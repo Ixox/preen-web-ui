@@ -81,6 +81,7 @@ export interface Operator {
   // Paramètres spécifiques PreenFM
   feedbackAmount: number; // Auto-modulation
   velocitySensitivity: number;
+  phase: number;          // Phase de départ de l'oscillateur (0-360°)
 }
 
 export interface Algorithm {
@@ -340,7 +341,8 @@ export const DEFAULT_OPERATOR: Omit<Operator, 'id'> = {
   adsr: DEFAULT_ADSR,
   target: [],
   feedbackAmount: 0,
-  velocitySensitivity: 0.5
+  velocitySensitivity: 0.5,
+  phase: 0,
 };
 
 function createOperator(

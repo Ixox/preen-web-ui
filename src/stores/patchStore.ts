@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { WaveformType, getWaveformId } from '../types/waveform';
-import { sendOperatorMix, sendOperatorPan, sendOperatorFrequency, sendOperatorDetune, sendOperatorWaveform, sendOperatorKeyboardTracking, sendOperatorADSR, sendModulationIM, sendModulationVelo, calculateIMIndex, sendStepSequencerStep, sendStepSequencerBpm, sendStepSequencerGate, sendAlgorithmChange, sendGlobalVelocitySensitivity, sendPlayMode, sendGlideTime, sendNoteCurve, sendPatchName, sendFilterType, sendFilterParam1, sendFilterParam2, sendFilterGain, sendFilter2Type, sendFilter2Param1, sendFilter2Param2, sendFilter2Gain } from '../midi/midiService';
+import { sendOperatorMix, sendOperatorPan, sendOperatorFrequency, sendOperatorDetune, sendOperatorPhase, sendOperatorWaveform, sendOperatorKeyboardTracking, sendOperatorADSR, sendModulationIM, sendModulationVelo, calculateIMIndex, sendStepSequencerStep, sendStepSequencerBpm, sendStepSequencerGate, sendAlgorithmChange, sendGlobalVelocitySensitivity, sendPlayMode, sendGlideTime, sendNoteCurve, sendPatchName, sendFilterType, sendFilterParam1, sendFilterParam2, sendFilterGain, sendFilter2Type, sendFilter2Param1, sendFilter2Param2, sendFilter2Gain } from '../midi/midiService';
 import { sanitizePatchName } from '../utils/patchNameUtils';
 
 
@@ -869,6 +869,12 @@ export const updateOperator = (operatorId: number, changes: Partial<Operator>, s
   if (sendMidi && changes.keyboardTracking !== undefined) {
     console.log('🎛️ Keyboard tracking change detected, calling sendOperatorKeyboardTracking...');
     sendOperatorKeyboardTracking(operatorId, changes.keyboardTracking);
+  }
+
+  // Envoyer le MIDI si la phase change (sauf si on reçoit depuis MIDI)
+  if (sendMidi && changes.phase !== undefined) {
+    console.log('🎛️ Phase change detected, calling sendOperatorPhase...');
+    sendOperatorPhase(operatorId, changes.phase);
   }
   
   // Mettre à jour le store

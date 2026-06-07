@@ -127,7 +127,7 @@ export function sendFilter2Gain(value: number, channel: number = currentChannel)
 import { encodeLfoBias } from '../types/lfo';
 import { NoteCurveUtils } from '../types/patch';
 import { ALGO_DIAGRAMS } from '../algo/algorithms.static';
-import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES } from './preenFmConstants';
+import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES} from './preenFmConstants';
 /**
  * Envoie le mode midiClockMode du step sequencer via NRPN
  * @param seqIndex 0 ou 1 (Seq1 ou Seq2)
@@ -1292,6 +1292,34 @@ export function sendOperatorDetune(opNumber: number, value: number, channel: num
   };
   
   console.log('📤 Sending DETUNE via NRPN:', { opNumber, nrpn, scaledValue, originalValue: value });
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send operator phase for operators 1-6 via NRPN.
+ * NRPN address: absolute = 248 + (opNumber-1)*4
+ *   OP1: abs=248 (MSB=1, LSB=120) … OP6: abs=268 (MSB=2, LSB=12)
+ * Integer encoding: nrpnValue = degrees (firmware accepts 0-360 int directly).
+ */
+export function sendOperatorPhase(opNumber: number, degrees: number, channel: number = currentChannel) {
+  console.log('🎨 sendOperatorPhase called:', { opNumber, degrees, channel, hasOutput: !!midiOutput });
+
+  if (opNumber < 1 || opNumber > 6) {
+    console.warn('⚠️ Operator phase only available for operators 1-6, got:', opNumber);
+    return;
+  }
+
+  const absoluteIndex = 248 + (opNumber - 1) * 4;
+  const nrpnValue = Math.round(degrees);
+
+  const nrpn: NRPNMessage = {
+    paramMSB: (absoluteIndex >> 7) & 0x7F,
+    paramLSB: absoluteIndex & 0x7F,
+    valueMSB: (nrpnValue >> 7) & 0x7F,
+    valueLSB: nrpnValue & 0x7F,
+  };
+
+  console.log('📤 Sending PHASE via NRPN:', { opNumber, nrpn, nrpnValue, degrees });
   sendNRPN(nrpn, channel);
 }
 

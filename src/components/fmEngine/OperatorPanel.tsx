@@ -5,6 +5,7 @@ import AdsrControl from './operator/AdsrControl';
 import { WaveformSelector } from './operator/WaveformSelector';
 import { KeyboardTrackingSelect } from './operator/KeyboardTrackingSelect';
 import KnobBase from '../knobs/KnobBase';
+import SliderBase from '../knobs/SliderBase';
 import { useThemeStore } from '../../theme/themeStore';
 import { useOperator, updateOperator } from '../../stores/patchStore';
 import { useFMSynthContext } from './FMSynthContext';
@@ -98,6 +99,25 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
         <KeyboardTrackingSelect
           value={selectedOperator?.keyboardTracking ?? 1}
           onChange={(keyboardTracking) => updateOperator(opId, { keyboardTracking })}
+        />
+      </ControlsRow>
+
+      <ControlsRow>
+        <SliderBase
+          label={t('Phase')}
+          value={selectedOperator?.phase ?? 0}
+          min={0}
+          max={360}
+          step={1}
+          onChange={val => updateOperator(opId, { phase: val })}
+          renderLabel={(v: number) => `${Math.round(v)}°`}
+          labelPosition="left"
+          valuePosition="right"
+          width={160}
+          height={20}
+          color={theme.colors.knobFrequency}
+          strokeColor={theme.colors.knobStroke}
+          backgroundColor={theme.colors.knobBackground}
         />
       </ControlsRow>
 

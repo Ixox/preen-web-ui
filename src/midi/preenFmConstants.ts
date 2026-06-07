@@ -276,6 +276,18 @@ export const MATRIX_DEST_NAMES = [
   'Flt2 P1', // 51 - FILTER2_PARAM1
   'Flt2 P2', // 52 - FILTER2_PARAM2
   'Flt2 G',  // 53 - FILTER2_AMP
+  'o1 Ph',   // 54 - OSC1_PHASE
+  'o2 Ph',   // 55 - OSC2_PHASE
+  'o3 Ph',   // 56 - OSC3_PHASE
+  'o4 Ph',   // 57 - OSC4_PHASE
+  'o5 Ph',   // 58 - OSC5_PHASE
+  'o6 Ph',   // 59 - OSC6_PHASE
+  'o1 Wp',   // 60 - OSC1_WARP
+  'o2 Wp',   // 61 - OSC2_WARP
+  'o3 Wp',   // 62 - OSC3_WARP
+  'o4 Wp',   // 63 - OSC4_WARP
+  'o5 Wp',   // 64 - OSC5_WARP
+  'o6 Wp',   // 65 - OSC6_WARP
 ] as const;
 
 // ============================================================================
@@ -481,6 +493,8 @@ export const LFO_KEYSYNC_OFFSET        = 0.01;
 
 export const LFO_PHASE_MAX_NRPN    = 16383;
 export const LFO_PHASE_MAX_DEGREES = 360;
+
+export const OP_PHASE_MAX_DEGREES      = 360;
 
 export const LFO_SHAPE_MIN = 0;
 export const LFO_SHAPE_MAX = 7;

@@ -389,6 +389,11 @@ export class PreenFM3Parser {
       // Détune (encoder 3: detune)
       const detuneValue = this.getValue(0, oscRowBase + 3) ?? 1600;
       const detune = (detuneValue - 1600) / 100; // Centré sur 1600 pour 0
+      // Phase (ROW_OP_PHASE): absolute NRPN = 248 + opIndex * 4
+      const phaseNrpnAbs = 248 + opIndex * 4;
+      const phaseMSB = (phaseNrpnAbs >> 7) & 0x7F;
+      const phaseLSB = phaseNrpnAbs & 0x7F;
+      const phase = this.getValue(phaseMSB, phaseLSB) ?? 0; // degrees (firmware sends int 0-360)
       // ROW_ENV1: indices 68-75 (Attack T/L, Decay T/L, Sustain T/L, Release T/L)
       // ROW_ENV2: indices 76-83, etc.
       const envRowBase = 68 + opIndex * 8; // 8 valeurs par envelope (4 temps + 4 niveaux entrelacés)
@@ -449,6 +454,7 @@ export class PreenFM3Parser {
         keyboardTracking,
         frequency,
         detune,
+        phase,
         // amplitude sera patchée après
         pan: 0, // sera patché après aussi si besoin
         target: op.target.map(t => ({ ...t })),
