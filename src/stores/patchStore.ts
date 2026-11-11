@@ -158,6 +158,8 @@ const initialState: EditorState = {
   isModified: false,
   clipboard: null,
   pullRevision: 0,
+  isPulling: false,
+  isPushing: false,
 
   ui: {
     activeTab: 'OPERATORS',
@@ -241,6 +243,12 @@ interface PatchStore extends EditorState {
 
   /** Signale qu'un patch vient d'être reçu depuis le hardware (pull). */
   notifyPullReceived: () => void;
+  
+  /** Indique qu'un pull est en cours (suspendre l'envoi MIDI). */
+  setPulling: (isPulling: boolean) => void;
+  
+  /** Indique qu'un push est en cours (suspendre l'envoi MIDI). */
+  setPushing: (isPushing: boolean) => void;
 
   // Utilitaires
   markModified: (modified?: boolean) => void;
@@ -752,6 +760,12 @@ export const usePatchStore = create<PatchStore>()(
 
     notifyPullReceived: () =>
       set((state) => { state.pullRevision += 1; }),
+    
+    setPulling: (isPulling: boolean) =>
+      set((state) => { state.isPulling = isPulling; }),
+    
+    setPushing: (isPushing: boolean) =>
+      set((state) => { state.isPushing = isPushing; }),
 
     // Utilitaires
     markModified: (modified: boolean = true) =>
@@ -799,6 +813,13 @@ export const useOperator = (operatorId: number) => usePatchStore(state => {
 export const updateOperator = (operatorId: number, changes: Partial<Operator>, sendMidi: boolean = true) => {
   console.log('🔧 updateOperator called:', { operatorId, changes, sendMidi });
   
+  // Suspendre l'envoi MIDI si un pull ou push est en cours
+  const { isPulling, isPushing } = usePatchStore.getState();
+  if (isPulling || isPushing) {
+    console.log('⏸️ MIDI suspended:', isPulling ? 'pull' : 'push', 'in progress');
+    sendMidi = false;
+  }
+  
   // Get current algorithm to determine carrier index
   const currentPatch = usePatchStore.getState().currentPatch;
   const currentAlgorithm = currentPatch.algorithm;
@@ -821,9 +842,8 @@ export const updateOperator = (operatorId: number, changes: Partial<Operator>, s
       carrierIds: carriers.map(c => c.id)
     });
     
-    // For carriers: use carrier index (0-3) to determine CC
-    // CC pattern: 22, 24, 26, 28 = 22 + carrierIndex*2
-    if (isCarrier && carrierIndex < 4) {
+    // For carriers: use carrier index (0-5) to determine CC
+    if (isCarrier && carrierIndex < 6) {
       const encoderNumber = carrierIndex + 1; // 1-based for display
       console.log(`📍 Carrier ${operatorId} is the ${encoderNumber}${encoderNumber===1?'st':encoderNumber===2?'nd':encoderNumber===3?'rd':'th'} carrier → Encoder Mix${encoderNumber}`);
       sendOperatorMix(encoderNumber, changes.amplitude);
@@ -837,7 +857,7 @@ export const updateOperator = (operatorId: number, changes: Partial<Operator>, s
     console.log('🎛️ Pan change detected, calling sendOperatorPan...');
     
     // Same logic for Pan: use carrier index
-    if (isCarrier && carrierIndex < 4) {
+    if (isCarrier && carrierIndex < 6) {
       const encoderNumber = carrierIndex + 1;
       console.log(`📍 Carrier ${operatorId} is the ${encoderNumber}${encoderNumber===1?'st':encoderNumber===2?'nd':encoderNumber===3?'rd':'th'} carrier → Encoder Pan${encoderNumber}`);
       sendOperatorPan(encoderNumber, changes.pan);

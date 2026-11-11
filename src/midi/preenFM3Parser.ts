@@ -112,7 +112,7 @@ export class PreenFM3Parser {
         this.presetNameReceived = true;
       }
     } else {
-      // Stocker le paramètre  
+      // Stocker le paramètre
       this.nrpnData.set(paramIndex, value);
     }
   }
@@ -400,6 +400,7 @@ export class PreenFM3Parser {
       const warpLSB = warpNrpnAbs & 0x7F;
       const warpRaw = this.getValue(warpMSB, warpLSB); // encoding: (warp + 4) * 100
       const warp = (warpRaw != null) ? warpRaw / 100 - 4 : 0;
+      console.log(`[WARP DEBUG] OP${op.id}: abs=${warpNrpnAbs}, MSB=${warpMSB}, LSB=${warpLSB}, raw=${warpRaw}, decoded=${warp}`);
       // ROW_ENV1: indices 68-75 (Attack T/L, Decay T/L, Sustain T/L, Release T/L)
       // ROW_ENV2: indices 76-83, etc.
       const envRowBase = 68 + opIndex * 8; // 8 valeurs par envelope (4 temps + 4 niveaux entrelacés)

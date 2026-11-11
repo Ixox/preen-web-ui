@@ -40,6 +40,8 @@ export const useMidiActions = () => {
     // Cancel any in-flight push before starting a new one
     clearNRPNQueue();
     setIsSending(true);
+    usePatchStore.getState().setPushing(true);
+    console.log('⏸️ MIDI suspended: starting patch push');
 
     const nrpnMessages = patchToNRPNMessages(currentPatch, options);
     console.log(`📤 ${nrpnMessages.length} messages NRPN à envoyer (via queue, ~${nrpnMessages.length * 10}ms)`);
@@ -54,6 +56,8 @@ export const useMidiActions = () => {
     drainNRPNQueue().then(() => {
       console.log(`✅ Push terminé : ${nrpnMessages.length} messages NRPN envoyés`);
       setIsSending(false);
+      usePatchStore.getState().setPushing(false);
+      console.log('▶️ MIDI resumed: push complete');
     });
   };
 
@@ -87,6 +91,10 @@ export const useMidiActions = () => {
     isReceivingRef.current = true;
     lastNRPNTimeRef.current = Date.now();
     
+    // Suspendre l'envoi MIDI pendant toute la durée du pull
+    usePatchStore.getState().setPulling(true);
+    console.log('⏸️ MIDI suspended: starting patch pull');
+    
     console.log('📡 Envoi de la demande de dump patch...');
     requestPatchDump(0, midi.channel); // Timbre 0
     
@@ -106,6 +114,8 @@ export const useMidiActions = () => {
         alert('Erreur: Algorithme non reçu du PreenFM3. Veuillez réessayer.');
         setIsReceiving(false);
         isReceivingRef.current = false;
+        usePatchStore.getState().setPulling(false);
+        console.log('▶️ MIDI resumed: pull failed');
         return;
       }
       
@@ -151,17 +161,26 @@ export const useMidiActions = () => {
 
         // Synchroniser la version firmware dans le synthStore
         useSynthStore.getState().setPfm3Version(parserRef.current.getpfm3Version());
-        loadPatch(patch);
-        usePatchStore.getState().notifyPullReceived();
-        console.log('✅ Patch chargé dans l\'UI');
+        
+        // Suspendre l'envoi MIDI pendant le chargement du patch
+        usePatchStore.getState().setPulling(true);
+        try {
+          loadPatch(patch);
+          usePatchStore.getState().notifyPullReceived();
+          console.log('✅ Patch chargé dans l\'UI');
 
-        // Mettre à jour les statistiques finales
-        setReceivedCount(stats.count);
-        setReceivedName(stats.name);
+          // Mettre à jour les statistiques finales
+          setReceivedCount(stats.count);
+          setReceivedName(stats.name);
+        } finally {
+          usePatchStore.getState().setPulling(false);
+          console.log('▶️ MIDI resumed: pull complete');
+        }
         
       } catch (error) {
         console.error('❌ Erreur lors de la conversion du patch:', error);
         alert(`Erreur lors du chargement du patch: ${error}`);
+        usePatchStore.getState().setPulling(false);
       }
       
       setIsReceiving(false);
@@ -198,6 +217,14 @@ export const useMidiActions = () => {
         console.log(`🎵 ALGORITHME REÇU: ${value}`);
       }
       
+      // Logger spécifiquement les phase/warp (abs 248-269)
+      if (paramIndex >= 248 && paramIndex <= 269) {
+        const offset = (paramIndex - 248) % 4;
+        const opNum = Math.floor((paramIndex - 248) / 4) + 1;
+        const paramType = offset === 0 ? 'PHASE' : offset === 1 ? 'WARP' : `UNUSED+${offset}`;
+        console.log(`🔧 PHASE/WARP RANGE: OP${opNum} ${paramType} [${nrpn.paramMSB},${nrpn.paramLSB}] (abs=${paramIndex}) = ${value}`);
+      }
+      
       // Réinitialiser le timeout d'inactivité
       if (receptionTimeoutRef.current) {
         clearTimeout(receptionTimeoutRef.current);
@@ -231,6 +258,8 @@ export const useMidiActions = () => {
           alert('Timeout: Aucune réponse du PreenFM3. Vérifiez la connexion MIDI.');
           setIsReceiving(false);
           isReceivingRef.current = false;
+          usePatchStore.getState().setPulling(false);
+          console.log('▶️ MIDI resumed: pull timeout');
         }
       }
     }, 10000);

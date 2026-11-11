@@ -241,6 +241,10 @@ export interface EditorState {
   clipboard: Partial<Patch> | null;
   /** Incrémenté à chaque réception d'un patch depuis le hardware (pull). */
   pullRevision: number;
+  /** Indique qu'un pull est en cours (suspendre l'envoi MIDI). */
+  isPulling: boolean;
+  /** Indique qu'un push est en cours (suspendre l'envoi MIDI). */
+  isPushing: boolean;
 
   // État de l'interface
   ui: {

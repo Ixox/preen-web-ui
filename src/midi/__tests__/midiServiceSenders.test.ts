@@ -40,10 +40,24 @@ import {
   sendArpeggiatorLatch,
   sendLfoEnvelope,
   sendPatchName,
+  sendOperatorMix,
+  sendOperatorPan,
+  sendOperatorWarp,
+  sendIMChange,
+  sendNoteCurve,
+  sendTimbreDryWet,
+  sendTimbreDynamics,
+  sendEngineDecimation,
+  sendMfxReturnLevel,
+  sendMfxPreset,
+  sendMixerVolume,
+  sendMixerPan,
+  sendMixerSend,
   setMidiOutput,
   clearNRPNQueue,
   drainNRPNQueue,
 } from '../midiService';
+import { PREENFM3_CC, NoteCurveType } from '../preenFmConstants';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -59,6 +73,16 @@ function allSentNRPNs(): Array<{ paramMSB: number; paramLSB: number; valueMSB: n
 
 function sentNRPNCount(): number {
   return mockSend.mock.calls.filter((call: unknown[]) => (call[0] as number[]).length === 12).length;
+}
+
+/** Extract all sent standard CC messages (each 3 bytes: status, controller, value). */
+function allSentCCs(): Array<{ channel: number; controller: number; value: number }> {
+  return mockSend.mock.calls
+    .filter((call: unknown[]) => (call[0] as number[]).length === 3)
+    .map((call: unknown[]) => {
+      const b = call[0] as number[];
+      return { channel: (b[0] & 0x0F) + 1, controller: b[1], value: b[2] };
+    });
 }
 
 /** Drain & advance so all queued NRPNs are actually sent. */
@@ -248,5 +272,176 @@ describe('sendPatchName — character encoding and clearing', () => {
       expect(n.paramLSB).toBe(100 + i);
       expect(n.valueLSB).toBe(0x20);
     });
+  });
+});
+
+// ── Control Changes: Operator Mix & Pan (TECHREADME.md reference) ────────────
+
+describe('Control Changes — Operator Mix & Pan (CC 22-29, 31, 36, 37, 39)', () => {
+  it('sendOperatorMix sends correct CCs for OP1 to OP6', () => {
+    // OP1 -> CC 22, OP2 -> CC 24, OP3 -> CC 26, OP4 -> CC 28, OP5 -> CC 31, OP6 -> CC 37
+    const expectedCCs = [22, 24, 26, 28, 31, 37];
+    for (let op = 1; op <= 6; op++) {
+      sendOperatorMix(op, 1.0, 1);
+    }
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(6);
+    expect(ccs.map(c => c.controller)).toEqual(expectedCCs);
+    expect(ccs.every(c => c.value === 127)).toBe(true);
+  });
+
+  it('sendOperatorMix ignores invalid operator numbers (< 1 or > 6)', () => {
+    sendOperatorMix(0, 1.0, 1);
+    sendOperatorMix(7, 1.0, 1);
+    expect(allSentCCs().length).toBe(0);
+  });
+
+  it('sendOperatorPan sends correct CCs for OP1 to OP6', () => {
+    // OP1 -> CC 23, OP2 -> CC 25, OP3 -> CC 27, OP4 -> CC 29, OP5 -> CC 36, OP6 -> CC 39
+    const expectedCCs = [23, 25, 27, 29, 36, 39];
+    for (let op = 1; op <= 6; op++) {
+      sendOperatorPan(op, 0.0, 1); // Center pan -> 64
+    }
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(6);
+    expect(ccs.map(c => c.controller)).toEqual(expectedCCs);
+    expect(ccs.every(c => c.value === 64)).toBe(true);
+  });
+
+  it('sendOperatorPan scales -1.0 to 0 and +1.0 to 127', () => {
+    sendOperatorPan(1, -1.0, 1);
+    sendOperatorPan(2, 1.0, 1);
+    const ccs = allSentCCs();
+    expect(ccs[0].controller).toBe(23);
+    expect(ccs[0].value).toBe(0);
+    expect(ccs[1].controller).toBe(25);
+    expect(ccs[1].value).toBe(127);
+  });
+});
+
+// ── Control Changes: IM & Feedback (TECHREADME.md reference) ────────────────
+
+describe('Control Changes — IM & Feedback (CC 17-21, CC 30)', () => {
+  it('sendIMChange sends CC 17-21 for IM1-IM5', () => {
+    for (let im = 1; im <= 5; im++) {
+      sendIMChange(im, 50, 1);
+    }
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(5);
+    expect(ccs.map(c => c.controller)).toEqual([17, 18, 19, 20, 21]);
+    expect(ccs.every(c => c.value === 50)).toBe(true);
+  });
+
+  it('sendIMChange sends CC 30 for Feedback (IM6)', () => {
+    sendIMChange(6, 80, 1);
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(1);
+    expect(ccs[0].controller).toBe(PREENFM3_CC.IM_FEEDBACK); // 30
+    expect(ccs[0].value).toBe(80);
+  });
+});
+
+// ── Control Changes: Operator Warp (TECHREADME.md reference) ────────────────
+
+describe('Control Changes — Operator Warp (CC 33-35, CC 111-113)', () => {
+  it('sendOperatorWarp sends CC 33-35 for OP1-3 and CC 111-113 for OP4-6', () => {
+    const expectedCCs = [33, 34, 35, 111, 112, 113];
+    for (let op = 1; op <= 6; op++) {
+      sendOperatorWarp(op, 0.0, 1); // Warp 0.0 -> CC 64
+    }
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(6);
+    expect(ccs.map(c => c.controller)).toEqual(expectedCCs);
+    expect(ccs.every(c => c.value === 64)).toBe(true);
+  });
+});
+
+// ── Timbre, Mixer & Master FX CCs ───────────────────────────────────────────
+
+describe('Control Changes — Timbre, Mixer & MFX', () => {
+  it('sendTimbreDryWet sends CC 40', () => {
+    sendTimbreDryWet(0.5, 1);
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(1);
+    expect(ccs[0].controller).toBe(40);
+    expect(ccs[0].value).toBe(64);
+  });
+
+  it('sendTimbreDynamics sends CC 41', () => {
+    sendTimbreDynamics(2, 1); // Punch
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(1);
+    expect(ccs[0].controller).toBe(41);
+    expect(ccs[0].value).toBe(2);
+  });
+
+  it('sendEngineDecimation sends CC 42', () => {
+    sendEngineDecimation(3, 1); // 8bit
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(1);
+    expect(ccs[0].controller).toBe(42);
+    expect(ccs[0].value).toBe(3);
+  });
+
+  it('sendMfxReturnLevel sends CC 44', () => {
+    sendMfxReturnLevel(0.75, 1);
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(1);
+    expect(ccs[0].controller).toBe(44);
+    expect(ccs[0].value).toBe(95);
+  });
+
+  it('sendMfxPreset sends CC 45', () => {
+    sendMfxPreset(5, 1);
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(1);
+    expect(ccs[0].controller).toBe(45);
+    expect(ccs[0].value).toBe(5);
+  });
+
+  it('sendMixerVolume sends CC 7 and is not blocked', () => {
+    sendMixerVolume(0.8, 1);
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(1);
+    expect(ccs[0].controller).toBe(7);
+  });
+
+  it('sendMixerPan sends CC 10 and is not blocked', () => {
+    sendMixerPan(0.0, 1);
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(1);
+    expect(ccs[0].controller).toBe(10);
+    expect(ccs[0].value).toBe(64);
+  });
+
+  it('sendMixerSend sends CC 11 and is not blocked', () => {
+    sendMixerSend(0.5, 1);
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(1);
+    expect(ccs[0].controller).toBe(11);
+  });
+});
+
+// ── NRPN: Note Curves (TECHREADME.md reference) ─────────────────────────────
+
+describe('NRPN — Note Curves (TECHREADME.md reference)', () => {
+  it('sendNoteCurve for curveIndex=0 uses MSB=1 and LSBs 72, 73, 74', async () => {
+    sendNoteCurve(0, { before: NoteCurveType.PlusLinear, breakNote: 60, after: NoteCurveType.PlusExp }, 1);
+    await flushQueue();
+    const nrpns = allSentNRPNs();
+    expect(nrpns.length).toBe(3);
+    expect(nrpns.map(n => n.paramMSB)).toEqual([1, 1, 1]);
+    expect(nrpns.map(n => n.paramLSB)).toEqual([72, 73, 74]);
+    expect(nrpns[1].valueLSB).toBe(60); // Break note
+  });
+
+  it('sendNoteCurve for curveIndex=1 uses MSB=1 and LSBs 76, 77, 78', async () => {
+    sendNoteCurve(1, { before: NoteCurveType.PlusExp, breakNote: 48, after: NoteCurveType.PlusLinear }, 1);
+    await flushQueue();
+    const nrpns = allSentNRPNs();
+    expect(nrpns.length).toBe(3);
+    expect(nrpns.map(n => n.paramMSB)).toEqual([1, 1, 1]);
+    expect(nrpns.map(n => n.paramLSB)).toEqual([76, 77, 78]);
+    expect(nrpns[1].valueLSB).toBe(48);
   });
 });

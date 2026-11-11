@@ -33,25 +33,32 @@ export const MIDI_CC = {
 
 export const PREENFM3_CC = {
   // Engine
+  GLIDE_SPEED: 5,
   ALGO: 16,
+  ENGINE_DECIMATION: 42,
+  PLAY_MODE: 43,
 
-  // Modulation Indices — CC_IM1-5 = 17-21
+  // Modulation Indices — CC_IM1-5 = 17-21, Feedback = 30
   IM1: 17,
+  IM2: 18,
+  IM3: 19,
+  IM4: 20,
+  IM5: 21,
   IM_FEEDBACK: 30,
 
-  // Oscillator Mix and Pan (INTERLEAVED) — CC_MIX1/PAN1 = 22/23 …
+  // Oscillator Mix and Pan — OP1-4 interleaved (22-29), OP5 (31, 36), OP6 (37, 39)
   MIX1: 22, PAN1: 23,
   MIX2: 24, PAN2: 25,
   MIX3: 26, PAN3: 27,
   MIX4: 28, PAN4: 29,
+  MIX5: 31, PAN5: 36,
+  MIX6: 37, PAN6: 39,
 
-  // Master FX (Global Channel) — CC_MFX_* = 40-45
-  MFX_PRESET:       40,
-  MFX_PREDELAYTIME: 41,
-  MFX_PREDELAYMIX:  42,
-  MFX_INPUTTILT:    43,
-  MFX_MOD_SPEED:    44,
-  MFX_MOD_DEPTH:    45,
+  // Timbre & Master FX — CC 40, 41, 44, 45
+  TIMBRE_DRYWET:   40,
+  TIMBRE_DYNAMICS: 41,
+  MFX_RETURN:      44,
+  MFX_PRESET:      45,
 
   // Matrix Row Multipliers — CC_MATRIXROW*_MUL = 46-49
   MATRIXROW1_MUL: 46,
@@ -69,9 +76,11 @@ export const PREENFM3_CC = {
   // LFO Envelope 2 Silence
   LFO_ENV2_SILENCE: 59,
 
-  // Step Sequencer Gate
-  STEPSEQ5_GATE: 60,
-  STEPSEQ6_GATE: 61,
+  // Step Sequencer Gate — CC 60, 61
+  STEPSEQ1_GATE: 60,
+  STEPSEQ2_GATE: 61,
+  STEPSEQ5_GATE: 60, // Alias de compatibilité
+  STEPSEQ6_GATE: 61, // Alias de compatibilité
 
   // Envelope Attack/Release all modulators
   ENV_ATK_ALL_MODULATOR: 62,
@@ -97,8 +106,8 @@ export const PREENFM3_CC = {
   // LFO Shape — CC_LFO*_SHAPE = 94-96
   LFO1_SHAPE: 94, LFO2_SHAPE: 95, LFO3_SHAPE: 96,
 
-  // Oscillator Warp — CC_OSC*_WARP = 97-99 (OP1-3), 111-113 (OP4-6)
-  OSC1_WARP: 97, OSC2_WARP: 98, OSC3_WARP: 99,
+  // Oscillator Warp — OP1-3 on 33-35, OP4-6 on 111-113
+  OSC1_WARP: 33, OSC2_WARP: 34, OSC3_WARP: 35,
   OSC4_WARP: 111, OSC5_WARP: 112, OSC6_WARP: 113,
 
   // Arpeggiator — CC_ARP_* = 100-105
