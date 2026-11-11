@@ -394,6 +394,12 @@ export class PreenFM3Parser {
       const phaseMSB = (phaseNrpnAbs >> 7) & 0x7F;
       const phaseLSB = phaseNrpnAbs & 0x7F;
       const phase = this.getValue(phaseMSB, phaseLSB) ?? 0; // degrees (firmware sends int 0-360)
+      // Warp (ROW_OP_PHASE offset +1): absolute NRPN = 248 + opIndex * 4 + 1
+      const warpNrpnAbs = 248 + opIndex * 4 + 1;
+      const warpMSB = (warpNrpnAbs >> 7) & 0x7F;
+      const warpLSB = warpNrpnAbs & 0x7F;
+      const warpRaw = this.getValue(warpMSB, warpLSB); // encoding: (warp + 4) * 100
+      const warp = (warpRaw != null) ? warpRaw / 100 - 4 : 0;
       // ROW_ENV1: indices 68-75 (Attack T/L, Decay T/L, Sustain T/L, Release T/L)
       // ROW_ENV2: indices 76-83, etc.
       const envRowBase = 68 + opIndex * 8; // 8 valeurs par envelope (4 temps + 4 niveaux entrelacés)
@@ -455,6 +461,7 @@ export class PreenFM3Parser {
         frequency,
         detune,
         phase,
+        warp,
         // amplitude sera patchée après
         pan: 0, // sera patché après aussi si besoin
         target: op.target.map(t => ({ ...t })),

@@ -1324,6 +1324,34 @@ export function sendOperatorPhase(opNumber: number, degrees: number, channel: nu
 }
 
 /**
+ * Send operator warp for operators 1-6 via NRPN.
+ * NRPN address: absolute = 248 + (opNumber-1)*4 + 1  (offset +1 after phase)
+ * Encoding: nrpnValue = round((warp + 4.0) * 100) → range 0-800
+ * Firmware clamps to [-4, +4].
+ */
+export function sendOperatorWarp(opNumber: number, warp: number, channel: number = currentChannel) {
+  console.log('🌀 sendOperatorWarp called:', { opNumber, warp, channel, hasOutput: !!midiOutput });
+
+  if (opNumber < 1 || opNumber > 6) {
+    console.warn('⚠️ Operator warp only available for operators 1-6, got:', opNumber);
+    return;
+  }
+
+  const absoluteIndex = 248 + (opNumber - 1) * 4 + 1;
+  const nrpnValue = Math.round((warp + 4.0) * 100);
+
+  const nrpn: NRPNMessage = {
+    paramMSB: (absoluteIndex >> 7) & 0x7F,
+    paramLSB: absoluteIndex & 0x7F,
+    valueMSB: (nrpnValue >> 7) & 0x7F,
+    valueLSB: nrpnValue & 0x7F,
+  };
+
+  console.log('📤 Sending WARP via NRPN:', { opNumber, nrpn, nrpnValue, warp });
+  sendNRPN(nrpn, channel);
+}
+
+/**
  * Send operator keyboard tracking (frequency type) for operators 1-6
  * NRPN [0, 44+(opNumber-1)*4+1] for keyboard tracking
  * UI: 0=Fixed, 1=Keyboard, 2=Finetune | PreenFM3: 0=Keyboard, 1=Fixed, 2=Finetune

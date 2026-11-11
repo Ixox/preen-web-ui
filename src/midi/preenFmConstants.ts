@@ -97,6 +97,10 @@ export const PREENFM3_CC = {
   // LFO Shape — CC_LFO*_SHAPE = 94-96
   LFO1_SHAPE: 94, LFO2_SHAPE: 95, LFO3_SHAPE: 96,
 
+  // Oscillator Warp — CC_OSC*_WARP = 97-99 (OP1-3), 111-113 (OP4-6)
+  OSC1_WARP: 97, OSC2_WARP: 98, OSC3_WARP: 99,
+  OSC4_WARP: 111, OSC5_WARP: 112, OSC6_WARP: 113,
+
   // Arpeggiator — CC_ARP_* = 100-105
   ARP_CLOCK:     100,
   ARP_DIRECTION: 101,
@@ -495,6 +499,8 @@ export const LFO_PHASE_MAX_NRPN    = 16383;
 export const LFO_PHASE_MAX_DEGREES = 360;
 
 export const OP_PHASE_MAX_DEGREES      = 360;
+export const OP_WARP_MIN               = -4;
+export const OP_WARP_MAX               = 4;
 
 export const LFO_SHAPE_MIN = 0;
 export const LFO_SHAPE_MAX = 7;

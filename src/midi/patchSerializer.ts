@@ -1014,6 +1014,16 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
     push(nrpnMsg(1, 68 + i, (lfos[i]?.phase ?? 0) * 100));
   }
 
+  // ── Operator Phase + Warp (MSB=1/2, abs = 248 + opIndex*4 + offset) ────────
+  // offset +0 = phase (int degrees 0-360), offset +1 = warp ((val+4)*100, 0-800)
+  for (let i = 0; i < 6; i++) {
+    const op = patch.operators.find(o => o.id === i + 1);
+    const phaseAbs = 248 + i * 4;
+    const warpAbs  = 248 + i * 4 + 1;
+    push(nrpnMsg((phaseAbs >> 7) & 0x7F, phaseAbs & 0x7F, Math.round(op?.phase ?? 0)));
+    push(nrpnMsg((warpAbs  >> 7) & 0x7F, warpAbs  & 0x7F, Math.round(((op?.warp ?? 0) + 4) * 100)));
+  }
+
   // ── Preset Name (MSB=1, LSB=100-111) ───────────────────────────────────────
   const name = (patch.name || 'Init').substring(0, 12);
   for (let i = 0; i < 12; i++) {

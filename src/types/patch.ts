@@ -82,6 +82,7 @@ export interface Operator {
   feedbackAmount: number; // Auto-modulation
   velocitySensitivity: number;
   phase: number;          // Phase de départ de l'oscillateur (0-360°)
+  warp: number;           // Warp de l'oscillateur (-4 à +4)
 }
 
 export interface Algorithm {
@@ -343,6 +344,7 @@ export const DEFAULT_OPERATOR: Omit<Operator, 'id'> = {
   feedbackAmount: 0,
   velocitySensitivity: 0.5,
   phase: 0,
+  warp: 0,
 };
 
 function createOperator(

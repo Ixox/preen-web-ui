@@ -121,6 +121,25 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
         />
       </ControlsRow>
 
+      <ControlsRow>
+        <SliderBase
+          label={t('Warp')}
+          value={selectedOperator?.warp ?? 0}
+          min={-4}
+          max={4}
+          step={0.01}
+          onChange={val => updateOperator(opId, { warp: val })}
+          renderLabel={(v: number) => v.toFixed(2)}
+          labelPosition="left"
+          valuePosition="right"
+          width={160}
+          height={20}
+          color={theme.colors.knobFrequency}
+          strokeColor={theme.colors.knobStroke}
+          backgroundColor={theme.colors.knobBackground}
+        />
+      </ControlsRow>
+
     </PanelContainer>
   );
 };
