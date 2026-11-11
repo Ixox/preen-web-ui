@@ -3,6 +3,7 @@ import { usePreenFM3Midi } from './usePreenFM3Midi';
 import { useCurrentPatch, usePatchStore } from '../stores/patchStore';
 import { requestPatchDump, sendNRPN, clearNRPNQueue, drainNRPNQueue } from './midiService';
 import { PreenFM3Parser } from './preenFM3Parser';
+import { formatTimbreMfxNrpnDetail } from './preenFmConstants';
 import { patchToNRPNMessages, type PatchToNRPNOptions } from './patchSerializer';
 import { useSynthStore } from '../stores/synthStore';
 
@@ -223,6 +224,11 @@ export const useMidiActions = () => {
         const opNum = Math.floor((paramIndex - 248) / 4) + 1;
         const paramType = offset === 0 ? 'PHASE' : offset === 1 ? 'WARP' : `UNUSED+${offset}`;
         console.log(`🔧 PHASE/WARP RANGE: OP${opNum} ${paramType} [${nrpn.paramMSB},${nrpn.paramLSB}] (abs=${paramIndex}) = ${value}`);
+      }
+
+      // Logger spécifiquement Timbre & Master FX (MSB=4, LSB=0-3, indices 512-515)
+      if (nrpn.paramMSB === 4 && nrpn.paramLSB >= 0 && nrpn.paramLSB <= 3) {
+        console.log(`🎛️ TIMBRE/MFX RANGE: ${formatTimbreMfxNrpnDetail(nrpn.paramLSB, value)}`);
       }
       
       // Réinitialiser le timeout d'inactivité

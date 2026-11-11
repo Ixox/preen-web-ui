@@ -3,7 +3,17 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { WaveformType, getWaveformId } from '../types/waveform';
-import { sendOperatorMix, sendOperatorPan, sendOperatorFrequency, sendOperatorDetune, sendOperatorPhase, sendOperatorWarp, sendOperatorWaveform, sendOperatorKeyboardTracking, sendOperatorADSR, sendModulationIM, sendModulationVelo, calculateIMIndex, sendStepSequencerStep, sendStepSequencerBpm, sendStepSequencerGate, sendAlgorithmChange, sendGlobalVelocitySensitivity, sendPlayMode, sendGlideTime, sendNoteCurve, sendPatchName, sendFilterType, sendFilterParam1, sendFilterParam2, sendFilterGain, sendFilter2Type, sendFilter2Param1, sendFilter2Param2, sendFilter2Gain } from '../midi/midiService';
+import {
+  sendOperatorMix, sendOperatorPan, sendOperatorFrequency, sendOperatorDetune,
+  sendOperatorPhase, sendOperatorWarp, sendOperatorWaveform, sendOperatorKeyboardTracking,
+  sendOperatorADSR, sendModulationIM, sendModulationVelo, calculateIMIndex,
+  sendStepSequencerStep, sendStepSequencerBpm, sendStepSequencerGate, sendAlgorithmChange,
+  sendGlobalVelocitySensitivity, sendPlayMode, sendPlayModeCC, sendGlideTime, sendNoteCurve,
+  sendPatchName, sendFilterType, sendFilterParam1, sendFilterParam2, sendFilterGain,
+  sendFilter2Type, sendFilter2Param1, sendFilter2Param2, sendFilter2Gain,
+  sendMixerVolume, sendMixerPan, sendTimbreDynamics, sendTimbreDryWet, sendEngineDecimation,
+  sendMfxReturnLevel, sendMfxPreset
+} from '../midi/midiService';
 import { sanitizePatchName } from '../utils/patchNameUtils';
 
 
@@ -78,12 +88,19 @@ const createDefaultPatch = (): Patch => ({
 
   global: {
     volume: 0.8,
+    pan: 0,
     transpose: 0,
     fineTune: 0,
     polyphony: 8,
+    playMode: 1, // 0: Mono, 1: Poly, 2: Unison
     glideTime: 0,
     bendRange: 2,
-    velocitySensitivity: 8 // Valeur médiane 0-16
+    velocitySensitivity: 8, // Valeur médiane 0-16
+    dynamics: 0, // 0: Off
+    reverbDryWet: 0.2, // 20%
+    decimation: 19, // 19: Full (FM_DECIMATION_CURRENT)
+    mfxReturn: 0.5,
+    mfxPreset: 0,
   },
 
   effects: {
@@ -1014,8 +1031,32 @@ export const updateGlobal = (changes: Partial<Patch['global']>) => {
   if (changes.polyphony !== undefined) {
     sendPlayMode(changes.polyphony);
   }
+  if (changes.playMode !== undefined) {
+    sendPlayModeCC(changes.playMode);
+  }
   if (changes.glideTime !== undefined) {
     sendGlideTime(changes.glideTime);
+  }
+  if (changes.volume !== undefined) {
+    sendMixerVolume(changes.volume);
+  }
+  if (changes.pan !== undefined) {
+    sendMixerPan(changes.pan);
+  }
+  if (changes.dynamics !== undefined) {
+    sendTimbreDynamics(changes.dynamics);
+  }
+  if (changes.reverbDryWet !== undefined) {
+    sendTimbreDryWet(changes.reverbDryWet);
+  }
+  if (changes.decimation !== undefined) {
+    sendEngineDecimation(changes.decimation);
+  }
+  if (changes.mfxReturn !== undefined) {
+    sendMfxReturnLevel(changes.mfxReturn);
+  }
+  if (changes.mfxPreset !== undefined) {
+    sendMfxPreset(changes.mfxPreset);
   }
 };
 

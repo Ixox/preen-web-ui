@@ -150,11 +150,78 @@ export const PREENFM3_CC = {
   UNISON_DETUNE: 13,
   UNISON_SPREAD: 14,
 
-  // Mixer — hardware encoders only, BLOCKED in sendCC()
+  // Mixer CCs
   MIXER_VOLUME: 7,
   MIXER_PAN:    10,
   MIXER_SEND:   11,
 } as const;
+
+export const TIMBRE_DYNAMICS_PROFILES = [
+  'Off',
+  'Glue',
+  'Punch',
+  'Tube',
+  'Limit',
+  'Drive',
+  'Fuzz',
+] as const;
+export type TimbreDynamicsProfile = typeof TIMBRE_DYNAMICS_PROFILES[number];
+
+export const ENGINE_DECIMATION_MODES = [
+  '1-bit',
+  '2-bit',
+  '3-bit',
+  '4-bit',
+  '5-bit',
+  '6-bit',
+  '7-bit',
+  '8-bit',
+  '9-bit',
+  '10-bit',
+  '11-bit',
+  '12-bit',
+  '13-bit',
+  '14-bit',
+  '15-bit',
+  '16-bit',
+  '17-bit',
+  '18-bit',
+  '19-bit',
+  'Full',
+  'HQ',
+] as const;
+export type EngineDecimationMode = typeof ENGINE_DECIMATION_MODES[number];
+export const ENGINE_DECIMATION_DEFAULT = 19; // FM_DECIMATION_FULL = FM_DECIMATION_CURRENT
+
+export const PLAY_MODES = [
+  'Mono',
+  'Poly',
+  'Unison',
+] as const;
+export type PlayMode = typeof PLAY_MODES[number];
+
+export const MFX_REVERB_PRESETS = [
+  'XSmal1',
+  'XSmal2',
+  'XSmal3',
+  'SmlDrk',
+  'SmlWrm',
+  'SmlBrt',
+  'MedDrk',
+  'MedWrm',
+  'MedBrt',
+  'LrgDrk',
+  'LrgWrm',
+  'LrgBrt',
+  'XLgDrk',
+  'XLgWrm',
+  'XLgBrt',
+  'Glue',
+  'Hall',
+  'Cave',
+  'Aptmnt',
+] as const;
+export type MfxReverbPreset = typeof MFX_REVERB_PRESETS[number];
 
 // ============================================================================
 // NRPN
@@ -173,7 +240,36 @@ export const NRPN_COMMANDS = {
   PRESET_NAME_END:    { paramMSB: 1,   paramLSB: 111 },
   STEPSEQ1: { paramMSB: 2 },
   STEPSEQ2: { paramMSB: 3 },
+  // Timbre & Master FX (indices 512..515 -> MSB 4, LSB 0..3)
+  TIMBRE_DRYWET:   { paramMSB: 4, paramLSB: 0 },
+  TIMBRE_DYNAMICS: { paramMSB: 4, paramLSB: 1 },
+  MFX_RETURN:      { paramMSB: 4, paramLSB: 2 },
+  MFX_PRESET:      { paramMSB: 4, paramLSB: 3 },
 } as const;
+
+/**
+ * Format a Timbre & Master FX NRPN parameter (MSB=4, LSB=0..3 / indices 512..515)
+ * into a concise diagnostic string for MIDI send/receive/parse/serialize logs.
+ */
+export function formatTimbreMfxNrpnDetail(paramLSB: number, rawValue: number): string {
+  const index = 512 + paramLSB;
+  switch (paramLSB) {
+    case 0:
+      return `TIMBRE_DRYWET [4,0] (idx=${index}) = ${rawValue} (${(rawValue / 100).toFixed(2)})`;
+    case 1: {
+      const label = TIMBRE_DYNAMICS_PROFILES[rawValue] ?? 'Unknown';
+      return `TIMBRE_DYNAMICS [4,1] (idx=${index}) = ${rawValue} (${label})`;
+    }
+    case 2:
+      return `MFX_RETURN [4,2] (idx=${index}) = ${rawValue} (${(rawValue / 100).toFixed(2)})`;
+    case 3: {
+      const label = MFX_REVERB_PRESETS[rawValue] ?? 'Unknown';
+      return `MFX_PRESET [4,3] (idx=${index}) = ${rawValue} (${label})`;
+    }
+    default:
+      return `TIMBRE_MFX_UNKNOWN [4,${paramLSB}] (idx=${index}) = ${rawValue}`;
+  }
+}
 
 export const MidiConfig = {
   RECEIVES_NONE: 0,

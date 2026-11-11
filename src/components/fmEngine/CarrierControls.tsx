@@ -1,8 +1,16 @@
-import { useCurrentPatch, updateOperator } from '../../stores/patchStore';
-import KnobBase from '../knobs/KnobBase';
+import React from 'react';
 import styled from 'styled-components';
+import { useCurrentPatch, updateOperator, updateGlobal } from '../../stores/patchStore';
+import KnobBase from '../knobs/KnobBase';
 import { useFMSynthContext } from './FMSynthContext';
 import { useThemeStore } from '../../theme/themeStore';
+import {
+  TIMBRE_DYNAMICS_PROFILES,
+  ENGINE_DECIMATION_MODES,
+  ENGINE_DECIMATION_DEFAULT,
+  PLAY_MODES,
+  MFX_REVERB_PRESETS,
+} from '../../midi/preenFmConstants';
 
 const CarrierContainer = styled.div`
   margin: auto;
@@ -18,23 +26,85 @@ const CarrierContainer = styled.div`
   }
 `;
 
-const CarrierTitle = styled.h3`
-  margin: 0;
-  padding: 12px 20px;
+const CarrierHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
   background: ${props => props.theme.colors.panel};
-  color: ${props => props.theme.colors.text};
-  font-size: 1rem;
-  font-weight: 600;
-  text-align: left;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+  flex-wrap: wrap;
+  gap: 12px;
 `;
 
-const ControlsContainer = styled.div`
+const CarrierTitle = styled.h3`
+  margin: 0;
+  color: ${props => props.theme.colors.text};
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+`;
+
+const HeaderControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const HeaderControlItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+`;
+
+const CompactLabel = styled.label`
+  font-size: 0.72rem;
+  color: #a0aec0;
+  text-transform: uppercase;
+  font-weight: 600;
+  white-space: nowrap;
+`;
+
+const CompactSelect = styled.select`
+  background: ${props => props.theme.colors.button};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 4px;
+  color: ${props => props.theme.colors.text};
+  padding: 3px 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  outline: none;
+
+  &:focus {
+    border-color: ${props => props.theme.colors.primary};
+  }
+`;
+
+const CompactRange = styled.input`
+  width: 72px;
+  height: 4px;
+  cursor: pointer;
+  accent-color: ${props => props.theme.colors.primary};
+`;
+
+const ValueBadge = styled.span`
+  font-size: 0.72rem;
+  color: ${props => props.theme.colors.text};
+  font-variant-numeric: tabular-nums;
+  min-width: 32px;
+  text-align: right;
+`;
+
+const CarriersContent = styled.div`
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 20px;
-  padding-bottom: 20px;
+  padding: 16px 20px;
   background: ${props => props.theme.colors.panel};
+  justify-content: center;
+  align-items: center;
 `;
 
 const OperatorControl = styled.div<{ $isHighlighted?: boolean }>`
@@ -42,7 +112,7 @@ const OperatorControl = styled.div<{ $isHighlighted?: boolean }>`
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 15px;
+  padding: 14px 18px;
   background: ${props => props.theme.colors.panelHover};
   border-radius: 6px;
   border: 2px solid ${props => props.theme.colors.border};
@@ -57,8 +127,9 @@ const OperatorControl = styled.div<{ $isHighlighted?: boolean }>`
 
 const OperatorTitle = styled.h4`
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.95rem;
   text-align: center;
+  color: ${props => props.theme.colors.text};
 `;
 
 const ControlGroup = styled.div`
@@ -70,87 +141,213 @@ const ControlGroup = styled.div`
 `;
 
 const ControlLabel = styled.span`
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #a0aec0;
   text-align: center;
+  text-transform: uppercase;
 `;
 
 const ControlInput = styled.input`
   font-size: 0.8rem;
   color: #a0aec0;
   text-align: center;
-  width:80px;
-  margin-top:10px;
+  width: 80px;
+  margin-top: 5px;
 `;
 
-const CarrierControls = () => {
+const CarrierFooter = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 6px 16px;
+  background: ${props => props.theme.colors.panelHover};
+  border-top: 1px solid ${props => props.theme.colors.border};
+  flex-wrap: wrap;
+`;
+
+const FooterTitle = styled.span`
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: ${props => props.theme.colors.textMuted};
+  letter-spacing: 0.5px;
+`;
+
+const FooterControlGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
+export const CarrierControls: React.FC = () => {
   const currentPatch = useCurrentPatch();
   const currentAlgorithm = currentPatch.algorithm;
   const carriers = currentAlgorithm?.ops?.filter(op => op.type === 'CARRIER') || [];
   const { setHighlightedNode, highlightedNode } = useFMSynthContext();
   const { theme } = useThemeStore();
 
-  if (carriers.length === 0) {
-    return (
-      <CarrierContainer>
-        <CarrierTitle>Mixer</CarrierTitle>
-        <ControlsContainer>
-          <div style={{ color: theme.colors.textMuted, textAlign: 'center' }}>
-            No carrier operators in current algorithm
-          </div>
-        </ControlsContainer>
-      </CarrierContainer>
-    );
-  }
+  const global = currentPatch.global;
+  const dynamicsValue = global.dynamics ?? 0;
+  const reverbDryWetValue = global.reverbDryWet ?? 0.2;
+  const decimationValue = global.decimation ?? ENGINE_DECIMATION_DEFAULT;
+  const playModeValue = global.playMode ?? 1;
+  const mfxReturnValue = global.mfxReturn ?? 0.5;
+  const mfxPresetValue = global.mfxPreset ?? 0;
 
   return (
     <CarrierContainer>
-      <CarrierTitle>Mixer</CarrierTitle>
-      <ControlsContainer>
-      {carriers.map(({ id }) => {
-        const operator = currentPatch.operators.find(op => op.id === id);
-        return (
-        <OperatorControl 
-          key={`carrier-${id}`}
-          $isHighlighted={highlightedNode === id}
-          onMouseEnter={() => setHighlightedNode(id)}
-          onMouseLeave={() => setHighlightedNode(null)}
-        >
-          <OperatorTitle>OP{id}</OperatorTitle>
+      {/* Header: Titre & Paramètres du Timbre (CC 40, 41, 42, 43) */}
+      <CarrierHeader>
+        <CarrierTitle>Mixer & Carriers</CarrierTitle>
 
-          <ControlGroup>
-            <KnobBase
-              size={60}
-              knobRadius={20}
-              min={0}
-              max={1}
-              step={0.01}
-              value={operator?.amplitude ?? 0}
-              onChange={val => updateOperator(id, { amplitude: Math.max(0, Math.min(1, val)) })}
-              color={theme.colors.knobVolume}
-              backgroundColor={theme.colors.knobBackground}
-              strokeColor={theme.colors.knobStroke}
-              renderLabel={(val) => val.toFixed(2)}
-              label="Volume"
-            />
-          </ControlGroup>
-
-          <ControlGroup>
-            <ControlInput
+        <HeaderControls>
+          {/* CC 40: Timbre Reverb Dry/Wet */}
+          <HeaderControlItem title="Timbre Reverb Dry/Wet (CC 40)">
+            <CompactLabel>Reverb Send:</CompactLabel>
+            <CompactRange
               type="range"
-              min="-1"
+              min="0"
               max="1"
               step="0.01"
-              value={operator?.pan ?? 0}
-              onChange={e => updateOperator(id, { pan: Number(e.target.value) })}
-              width="80px"
+              value={reverbDryWetValue}
+              onChange={(e) => updateGlobal({ reverbDryWet: Number(e.target.value) })}
             />
-            <ControlLabel>Pan</ControlLabel>
-          </ControlGroup>
-        </OperatorControl>
-        );
-      })}
-    </ControlsContainer>
+            <ValueBadge>{Math.round(reverbDryWetValue * 100)}%</ValueBadge>
+          </HeaderControlItem>
+
+          {/* CC 41: Timbre Dynamics (Off, Glue, Punch, Tube, Limit, Drive, Fuzz) */}
+          <HeaderControlItem title="Timbre Dynamics profile (CC 41)">
+            <CompactLabel>Dynamics:</CompactLabel>
+            <CompactSelect
+              value={dynamicsValue}
+              onChange={(e) => updateGlobal({ dynamics: Number(e.target.value) })}
+            >
+              {TIMBRE_DYNAMICS_PROFILES.map((name, idx) => (
+                <option key={name} value={idx}>
+                  {name}
+                </option>
+              ))}
+            </CompactSelect>
+          </HeaderControlItem>
+
+          {/* CC 42: Engine Decimation (1-bit .. 19-bit, Full, HQ) */}
+          <HeaderControlItem title="Engine Decimation lo-fi bit reduction (CC 42)">
+            <CompactLabel>Decim:</CompactLabel>
+            <CompactSelect
+              value={decimationValue}
+              onChange={(e) => updateGlobal({ decimation: Number(e.target.value) })}
+            >
+              {ENGINE_DECIMATION_MODES.map((mode, idx) => (
+                <option key={mode} value={idx}>
+                  {mode}
+                </option>
+              ))}
+            </CompactSelect>
+          </HeaderControlItem>
+
+          {/* CC 43: Play Mode (Mono, Poly, Unison) */}
+          <HeaderControlItem title="Play Mode (CC 43)">
+            <CompactLabel>Play:</CompactLabel>
+            <CompactSelect
+              value={playModeValue}
+              onChange={(e) => updateGlobal({ playMode: Number(e.target.value) })}
+            >
+              {PLAY_MODES.map((mode, idx) => (
+                <option key={mode} value={idx}>
+                  {mode}
+                </option>
+              ))}
+            </CompactSelect>
+          </HeaderControlItem>
+        </HeaderControls>
+      </CarrierHeader>
+      
+      {/* Contenu principal : Carrier Operators Mix & Pan */}
+      <CarriersContent>
+        {carriers.length === 0 ? (
+          <div style={{ color: theme.colors.textMuted, textAlign: 'center', padding: '16px' }}>
+            No carrier operators in current algorithm
+          </div>
+        ) : (
+          carriers.map(({ id }) => {
+            const operator = currentPatch.operators.find(op => op.id === id);
+            return (
+              <OperatorControl 
+                key={`carrier-${id}`}
+                $isHighlighted={highlightedNode === id}
+                onMouseEnter={() => setHighlightedNode(id)}
+                onMouseLeave={() => setHighlightedNode(null)}
+              >
+                <OperatorTitle>OP{id}</OperatorTitle>
+
+                <ControlGroup>
+                  <KnobBase
+                    size={55}
+                    knobRadius={18}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={operator?.amplitude ?? 0}
+                    onChange={val => updateOperator(id, { amplitude: Math.max(0, Math.min(1, val)) })}
+                    color={theme.colors.knobVolume}
+                    backgroundColor={theme.colors.knobBackground}
+                    strokeColor={theme.colors.knobStroke}
+                    renderLabel={(val) => val.toFixed(2)}
+                    label="Level"
+                  />
+                </ControlGroup>
+
+                <ControlGroup>
+                  <ControlInput
+                    type="range"
+                    min="-1"
+                    max="1"
+                    step="0.01"
+                    value={operator?.pan ?? 0}
+                    onChange={e => updateOperator(id, { pan: Number(e.target.value) })}
+                  />
+                  <ControlLabel>Pan</ControlLabel>
+                </ControlGroup>
+              </OperatorControl>
+            );
+          })
+        )}
+      </CarriersContent>
+
+      {/* Footer ultra-compact : Paramètres globaux Master FX Reverb (CC 44, 45) */}
+      <CarrierFooter>
+        <FooterTitle>Global Master FX</FooterTitle>
+
+        {/* CC 44: Master FX Return Level */}
+        <FooterControlGroup title="Master FX Global Reverb Return Level (CC 44)">
+          <CompactLabel>MFX Return:</CompactLabel>
+          <CompactRange
+            type="range"
+            min="0"
+            max="1"
+            step="0.01"
+            value={mfxReturnValue}
+            onChange={(e) => updateGlobal({ mfxReturn: Number(e.target.value) })}
+          />
+          <ValueBadge>{Math.round(mfxReturnValue * 100)}%</ValueBadge>
+        </FooterControlGroup>
+
+        {/* CC 45: Master FX Preset */}
+        <FooterControlGroup title="Master FX Global Reverb Preset (CC 45)">
+          <CompactLabel>MFX Preset:</CompactLabel>
+          <CompactSelect
+            value={mfxPresetValue}
+            onChange={(e) => updateGlobal({ mfxPreset: Number(e.target.value) })}
+          >
+            {MFX_REVERB_PRESETS.map((presetName, idx) => (
+              <option key={presetName} value={idx}>
+                {idx}: {presetName}
+              </option>
+            ))}
+          </CompactSelect>
+        </FooterControlGroup>
+      </CarrierFooter>
     </CarrierContainer>
   );
 };

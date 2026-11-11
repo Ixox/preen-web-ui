@@ -4,9 +4,16 @@
  */
 
 import type { Patch } from '../types/patch';
-import { FILTER1_TYPE_LIST, FILTER2_TYPE_LIST, NoteCurveUtils } from '../types/patch';
+import {
+  FILTER1_TYPE_LIST,
+  FILTER2_TYPE_LIST,
+  NoteCurveUtils,
+  TIMBRE_DYNAMICS_PROFILES,
+  MFX_REVERB_PRESETS,
+} from '../types/patch';
 // import type { Filter1Type, Filter2Type } from '../types/patch';
 import type { NRPNMessage } from './preenFM3MidiMap';
+import { formatTimbreMfxNrpnDetail } from './preenFmConstants';
 import { DEFAULT_ALGORITHMS, DEFAULT_LFO_ENVELOPE, ARP_CLOCKS, ARP_DIRECTIONS, ARP_PATTERNS, ARP_DIVISIONS, ARP_DURATIONS, ARP_LATCH } from '../types/patch';
 import type { 
   ArpClock,
@@ -97,6 +104,9 @@ export class PreenFM3Parser {
         console.log(`🛠️ preenfm3 version ${value}`);
         this.pfm3Version = value;
     }
+    if (nrpn.paramMSB === 4 && nrpn.paramLSB >= 0 && nrpn.paramLSB <= 3) {
+      console.log(`🎛️ [PreenFM3Parser] Timbre & Master FX reçu: ${formatTimbreMfxNrpnDetail(nrpn.paramLSB, value)}`);
+    }
 
     // Nom du preset (NRPN MSB=1, LSB=100-111)
     // presetNameReceived permet de séparer la reception du nom des autres paramètres, car le firmware envoie d'abord le nom
@@ -121,16 +131,13 @@ export class PreenFM3Parser {
    * Parse Note Curve parameters from NRPN data
    */
   private parseNoteCurve(curveIndex: 0 | 1): import('../types/patch').NoteCurve {
-    // ✅ SOLUTION CONFIRMÉE - NRPN Note Curves :
-    // RÉCEPTION: MSB=0, LSB=200-206, indices 0-6 ✅
-    // ENVOI: MSB=1, LSB=200-206, indices 0-6 ✅
-    // Note1: MSB=0, LSB=200 (before), LSB=201 (breakNote), LSB=202 (after)
-    // Note2: MSB=0, LSB=204 (before), LSB=205 (breakNote), LSB=206 (after)
-    
-    const baseLSB = 200 + (curveIndex * 4);
-    const beforeRaw = this.getValue(0, baseLSB + 0);     // before type
-    const breakNoteRaw = this.getValue(0, baseLSB + 1);  // break note  
-    const afterRaw = this.getValue(0, baseLSB + 2);      // after type
+    // NRPN Note Curves (indices 200..206 -> MSB=1, LSB=72..78):
+    // Note1: MSB=1, LSB=72 (before), LSB=73 (breakNote), LSB=74 (after)
+    // Note2: MSB=1, LSB=76 (before), LSB=77 (breakNote), LSB=78 (after)
+    const baseLSB = 72 + (curveIndex * 4);
+    const beforeRaw = this.getValue(1, baseLSB + 0);     // before type
+    const breakNoteRaw = this.getValue(1, baseLSB + 1);  // break note
+    const afterRaw = this.getValue(1, baseLSB + 2);      // after type
     
     // ✅ Utiliser le système centralisé NoteCurveUtils (indices 0-6)
     const before = NoteCurveUtils.fromNrpnIndex(beforeRaw ?? 0);
@@ -810,15 +817,41 @@ export class PreenFM3Parser {
           this.parseNoteCurve(1)  // Note2
         ],
       // import type { Filter1Type, Filter2Type } from '../types/patch';
-      global: {
-        volume: 0.8,
-        transpose: 0,
-        fineTune: 0,
-        polyphony: voices,
-        glideTime: glide,
-        bendRange: 2,
-        velocitySensitivity: velocity,
-      },
+      global: (() => {
+        const playModeRaw = this.getValue(0, 2);
+        const dryWetRaw = this.getValue(4, 0);
+        const dynamicsRaw = this.getValue(4, 1);
+        const mfxReturnRaw = this.getValue(4, 2);
+        const mfxPresetRaw = this.getValue(4, 3);
+
+        const playMode = typeof playModeRaw === 'number' && playModeRaw >= 0 && playModeRaw <= 2 ? playModeRaw : 1;
+        const reverbDryWet = typeof dryWetRaw === 'number' ? Math.max(0, Math.min(1, dryWetRaw / 100)) : 0.2;
+        const dynamics = typeof dynamicsRaw === 'number' ? Math.max(0, Math.min(6, Math.round(dynamicsRaw))) : 0;
+        const mfxReturn = typeof mfxReturnRaw === 'number' ? Math.max(0, Math.min(1, mfxReturnRaw / 100)) : 0.5;
+        const mfxPreset = typeof mfxPresetRaw === 'number' ? Math.max(0, Math.min(18, Math.round(mfxPresetRaw))) : 0;
+
+        console.log('🔎 Timbre & Master FX NRPN (MSB=4, LSB=0-3 / indices 512-515):', {
+          dryWet:    { idx: 512, raw: dryWetRaw,    parsed: reverbDryWet },
+          dynamics:  { idx: 513, raw: dynamicsRaw,  parsed: dynamics, label: TIMBRE_DYNAMICS_PROFILES[dynamics] },
+          mfxReturn: { idx: 514, raw: mfxReturnRaw, parsed: mfxReturn },
+          mfxPreset: { idx: 515, raw: mfxPresetRaw, parsed: mfxPreset, label: MFX_REVERB_PRESETS[mfxPreset] },
+        });
+
+        return {
+          volume: 0.8,
+          transpose: 0,
+          fineTune: 0,
+          polyphony: voices,
+          playMode,
+          glideTime: glide,
+          bendRange: 2,
+          velocitySensitivity: velocity,
+          reverbDryWet,
+          dynamics,
+          mfxReturn,
+          mfxPreset,
+        };
+      })(),
       effects: {
         reverb: { enabled: false, room: 0.5, damp: 0.5, level: 0.3 },
         delay: { enabled: false, time: 0.5, feedback: 0.3, level: 0.3 },

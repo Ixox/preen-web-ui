@@ -14,6 +14,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PreenFM3Parser } from '../preenFM3Parser';
+import { patchToNRPNMessages, MUTATION_EXCLUDED_NRPNS } from '../patchSerializer';
 import type { Patch } from '../../types/patch';
 
 // ---------------------------------------------------------------------------
@@ -503,4 +504,46 @@ describe('PreenFM3Parser — non-regression', () => {
     });
   }
 });
+
+describe('Timbre & Master FX NRPN (MSB=4, LSB=0..3 / indices 512..515)', () => {
+  it('parses MSB=4 LSB=0..3 and playMode [0,2] into patch.global', () => {
+    const parser = new PreenFM3Parser();
+    parser.addNRPN({ paramMSB: 0, paramLSB: 0, valueMSB: 0, valueLSB: 0 });  // Algorithm required by toPatch()
+    parser.addNRPN({ paramMSB: 0, paramLSB: 2, valueMSB: 0, valueLSB: 2 });  // PlayMode = 2 (Unison)
+    parser.addNRPN({ paramMSB: 4, paramLSB: 0, valueMSB: 0, valueLSB: 75 }); // TIMBRE_DRYWET = 75 -> 0.75
+    parser.addNRPN({ paramMSB: 4, paramLSB: 1, valueMSB: 0, valueLSB: 5 });  // TIMBRE_DYNAMICS = 5 (Drive)
+    parser.addNRPN({ paramMSB: 4, paramLSB: 2, valueMSB: 0, valueLSB: 85 }); // MFX_RETURN = 85 -> 0.85
+    parser.addNRPN({ paramMSB: 4, paramLSB: 3, valueMSB: 0, valueLSB: 18 }); // MFX_PRESET = 18
+
+    const patch = parser.toPatch();
+    expect(patch.global.playMode).toBe(2);
+    expect(patch.global.reverbDryWet).toBeCloseTo(0.75, 2);
+    expect(patch.global.dynamics).toBe(5);
+    expect(patch.global.mfxReturn).toBeCloseTo(0.85, 2);
+    expect(patch.global.mfxPreset).toBe(18);
+  });
+
+  it('serializes patch.global Timbre & MFX back to NRPN MSB=4 LSB=0..3', () => {
+    const parser = new PreenFM3Parser();
+    parser.addNRPN({ paramMSB: 0, paramLSB: 0, valueMSB: 0, valueLSB: 0 }); // Algorithm required by toPatch()
+    parser.addNRPN({ paramMSB: 4, paramLSB: 0, valueMSB: 0, valueLSB: 40 });
+    parser.addNRPN({ paramMSB: 4, paramLSB: 1, valueMSB: 0, valueLSB: 6 });
+    parser.addNRPN({ paramMSB: 4, paramLSB: 2, valueMSB: 0, valueLSB: 60 });
+    parser.addNRPN({ paramMSB: 4, paramLSB: 3, valueMSB: 0, valueLSB: 17 });
+    const patch = parser.toPatch();
+
+    const msgs = patchToNRPNMessages(patch);
+    const msb4 = msgs.filter(m => m.paramMSB === 4);
+    expect(msb4).toEqual([
+      { paramMSB: 4, paramLSB: 0, valueMSB: 0, valueLSB: 40 },
+      { paramMSB: 4, paramLSB: 1, valueMSB: 0, valueLSB: 6 },
+      { paramMSB: 4, paramLSB: 2, valueMSB: 0, valueLSB: 60 },
+      { paramMSB: 4, paramLSB: 3, valueMSB: 0, valueLSB: 17 },
+    ]);
+
+    const mutationMsgs = patchToNRPNMessages(patch, { exclude: MUTATION_EXCLUDED_NRPNS });
+    expect(mutationMsgs.filter(m => m.paramMSB === 4).map(m => m.paramLSB)).toEqual([0, 1]);
+  });
+});
+
 

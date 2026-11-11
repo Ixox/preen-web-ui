@@ -7,6 +7,10 @@ import {
   ARP_CLOCKS, ARP_DIRECTIONS, ARP_PATTERNS, ARP_DIVISIONS, ARP_DURATIONS, ARP_LATCH,
   NoteCurveType,
   NOTE_CURVE_NRPN_MAPPING, NOTE_CURVE_TYPE_TO_NRPN, NOTE_CURVE_TYPES_LIST,
+  TIMBRE_DYNAMICS_PROFILES, type TimbreDynamicsProfile,
+  ENGINE_DECIMATION_MODES, type EngineDecimationMode,
+  PLAY_MODES, type PlayMode,
+  MFX_REVERB_PRESETS, type MfxReverbPreset,
 } from '../midi/preenFmConstants';
 export {
   type CurveType, ADSR_CURVE_TYPES, ENV_CURVE_NAMES,
@@ -16,6 +20,10 @@ export {
   ARP_CLOCKS, ARP_DIRECTIONS, ARP_PATTERNS, ARP_DIVISIONS, ARP_DURATIONS, ARP_LATCH,
   NoteCurveType,
   NOTE_CURVE_NRPN_MAPPING, NOTE_CURVE_TYPE_TO_NRPN, NOTE_CURVE_TYPES_LIST,
+  TIMBRE_DYNAMICS_PROFILES, type TimbreDynamicsProfile,
+  ENGINE_DECIMATION_MODES, type EngineDecimationMode,
+  PLAY_MODES, type PlayMode,
+  MFX_REVERB_PRESETS, type MfxReverbPreset,
 };
 import { AdsrState, AdsrPoint } from './adsr';
 import { WaveformType } from './waveform.ts';
@@ -197,13 +205,20 @@ export interface Patch {
 
   // Paramètres globaux
   global: {
-    volume: number;           // Volume général
+    volume: number;           // Volume général (CC 7)
+    pan?: number;             // Panoramique timbre (CC 10, -1.0 à +1.0)
     transpose: number;        // Transposition en demi-tons
     fineTune: number;         // Accord fin en cents
     polyphony: number;        // Nombre de voix de polyphonie
-    glideTime: number;        // Portamento
+    playMode?: number;        // Mode de jeu (CC 43: 0: Mono, 1: Poly, 2: Unison)
+    glideTime: number;        // Portamento (CC 5)
     bendRange: number;        // Plage de pitch bend
     velocitySensitivity: number; // Sensibilité globale à la vélocité (0-16)
+    dynamics?: number;        // CC 41: Profil dynamique (0: Off, 1: Glue, 2: Punch, 3: Tube, 4: Limit, 5: Drive, 6: Fuzz)
+    reverbDryWet?: number;    // CC 40: Reverb Dry/Wet (0.0 à 1.0)
+    decimation?: number;      // CC 42: Décimation (0..18: 1-bit..19-bit, 19: Full, 20: HQ)
+    mfxReturn?: number;       // CC 44: Master FX Return Level (0.0 à 1.0)
+    mfxPreset?: number;       // CC 45 / NRPN [4,3]: Master FX Preset (0 à 18)
   };
 
   // Effets globaux

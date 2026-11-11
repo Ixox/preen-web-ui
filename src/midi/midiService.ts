@@ -127,7 +127,7 @@ export function sendFilter2Gain(value: number, channel: number = currentChannel)
 import { encodeLfoBias } from '../types/lfo';
 import { NoteCurveUtils } from '../types/patch';
 import { ALGO_DIAGRAMS } from '../algo/algorithms.static';
-import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES } from './preenFmConstants';
+import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES, formatTimbreMfxNrpnDetail } from './preenFmConstants';
 /**
  * Envoie le mode midiClockMode du step sequencer via NRPN
  * @param seqIndex 0 ou 1 (Seq1 ou Seq2)
@@ -724,6 +724,10 @@ function nrpnKey(nrpn: NRPNMessage): string {
  */
 function sendNRPNImmediate(nrpn: NRPNMessage, channel: number) {
   if (!midiOutput) return;
+  if (nrpn.paramMSB === 4 && nrpn.paramLSB >= 0 && nrpn.paramLSB <= 3) {
+    const value = ((nrpn.valueMSB & 0x7F) << 7) | (nrpn.valueLSB & 0x7F);
+    console.log(`📤 [sendNRPNImmediate] Timbre & Master FX ch=${channel}: ${formatTimbreMfxNrpnDetail(nrpn.paramLSB, value)}`);
+  }
   const s = 0xB0 + (channel - 1);
   midiOutput.send([
     s, 99, nrpn.paramMSB & 0x7F,   // CC 99 = NRPN param MSB
@@ -1033,7 +1037,7 @@ export function sendPlayMode(polyphony: number, channel: number = currentChannel
 }
 
 /**
- * Send Play Mode via CC 43 (0: Poly, 1: Mono, 2: Legato)
+ * Send Play Mode via CC 43 (0: Mono, 1: Poly, 2: Unison)
  */
 export function sendPlayModeCC(mode: number, channel: number = currentChannel) {
   const clamped = Math.max(0, Math.min(2, Math.round(mode)));
@@ -1077,19 +1081,20 @@ export function sendTimbreDryWet(value: number, channel: number = currentChannel
 
 /**
  * Send Timbre Dynamics Profile (CC 41)
- * 0: Off, 1: Glue, 2: Punch, 3: Tube, 4: Limit, 5: Fuzz
+ * 0: Off, 1: Glue, 2: Punch, 3: Tube, 4: Limit, 5: Drive, 6: Fuzz
+ * Firmware accepts direct integer 0..6 (when CC < 7) or continuous 0..127.
  */
 export function sendTimbreDynamics(profile: number, channel: number = currentChannel) {
-  const clamped = Math.max(0, Math.min(5, Math.round(profile)));
+  const clamped = Math.max(0, Math.min(6, Math.round(profile)));
   sendCC(PREENFM3_CC.TIMBRE_DYNAMICS, clamped, channel);
 }
 
 /**
  * Send Engine Decimation / Lo-fi effect (CC 42)
- * 0: 1bit, 1: 2bit, 2: 4bit, 3: 8bit, 4: 12bit, 5: HQ
+ * 0..18: 1-bit..19-bit, 19: Full (default), 20: HQ
  */
 export function sendEngineDecimation(decimation: number, channel: number = currentChannel) {
-  const clamped = Math.max(0, Math.min(5, Math.round(decimation)));
+  const clamped = Math.max(0, Math.min(20, Math.round(decimation)));
   sendCC(PREENFM3_CC.ENGINE_DECIMATION, clamped, channel);
 }
 
@@ -1104,10 +1109,10 @@ export function sendMfxReturnLevel(level: number, channel: number = currentChann
 
 /**
  * Send Master FX Preset (CC 45)
- * Preset: 0 to 15
+ * Preset: 0 to 18
  */
 export function sendMfxPreset(preset: number, channel: number = currentChannel) {
-  const clamped = Math.max(0, Math.min(15, Math.round(preset)));
+  const clamped = Math.max(0, Math.min(18, Math.round(preset)));
   sendCC(PREENFM3_CC.MFX_PRESET, clamped, channel);
 }
 

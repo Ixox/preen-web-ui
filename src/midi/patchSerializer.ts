@@ -65,7 +65,7 @@ import {
   encodeLfoShape,
 } from '../types/lfo';
 import { PreenFM3Parser } from './preenFM3Parser';
-import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES } from './preenFmConstants';
+import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES, formatTimbreMfxNrpnDetail } from './preenFmConstants';
 // ── Binary layout constants ───────────────────────────────────────────────────
 
 const PRESET_SIZE = 1024; // bytes per preset (FlashSynthParams)
@@ -794,10 +794,11 @@ function nrpnMsg(paramMSB: number, paramLSB: number, value: number): NRPNMsg {
  *   MSB=1, LSB 60-63:   StepSeq1 params (bpm, gate, unused, unused)
  *   MSB=1, LSB 64-67:   StepSeq2 params (bpm, gate, unused, unused)
  *   MSB=1, LSB 68-70:   LFO Phases
+ *   MSB=1, LSB 72-79:   Note Curves 1 & 2 (indices 200-207)
  *   MSB=1, LSB 100-111: Preset Name (12 chars)
- *   MSB=0, LSB 200-207: Note Curves 1 & 2
  *   MSB=2, LSB 0-15:    StepSeq1 steps
  *   MSB=3, LSB 0-15:    StepSeq2 steps
+ *   MSB=4, LSB 0-3:     Timbre & MFX (dryWet 0-100, dynamics 0-6, mfxReturn 0-100, mfxPreset 0-18)
  */
 export interface PatchToNRPNOptions {
   /**
@@ -809,8 +810,8 @@ export interface PatchToNRPNOptions {
 
 /**
  * NRPN addresses that should NOT be sent during a mutation push.
- * Polyphony [0,2] and arpeggiator [0,28-35] are excluded because
- * interpolating them can produce invalid values that break playback.
+ * Polyphony [0,2], arpeggiator [0,28-35], and global Master FX [4,2-3] are excluded
+ * because mutating them can produce invalid values or alter global reverb settings.
  */
 export const MUTATION_EXCLUDED_NRPNS = new Set([
   '0:2',   // polyphony / play mode
@@ -822,6 +823,8 @@ export const MUTATION_EXCLUDED_NRPNS = new Set([
   '0:33',  // arp division
   '0:34',  // arp duration
   '0:35',  // arp latch
+  '4:2',   // global MFX return
+  '4:3',   // global MFX preset
 ]);
 
 export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions): NRPNMsg[] {
@@ -1021,18 +1024,18 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
     push(nrpnMsg(1, 100 + i, charCode));
   }
 
-  // ── Note Curves (MSB=0, LSB=200-207) ───────────────────────────────────────
+  // ── Note Curves (MSB=1, LSB=72-79 / indices 200-207) ────────────────────────
   const noteCurves = patch.noteCurves ?? [
     { before: 'Flat' as NoteCurveType, breakNote: 60, after: 'Flat' as NoteCurveType },
     { before: 'Flat' as NoteCurveType, breakNote: 60, after: 'Flat' as NoteCurveType },
   ];
   for (let i = 0; i < 2; i++) {
     const nc = noteCurves[i];
-    const baseLsb = 200 + i * 4;
-    push(nrpnMsg(0, baseLsb, NOTE_CURVE_TYPE_TO_NRPN[nc.before] ?? 0));
-    push(nrpnMsg(0, baseLsb + 1, nc.breakNote));
-    push(nrpnMsg(0, baseLsb + 2, NOTE_CURVE_TYPE_TO_NRPN[nc.after] ?? 0));
-    push(nrpnMsg(0, baseLsb + 3, 0)); // unused
+    const baseLsb = 72 + i * 4;
+    push(nrpnMsg(1, baseLsb, NOTE_CURVE_TYPE_TO_NRPN[nc.before] ?? 0));
+    push(nrpnMsg(1, baseLsb + 1, nc.breakNote));
+    push(nrpnMsg(1, baseLsb + 2, NOTE_CURVE_TYPE_TO_NRPN[nc.after] ?? 0));
+    push(nrpnMsg(1, baseLsb + 3, 0)); // unused
   }
 
   // ── StepSeq Steps (MSB=2/3, LSB=0-15) ──────────────────────────────────────
@@ -1062,6 +1065,27 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
     push(nrpnMsg((phaseAbs >> 7) & 0x7F, phaseAbs & 0x7F, phaseValue));
     push(nrpnMsg((warpAbs  >> 7) & 0x7F, warpAbs  & 0x7F, warpValue));
   }
+
+  // ── Timbre & Master FX (MSB=4, LSB=0-3, indices 512-515) ───────────────────
+  const dryWet = patch.global.reverbDryWet ?? 0.2;
+  const dynamics = patch.global.dynamics ?? 0;
+  const mfxReturn = patch.global.mfxReturn ?? 0.5;
+  const mfxPreset = patch.global.mfxPreset ?? 0;
+  const dryWetNrpn = Math.max(0, Math.min(100, Math.round(dryWet * 100)));
+  const dynamicsNrpn = Math.max(0, Math.min(6, Math.round(dynamics)));
+  const mfxReturnNrpn = Math.max(0, Math.min(100, Math.round(mfxReturn * 100)));
+  const mfxPresetNrpn = Math.max(0, Math.min(18, Math.round(mfxPreset)));
+  console.log(
+    `[SERIALIZE DEBUG] Timbre & Master FX (MSB=4, LSB=0-3, indices 512-515): ` +
+    `${formatTimbreMfxNrpnDetail(0, dryWetNrpn)} | ` +
+    `${formatTimbreMfxNrpnDetail(1, dynamicsNrpn)} | ` +
+    `${formatTimbreMfxNrpnDetail(2, mfxReturnNrpn)} | ` +
+    `${formatTimbreMfxNrpnDetail(3, mfxPresetNrpn)}`
+  );
+  push(nrpnMsg(4, 0, dryWetNrpn));
+  push(nrpnMsg(4, 1, dynamicsNrpn));
+  push(nrpnMsg(4, 2, mfxReturnNrpn));
+  push(nrpnMsg(4, 3, mfxPresetNrpn));
 
   return allMsgs;
 }

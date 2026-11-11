@@ -48,6 +48,7 @@ import {
   sendTimbreDryWet,
   sendTimbreDynamics,
   sendEngineDecimation,
+  sendPlayModeCC,
   sendMfxReturnLevel,
   sendMfxPreset,
   sendMixerVolume,
@@ -367,20 +368,35 @@ describe('Control Changes — Timbre, Mixer & MFX', () => {
     expect(ccs[0].value).toBe(64);
   });
 
-  it('sendTimbreDynamics sends CC 41', () => {
+  it('sendTimbreDynamics sends CC 41 in 0..6 range (Off..Drive..Fuzz)', () => {
     sendTimbreDynamics(2, 1); // Punch
+    sendTimbreDynamics(5, 1); // Drive
+    sendTimbreDynamics(6, 1); // Fuzz
+    sendTimbreDynamics(9, 1); // Clamped to 6
     const ccs = allSentCCs();
-    expect(ccs.length).toBe(1);
-    expect(ccs[0].controller).toBe(41);
-    expect(ccs[0].value).toBe(2);
+    expect(ccs.length).toBe(4);
+    expect(ccs.map(c => c.controller)).toEqual([41, 41, 41, 41]);
+    expect(ccs.map(c => c.value)).toEqual([2, 5, 6, 6]);
   });
 
-  it('sendEngineDecimation sends CC 42', () => {
-    sendEngineDecimation(3, 1); // 8bit
+  it('sendEngineDecimation sends CC 42 in 0..20 range (1-bit..Full..HQ)', () => {
+    sendEngineDecimation(19, 1); // Full (FM_DECIMATION_CURRENT)
+    sendEngineDecimation(20, 1); // HQ
+    sendEngineDecimation(99, 1); // Clamped to 20 (HQ)
     const ccs = allSentCCs();
-    expect(ccs.length).toBe(1);
-    expect(ccs[0].controller).toBe(42);
-    expect(ccs[0].value).toBe(3);
+    expect(ccs.length).toBe(3);
+    expect(ccs.map(c => c.controller)).toEqual([42, 42, 42]);
+    expect(ccs.map(c => c.value)).toEqual([19, 20, 20]);
+  });
+
+  it('sendPlayModeCC sends CC 43 (0: Mono, 1: Poly, 2: Unison)', () => {
+    sendPlayModeCC(0, 1); // Mono
+    sendPlayModeCC(1, 1); // Poly
+    sendPlayModeCC(2, 1); // Unison
+    const ccs = allSentCCs();
+    expect(ccs.length).toBe(3);
+    expect(ccs.map(c => c.controller)).toEqual([43, 43, 43]);
+    expect(ccs.map(c => c.value)).toEqual([0, 1, 2]);
   });
 
   it('sendMfxReturnLevel sends CC 44', () => {
@@ -391,12 +407,14 @@ describe('Control Changes — Timbre, Mixer & MFX', () => {
     expect(ccs[0].value).toBe(95);
   });
 
-  it('sendMfxPreset sends CC 45', () => {
+  it('sendMfxPreset sends CC 45 in 0..18 range', () => {
     sendMfxPreset(5, 1);
+    sendMfxPreset(18, 1);
+    sendMfxPreset(25, 1); // Clamped to 18
     const ccs = allSentCCs();
-    expect(ccs.length).toBe(1);
-    expect(ccs[0].controller).toBe(45);
-    expect(ccs[0].value).toBe(5);
+    expect(ccs.length).toBe(3);
+    expect(ccs.map(c => c.controller)).toEqual([45, 45, 45]);
+    expect(ccs.map(c => c.value)).toEqual([5, 18, 18]);
   });
 
   it('sendMixerVolume sends CC 7 and is not blocked', () => {
