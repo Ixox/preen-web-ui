@@ -605,22 +605,65 @@ export type LfoType =
   | 'LFO_RANDOM'
   | 'LFO_BROWNIAN'
   | 'LFO_WANDERING'
-  | 'LFO_FLOW';
+  | 'LFO_FLOW'
+  | 'LFO_SAW_DOWN'
+  | 'LFO_DECAY_EXP'
+  | 'LFO_DECAY_LOG'
+  | 'LFO_RISE_EXP'
+  | 'LFO_RISE_LOG'
+  | 'LFO_ATTACK_DECAY'
+  | 'LFO_ATTACK_HOLD_DECAY'
+  | 'LFO_DECAY_S'
+  | 'LFO_BUCHLA_PLONG'
+  | 'LFO_BUCHLA_PLONG2'
+  | 'LFO_SIN_SQUARE'
+  | 'LFO_SIN_ZERO'
+  | 'LFO_SIN_POS'
+  | 'LFO_USER1'
+  | 'LFO_USER2'
+  | 'LFO_USER3'
+  | 'LFO_USER4'
+  | 'LFO_USER5'
+  | 'LFO_USER6';
 
 export const LFO_TYPES: LfoType[] = [
   'LFO_SIN', 'LFO_SAW', 'LFO_TRIANGLE', 'LFO_SQUARE',
   'LFO_RANDOM', 'LFO_BROWNIAN', 'LFO_WANDERING', 'LFO_FLOW',
+  'LFO_SAW_DOWN', 'LFO_DECAY_EXP', 'LFO_DECAY_LOG', 'LFO_RISE_EXP',
+  'LFO_RISE_LOG', 'LFO_ATTACK_DECAY', 'LFO_ATTACK_HOLD_DECAY', 'LFO_DECAY_S',
+  'LFO_BUCHLA_PLONG', 'LFO_BUCHLA_PLONG2', 'LFO_SIN_SQUARE', 'LFO_SIN_ZERO',
+  'LFO_SIN_POS', 'LFO_USER1', 'LFO_USER2', 'LFO_USER3',
+  'LFO_USER4', 'LFO_USER5', 'LFO_USER6',
 ];
 
 export const LFO_TYPE_LABELS: Record<LfoType, string> = {
-  LFO_SIN:       'Sine',
-  LFO_SAW:       'Saw',
-  LFO_TRIANGLE:  'Triangle',
-  LFO_SQUARE:    'Square',
-  LFO_RANDOM:    'Random',
-  LFO_BROWNIAN:  'Brownian',
-  LFO_WANDERING: 'Wandering',
-  LFO_FLOW:      'Flow',
+  LFO_SIN:               'Sine',
+  LFO_SAW:               'Saw',
+  LFO_TRIANGLE:          'Triangle',
+  LFO_SQUARE:            'Square',
+  LFO_RANDOM:            'Random',
+  LFO_BROWNIAN:          'Brownian',
+  LFO_WANDERING:         'Wandering',
+  LFO_FLOW:              'Flow',
+  LFO_SAW_DOWN:          'Saw Down',
+  LFO_DECAY_EXP:         'Decay Exp',
+  LFO_DECAY_LOG:         'Decay Log',
+  LFO_RISE_EXP:          'Rise Exp',
+  LFO_RISE_LOG:          'Rise Log',
+  LFO_ATTACK_DECAY:      'Attack Decay',
+  LFO_ATTACK_HOLD_DECAY: 'Attack Hold Decay',
+  LFO_DECAY_S:           'S-Curve Decay',
+  LFO_BUCHLA_PLONG:      'Plong',
+  LFO_BUCHLA_PLONG2:     'Plong 2',
+  LFO_SIN_SQUARE:        'Sin²',
+  LFO_SIN_ZERO:          'Sin Zero',
+  LFO_SIN_POS:           'Sin+',
+  LFO_USER1:             'User 1',
+  LFO_USER2:             'User 2',
+  LFO_USER3:             'User 3',
+  LFO_USER4:             'User 4',
+  LFO_USER5:             'User 5',
+  LFO_USER6:             'User 6',
 };
 
 // LFO NRPN encoding constants
@@ -647,7 +690,7 @@ export const OP_WARP_MIN               = -4;
 export const OP_WARP_MAX               = 4;
 
 export const LFO_SHAPE_MIN = 0;
-export const LFO_SHAPE_MAX = 7;
+export const LFO_SHAPE_MAX = 26;
 
 // MIDI Clock sync modes (frequency > 99.9 Hz)
 export type MidiClockMode =

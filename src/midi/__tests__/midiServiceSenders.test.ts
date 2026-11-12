@@ -59,7 +59,8 @@ import {
   clearNRPNQueue,
   drainNRPNQueue,
 } from '../midiService';
-import { PREENFM3_CC, NoteCurveType } from '../preenFmConstants';
+import { PREENFM3_CC, NoteCurveType, LFO_TYPES, LFO_SHAPE_MAX } from '../preenFmConstants';
+import { parseLfoShape, encodeLfoShape } from '../../types/lfo';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -496,5 +497,26 @@ describe('sendLfoEnvelopeCurve — NRPN 280..283 (MSB=2, LSB=24..27)', () => {
     sendLfoEnvelopeCurve(0, 'attack', 'invalid-curve', 1);
     await flushQueue();
     expect(allSentNRPNs()).toEqual([]);
+  });
+});
+
+describe('LFO shapes (0..26) — parseLfoShape / encodeLfoShape', () => {
+  it('supports all 27 firmware LFO shapes in order', () => {
+    expect(LFO_TYPES).toHaveLength(27);
+    expect(LFO_SHAPE_MAX).toBe(26);
+
+    LFO_TYPES.forEach((shape, index) => {
+      expect(parseLfoShape(index)).toBe(shape);
+      expect(encodeLfoShape(shape)).toBe(index);
+    });
+  });
+
+  it('maps key new shapes and clamps out-of-range NRPN values', () => {
+    expect(parseLfoShape(8)).toBe('LFO_SAW_DOWN');
+    expect(parseLfoShape(16)).toBe('LFO_BUCHLA_PLONG');
+    expect(parseLfoShape(20)).toBe('LFO_SIN_POS');
+    expect(parseLfoShape(26)).toBe('LFO_USER6');
+    expect(parseLfoShape(-1)).toBe('LFO_SIN');
+    expect(parseLfoShape(99)).toBe('LFO_USER6');
   });
 });

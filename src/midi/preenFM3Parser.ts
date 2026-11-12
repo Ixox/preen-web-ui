@@ -616,7 +616,7 @@ export class PreenFM3Parser {
       lfos: [0, 1, 2].map(lfoIndex => {
         const lfoBase = 40 + lfoIndex * 4; // 40, 44, 48
         
-        // Shape (0-7 → LfoType)
+        // Shape (0-26 → LfoType)
         const shapeRaw = this.getValue(1, lfoBase) ?? 0;
         const shape = parseLfoShape(shapeRaw);
         
