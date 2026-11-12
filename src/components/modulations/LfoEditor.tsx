@@ -13,7 +13,7 @@ const LfoContainer = styled.div`
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   border: 1px solid ${props => props.theme.colors.border};
   width: 100%;
   max-width: 520px;

@@ -9,7 +9,7 @@ const VisualizerContainer = styled.div`
   border-radius: 4px;
   border: 1px solid ${props => props.theme.colors.border};
   padding: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 `;
 
 const SvgContainer = styled.svg`

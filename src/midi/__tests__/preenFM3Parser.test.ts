@@ -546,4 +546,30 @@ describe('Timbre & Master FX NRPN (MSB=4, LSB=0..3 / indices 512..515)', () => {
   });
 });
 
+describe('Free Envelope Attack & Release Curves NRPN (280..283 / MSB=2, LSB=24..27)', () => {
+  it('parses and serializes Free Env 1 & 2 AtkCrv / RelCrv round-trip', () => {
+    const parser = new PreenFM3Parser();
+    parser.addNRPN({ paramMSB: 0, paramLSB: 0, valueMSB: 0, valueLSB: 0 });
+    parser.addNRPN({ paramMSB: 2, paramLSB: 24, valueMSB: 0, valueLSB: 0 }); // Env1 AtkCrv = Exp
+    parser.addNRPN({ paramMSB: 2, paramLSB: 25, valueMSB: 0, valueLSB: 2 }); // Env1 RelCrv = Log
+    parser.addNRPN({ paramMSB: 2, paramLSB: 26, valueMSB: 0, valueLSB: 3 }); // Env2 AtkCrv = Usr1
+    parser.addNRPN({ paramMSB: 2, paramLSB: 27, valueMSB: 0, valueLSB: 6 }); // Env2 RelCrv = Usr4
+
+    const patch = parser.toPatch();
+    expect(patch.lfoEnvelopes?.[0]?.attackCurve).toBe('exponential');
+    expect(patch.lfoEnvelopes?.[0]?.releaseCurve).toBe('logarithmic');
+    expect(patch.lfoEnvelopes?.[1]?.attackCurve).toBe('user1');
+    expect(patch.lfoEnvelopes?.[1]?.releaseCurve).toBe('user4');
+
+    const msgs = patchToNRPNMessages(patch);
+    const curveMsgs = msgs.filter(m => m.paramMSB === 2 && m.paramLSB >= 24 && m.paramLSB <= 27);
+    expect(curveMsgs).toEqual([
+      { paramMSB: 2, paramLSB: 24, valueMSB: 0, valueLSB: 0 },
+      { paramMSB: 2, paramLSB: 25, valueMSB: 0, valueLSB: 2 },
+      { paramMSB: 2, paramLSB: 26, valueMSB: 0, valueLSB: 3 },
+      { paramMSB: 2, paramLSB: 27, valueMSB: 0, valueLSB: 6 },
+    ]);
+  });
+});
+
 

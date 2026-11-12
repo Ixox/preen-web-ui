@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sendLfoEnvelope } from '../../midi/midiService';
-import { sendLfoEnvelope2 } from '../../midi/midiService';
+import { sendLfoEnvelope, sendLfoEnvelope2, sendLfoEnvelopeCurve } from '../../midi/midiService';
 import styled from 'styled-components';
 import KnobBase from '../knobs/KnobBase';
 import { useLfoEnvelope, updateLfoEnvelope } from '../../stores/patchStore';
 import type { LfoEnvLoopMode } from '../../types/modulation';
+import { ADSR_CURVE_TYPES, type CurveType } from '../../types/patch';
 import { EnvelopeVisualizer, type EnvelopeDataADSR, type EnvelopeDataSAR } from './EnvelopeVisualizer';
 import { useThemeStore } from '../../theme/themeStore';
 
@@ -13,7 +13,7 @@ const EnvContainer = styled.div`
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   width: 100%;
   max-width: 520px;
   border: 1px solid ${props => props.theme.colors.border};
@@ -23,7 +23,6 @@ const HeaderRow = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
 `;
 
 const EnvTitle = styled.h3`
@@ -67,11 +66,10 @@ const EnvTab = styled.button<{ $active: boolean }>`
 `;
 
 const EnvControls = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 20px;
+  display: flex;
+  gap: 10px;
   align-items: start;
-  padding-top: 20px;
+  padding-top: 10px;
 `;
 
 const ControlGroup = styled.div`
@@ -94,8 +92,8 @@ const Select = styled.select`
   color: ${props => props.theme.colors.text};
   padding: 8px 28px 8px 8px;
   font-size: 0.875rem;
-  width: 120px;
-  max-width: 120px;
+  width: 80px;
+  max-width: 80px;
   height: 36px;
   box-sizing: border-box;
   
@@ -469,6 +467,43 @@ export const LfoEnvEditor: React.FC = () => {
             </ControlGroup>
           </>
         )}
+
+        {/* Attack & Release Curves (NRPN 280-283) */}
+        <ControlGroup>
+          <ControlLabel>{t('modulation.attackCurve', 'Atk Curve')}</ControlLabel>
+          <Select
+            value={env.attackCurve ?? 'linear'}
+            onChange={(e) => {
+              const curve = e.target.value as CurveType;
+              updateLfoEnvelope(activeEnv, { attackCurve: curve });
+              sendLfoEnvelopeCurve(activeEnv, 'attack', curve);
+            }}
+          >
+            {ADSR_CURVE_TYPES.map((curve) => (
+              <option key={curve} value={curve}>
+                {curve.charAt(0).toUpperCase() + curve.slice(1)}
+              </option>
+            ))}
+          </Select>
+        </ControlGroup>
+
+        <ControlGroup>
+          <ControlLabel>{t('modulation.releaseCurve', 'Rel Curve')}</ControlLabel>
+          <Select
+            value={env.releaseCurve ?? 'linear'}
+            onChange={(e) => {
+              const curve = e.target.value as CurveType;
+              updateLfoEnvelope(activeEnv, { releaseCurve: curve });
+              sendLfoEnvelopeCurve(activeEnv, 'release', curve);
+            }}
+          >
+            {ADSR_CURVE_TYPES.map((curve) => (
+              <option key={curve} value={curve}>
+                {curve.charAt(0).toUpperCase() + curve.slice(1)}
+              </option>
+            ))}
+          </Select>
+        </ControlGroup>
 
         {/* Loop Mode only for Env2 */}
         {activeEnv === 1 && (

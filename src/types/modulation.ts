@@ -5,7 +5,7 @@
  */
 
 import { AdsrState } from './adsr';
-import { type StepSeqMidiClockMode, STEP_SEQ_MIDI_CLOCK_MODES } from '../midi/preenFmConstants';
+import { type CurveType, type StepSeqMidiClockMode, STEP_SEQ_MIDI_CLOCK_MODES } from '../midi/preenFmConstants';
 export { type StepSeqMidiClockMode, STEP_SEQ_MIDI_CLOCK_MODES };
 
 /**
@@ -21,6 +21,8 @@ export interface LFOEnvelope {
   adsr: AdsrState;           // Enveloppe ADSR classique
   loopMode: LfoEnvLoopMode;  // Mode de boucle
   silence: number;           // Paramètre silence (pour Env2) (0-100)
+  attackCurve?: CurveType;   // Courbe d'attaque (NRPN 280 / 282)
+  releaseCurve?: CurveType;  // Courbe de release (NRPN 281 / 283)
 }
 
 /**
@@ -51,7 +53,9 @@ export const DEFAULT_LFO_ENVELOPE: LFOEnvelope = {
     release: { time: 10, level: 0 }
   },
   loopMode: 'Off',
-  silence: 0
+  silence: 0,
+  attackCurve: 'linear',
+  releaseCurve: 'linear',
 };
 
 /**

@@ -65,7 +65,7 @@ import {
   encodeLfoShape,
 } from '../types/lfo';
 import { PreenFM3Parser } from './preenFM3Parser';
-import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES, formatTimbreMfxNrpnDetail } from './preenFmConstants';
+import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES, formatTimbreMfxNrpnDetail, curveTypeToNrpn } from './preenFmConstants';
 // ── Binary layout constants ───────────────────────────────────────────────────
 
 const PRESET_SIZE = 1024; // bytes per preset (FlashSynthParams)
@@ -979,16 +979,18 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
     push(nrpnMsg(1, baseLsb + 3, encodeLfoKeysync(lfo.keysync)));
   }
 
-  // ── LFO Env1 (MSB=1, LSB=52-55) ────────────────────────────────────────────
+  // ── LFO Env1 (MSB=1, LSB=52-55) & Curves (MSB=2, LSB=24-25 / idx 280-281) ─
   const lfoEnv1 = patch.lfoEnvelopes?.[0];
   if (lfoEnv1) {
     push(nrpnMsg(1, 52, lfoEnv1.adsr.attack.time * 100));
     push(nrpnMsg(1, 53, lfoEnv1.adsr.decay.time * 100));
     push(nrpnMsg(1, 54, lfoEnv1.adsr.sustain.time * 100));
     push(nrpnMsg(1, 55, lfoEnv1.adsr.release.time * 100));
+    push(nrpnMsg(2, 24, curveTypeToNrpn(lfoEnv1.attackCurve, 1)));
+    push(nrpnMsg(2, 25, curveTypeToNrpn(lfoEnv1.releaseCurve, 1)));
   }
 
-  // ── LFO Env2 (MSB=1, LSB=56-59) ────────────────────────────────────────────
+  // ── LFO Env2 (MSB=1, LSB=56-59) & Curves (MSB=2, LSB=26-27 / idx 282-283) ─
   const lfoEnv2 = patch.lfoEnvelopes?.[1];
   if (lfoEnv2) {
     const loopModes = ['Off', 'Silence', 'Attack'] as const;
@@ -997,6 +999,8 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
     push(nrpnMsg(1, 57, lfoEnv2.adsr.attack.time * 100));
     push(nrpnMsg(1, 58, lfoEnv2.adsr.decay.time * 100));
     push(nrpnMsg(1, 59, loopVal >= 0 ? loopVal : 0));
+    push(nrpnMsg(2, 26, curveTypeToNrpn(lfoEnv2.attackCurve, 1)));
+    push(nrpnMsg(2, 27, curveTypeToNrpn(lfoEnv2.releaseCurve, 1)));
   }
 
   // ── StepSeq params ──────────────────────────────────────────────────────────

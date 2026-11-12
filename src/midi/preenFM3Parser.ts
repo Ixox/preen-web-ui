@@ -13,7 +13,7 @@ import {
 } from '../types/patch';
 // import type { Filter1Type, Filter2Type } from '../types/patch';
 import type { NRPNMessage } from './preenFM3MidiMap';
-import { formatTimbreMfxNrpnDetail } from './preenFmConstants';
+import { formatTimbreMfxNrpnDetail, nrpnToCurveType } from './preenFmConstants';
 import { DEFAULT_ALGORITHMS, DEFAULT_LFO_ENVELOPE, ARP_CLOCKS, ARP_DIRECTIONS, ARP_PATTERNS, ARP_DIVISIONS, ARP_DURATIONS, ARP_LATCH } from '../types/patch';
 import type { 
   ArpClock,
@@ -696,6 +696,8 @@ export class PreenFM3Parser {
           },
           loopMode: 'Off' as const,
           silence: 0,
+          attackCurve: nrpnToCurveType(this.getValue(2, 24), 'linear'),
+          releaseCurve: nrpnToCurveType(this.getValue(2, 25), 'linear'),
         },
         // Env2: Silence-Attack-Release structure  
         {
@@ -721,6 +723,8 @@ export class PreenFM3Parser {
             return modes[loopValue] || 'Off';
           })(),
           silence: (this.getValue(1, 56) ?? 0) / 100,  // Silence time, default 0s
+          attackCurve: nrpnToCurveType(this.getValue(2, 26), 'linear'),
+          releaseCurve: nrpnToCurveType(this.getValue(2, 27), 'linear'),
         },
       ] as [typeof DEFAULT_LFO_ENVELOPE, typeof DEFAULT_LFO_ENVELOPE],
       

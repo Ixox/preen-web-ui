@@ -102,8 +102,7 @@ export const MidiCCTester = ({ onClose }: { onClose: () => void }) => {
       <Title>🧪 MIDI CC Tester</Title>
       
       <Info>
-        <strong>Problème:</strong> CC 27 devrait modifier Mix1 mais modifie Pan3.<br/>
-        <strong>Action:</strong> Testez chaque CC pour trouver celui qui modifie vraiment Mix1.
+        <strong>Mapping Référence :</strong> Mix & Pan entrelacés pour OP1-4 (Mix: 22, 24, 26, 28 / Pan: 23, 25, 27, 29). OP5: Mix 31, Pan 36. OP6: Mix 37, Pan 39.
       </Info>
 
       <TestGrid>
@@ -135,24 +134,61 @@ export const MidiCCTester = ({ onClose }: { onClose: () => void }) => {
       )}
 
       <div style={{ marginTop: '15px', borderTop: '1px solid #444', paddingTop: '15px' }}>
-        <Label style={{ display: 'block', marginBottom: '10px' }}>Quick Tests (Mix1-4, Pan1-4):</Label>
+        <Label style={{ display: 'block', marginBottom: '10px' }}>Quick Tests Mix & Pan (OP1-6) :</Label>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '5px' }}>
-          {[27, 28, 29, 30, 31, 32, 33, 34].map(cc => (
+          {[
+            { label: 'Mix1', cc: 22 },
+            { label: 'Pan1', cc: 23 },
+            { label: 'Mix2', cc: 24 },
+            { label: 'Pan2', cc: 25 },
+            { label: 'Mix3', cc: 26 },
+            { label: 'Pan3', cc: 27 },
+            { label: 'Mix4', cc: 28 },
+            { label: 'Pan4', cc: 29 },
+            { label: 'Mix5', cc: 31 },
+            { label: 'Pan5', cc: 36 },
+            { label: 'Mix6', cc: 37 },
+            { label: 'Pan6', cc: 39 },
+          ].map(({ label, cc }) => (
             <Button 
               key={cc} 
               onClick={() => testCC(cc)}
-              style={{ fontSize: '0.75rem', padding: '4px 8px' }}
+              style={{ fontSize: '0.75rem', padding: '4px 6px' }}
             >
-              CC {cc}
+              {label} ({cc})
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginTop: '15px', borderTop: '1px solid #444', paddingTop: '15px' }}>
+        <Label style={{ display: 'block', marginBottom: '10px' }}>Quick Tests Timbre & Master FX (CC 40-45) :</Label>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '5px' }}>
+          {[
+            { label: 'DryWet', cc: 40 },
+            { label: 'Dyn', cc: 41 },
+            { label: 'Decim', cc: 42 },
+            { label: 'Play', cc: 43 },
+            { label: 'MFX Ret', cc: 44 },
+            { label: 'MFX Prst', cc: 45 },
+          ].map(({ label, cc }) => (
+            <Button
+              key={cc}
+              onClick={() => testCC(cc)}
+              style={{ fontSize: '0.75rem', padding: '4px 6px' }}
+            >
+              {label} ({cc})
             </Button>
           ))}
         </div>
       </div>
 
       <Info style={{ marginTop: '15px' }}>
-        <strong>Documentation:</strong><br/>
-        27-30 = Mix OP1-4<br/>
-        31-34 = Pan OP1-4
+        <strong>Documentation :</strong><br/>
+        Mix OP1-4 : 22, 24, 26, 28 | Pan OP1-4 : 23, 25, 27, 29<br/>
+        OP5 : Mix 31, Pan 36 | OP6 : Mix 37, Pan 39<br/>
+        Warp OP1-3 : 33-35 | Warp OP4-6 : 111-113<br/>
+        Timbre/MFX : DryWet 40, Dyn 41, Decim 42, Play 43, Ret 44, Prst 45
       </Info>
     </Container>
   );

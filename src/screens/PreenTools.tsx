@@ -11,7 +11,7 @@ const ToolsContainer = styled.div`
   margin: auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
 `;
 
 const PatchEvolverContainer = styled.div`

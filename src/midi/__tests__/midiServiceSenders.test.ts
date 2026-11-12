@@ -39,6 +39,7 @@ import {
   sendArpeggiatorDuration,
   sendArpeggiatorLatch,
   sendLfoEnvelope,
+  sendLfoEnvelopeCurve,
   sendPatchName,
   sendOperatorMix,
   sendOperatorPan,
@@ -461,5 +462,39 @@ describe('NRPN — Note Curves (TECHREADME.md reference)', () => {
     expect(nrpns.map(n => n.paramMSB)).toEqual([1, 1, 1]);
     expect(nrpns.map(n => n.paramLSB)).toEqual([76, 77, 78]);
     expect(nrpns[1].valueLSB).toBe(48);
+  });
+});
+
+// ── NRPN: Free Envelope Curves (280-283 / MSB=2, LSB=24-27) ─────────────────
+
+describe('sendLfoEnvelopeCurve — NRPN 280..283 (MSB=2, LSB=24..27)', () => {
+  it('sends Free Env 1 AtkCrv [2,24] and RelCrv [2,25]', async () => {
+    sendLfoEnvelopeCurve(0, 'attack', 'exponential', 1);
+    sendLfoEnvelopeCurve(0, 'release', 'logarithmic', 1);
+    await flushQueue();
+
+    const nrpns = allSentNRPNs();
+    expect(nrpns).toEqual([
+      { paramMSB: 2, paramLSB: 24, valueMSB: 0, valueLSB: 0 },
+      { paramMSB: 2, paramLSB: 25, valueMSB: 0, valueLSB: 2 },
+    ]);
+  });
+
+  it('sends Free Env 2 AtkCrv [2,26] and RelCrv [2,27]', async () => {
+    sendLfoEnvelopeCurve(1, 'attack', 'user1', 1);
+    sendLfoEnvelopeCurve(1, 'release', 'user4', 1);
+    await flushQueue();
+
+    const nrpns = allSentNRPNs();
+    expect(nrpns).toEqual([
+      { paramMSB: 2, paramLSB: 26, valueMSB: 0, valueLSB: 3 },
+      { paramMSB: 2, paramLSB: 27, valueMSB: 0, valueLSB: 6 },
+    ]);
+  });
+
+  it('ignores unknown curve names', async () => {
+    sendLfoEnvelopeCurve(0, 'attack', 'invalid-curve', 1);
+    await flushQueue();
+    expect(allSentNRPNs()).toEqual([]);
   });
 });

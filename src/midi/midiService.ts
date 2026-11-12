@@ -127,7 +127,7 @@ export function sendFilter2Gain(value: number, channel: number = currentChannel)
 import { encodeLfoBias } from '../types/lfo';
 import { NoteCurveUtils } from '../types/patch';
 import { ALGO_DIAGRAMS } from '../algo/algorithms.static';
-import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES, formatTimbreMfxNrpnDetail } from './preenFmConstants';
+import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES, formatTimbreMfxNrpnDetail, curveTypeToNrpn } from './preenFmConstants';
 /**
  * Envoie le mode midiClockMode du step sequencer via NRPN
  * @param seqIndex 0 ou 1 (Seq1 ou Seq2)
@@ -367,6 +367,39 @@ export function sendLfoEnvelope(envIndex: 0 | 1, envelope: { attack: number, dec
     console.log('📤 Sending LFO Envelope NRPN:', { envIndex, lsb, value, nrpn });
     sendNRPN(nrpn);
   });
+}
+
+/**
+ * Envoie la courbe d'attaque ou de release d'une enveloppe libre (Free Env1 ou Env2) via NRPN
+ * NRPN 280 (MSB=2, LSB=24): Free Env 1 — AtkCrv
+ * NRPN 281 (MSB=2, LSB=25): Free Env 1 — RelCrv
+ * NRPN 282 (MSB=2, LSB=26): Free Env 2 — AtkCrv
+ * NRPN 283 (MSB=2, LSB=27): Free Env 2 — RelCrv
+ */
+export function sendLfoEnvelopeCurve(
+  envIndex: 0 | 1,
+  segment: 'attack' | 'release',
+  curveType: string,
+  channel: number = currentChannel,
+) {
+  if (!midiOutput) {
+    console.warn('No MIDI output selected for LFO envelope curve');
+    return;
+  }
+  const curveIdx = curveTypeToNrpn(curveType, -1);
+  if (curveIdx === -1) {
+    console.warn("Courbe d'enveloppe libre inconnue:", curveType);
+    return;
+  }
+  const paramLSB = 24 + envIndex * 2 + (segment === 'release' ? 1 : 0);
+  const nrpn = {
+    paramMSB: 2,
+    paramLSB,
+    valueMSB: 0,
+    valueLSB: curveIdx,
+  };
+  console.log(`📤 Sending Free Env${envIndex + 1} ${segment} curve via NRPN: ${curveType} (idx=${curveIdx}) -> [2,${paramLSB}] = [0,${curveIdx}]`);
+  sendNRPN(nrpn, channel);
 }
 
 /**

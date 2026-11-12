@@ -245,6 +245,11 @@ export const NRPN_COMMANDS = {
   TIMBRE_DYNAMICS: { paramMSB: 4, paramLSB: 1 },
   MFX_RETURN:      { paramMSB: 4, paramLSB: 2 },
   MFX_PRESET:      { paramMSB: 4, paramLSB: 3 },
+  // Free Envelope Attack & Release Curves (indices 280..283 -> MSB 2, LSB 24..27)
+  FREE_ENV1_ATK_CRV: { paramMSB: 2, paramLSB: 24 },
+  FREE_ENV1_REL_CRV: { paramMSB: 2, paramLSB: 25 },
+  FREE_ENV2_ATK_CRV: { paramMSB: 2, paramLSB: 26 },
+  FREE_ENV2_REL_CRV: { paramMSB: 2, paramLSB: 27 },
 } as const;
 
 /**
@@ -448,6 +453,40 @@ export const WAVEFORMS: WaveformItem[] = [
 export type CurveType = 'linear' | 'exponential' | 'logarithmic' | 'user1' | 'user2' | 'user3' | 'user4';
 export const ADSR_CURVE_TYPES: CurveType[] = ['linear', 'exponential', 'logarithmic', 'user1', 'user2', 'user3', 'user4'];
 export const ENV_CURVE_NAMES = ['Exp', 'Lin', 'Log', 'Usr1', 'Usr2', 'Usr3', 'Usr4'];
+
+const NRPN_TO_CURVE_TYPE: readonly CurveType[] = [
+  'exponential',
+  'linear',
+  'logarithmic',
+  'user1',
+  'user2',
+  'user3',
+  'user4',
+];
+
+export const CURVE_TYPE_TO_NRPN: Record<CurveType, number> = {
+  exponential: 0,
+  linear: 1,
+  logarithmic: 2,
+  user1: 3,
+  user2: 4,
+  user3: 5,
+  user4: 6,
+};
+
+export function nrpnToCurveType(nrpnValue: number | undefined, fallback: CurveType = 'linear'): CurveType {
+  if (typeof nrpnValue !== 'number' || nrpnValue < 0 || nrpnValue >= NRPN_TO_CURVE_TYPE.length) {
+    return fallback;
+  }
+  return NRPN_TO_CURVE_TYPE[nrpnValue];
+}
+
+export function curveTypeToNrpn(curve: string | undefined, fallback = 1): number {
+  if (!curve || !(curve in CURVE_TYPE_TO_NRPN)) {
+    return fallback;
+  }
+  return CURVE_TYPE_TO_NRPN[curve as CurveType];
+}
 
 // ============================================================================
 // Filter types — in firmware order
