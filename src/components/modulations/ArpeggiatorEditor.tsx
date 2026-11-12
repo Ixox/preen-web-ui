@@ -28,7 +28,7 @@ const ArpHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 `;
 
 const ArpTitle = styled.h3`
@@ -42,7 +42,7 @@ const ArpTitle = styled.h3`
 const ArpControls = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 20px;
+  gap: 10px;
   align-items: start;
 `;
 

@@ -7,6 +7,7 @@ import { ADSR_CURVE_TYPES, type CurveType } from '../../../types/patch';
 import { sendOperatorEnvCurve } from '../../../midi/midiService';
 import { useThemeStore } from '../../../theme/themeStore';
 import { useSynthStore } from '../../../stores/synthStore';
+import { generateCurvePoints, type CurvePoint as Point } from '../../../utils/envelopeCurve';
 
 const AdsrContainer = styled.div`
   position: relative;
@@ -68,46 +69,6 @@ const AdsrControl: React.FC<AdsrControlProps> = ({ operatorId }) => {
     decay: theme.colors.adsrDecay,
     sustain: theme.colors.adsrSustain,
     release: theme.colors.adsrRelease
-  };
-
-  type Point = { x: number; y: number };
-
-  // Génère les points intermédiaires selon le type de courbe
-  const generateCurvePoints = (start: Point, end: Point, curveType: CurveType, numPoints = 20): Point[] => {
-    const points: Point[] = [];
-
-    for (let i = 0; i <= numPoints; i++) {
-      const t = i / numPoints;
-      let factor: number;
-
-      switch (curveType) {
-        // Inverser la logique pour correspondre au PreenFM :
-        case 'exponential':
-          // PreenFM: exponentielle = montée rapide puis plateau (utiliser ancien logarithmic)
-          factor = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-          break;
-        case 'logarithmic':
-          // PreenFM: logarithmique = montée lente puis rapide (utiliser ancien exponentielle)
-          factor = t === 0 ? 0 : Math.pow(2, 10 * (t - 1));
-          break;
-        case 'user1':
-        case 'user2':
-        case 'user3':
-        case 'user4':
-          // Courbes utilisateur personnalisées (exemples)
-            factor = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-          break;
-        default: // 'linear'
-          factor = t;
-      }
-
-      points.push({
-        x: start.x + (end.x - start.x) * t,
-        y: start.y + (end.y - start.y) * factor
-      });
-    }
-
-    return points;
   };
 
   // Génère les points pour chaque segment (pour interaction)

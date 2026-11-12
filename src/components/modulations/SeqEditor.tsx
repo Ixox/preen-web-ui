@@ -127,7 +127,7 @@ const StepValue = styled.div`
 const SeqControls = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 20px;
+  gap: 10px;
   align-items: center;
   flex-wrap: wrap;
 `;

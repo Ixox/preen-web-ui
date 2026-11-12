@@ -12,7 +12,7 @@ const EditorContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 20px;
+  padding: 10px;
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   min-width: 250px;
@@ -37,7 +37,7 @@ const HeaderSection = styled.div`
 const GlobalKnobsContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 10px;
   margin-left: auto;
 
   @media (max-width: 768px) {

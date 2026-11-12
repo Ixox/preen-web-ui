@@ -18,7 +18,7 @@ const Panel = styled.div`
   background: ${({ theme }) => theme.colors.panel};
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
-  padding: 16px 20px;
+  padding: 16px 10px;
 `;
 
 const PanelTitle = styled.h3`

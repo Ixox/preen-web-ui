@@ -11,7 +11,7 @@ const MatrixContainer = styled.div`
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 `;
 
 const MatrixTitle = styled.h3`

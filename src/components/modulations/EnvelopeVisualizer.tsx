@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { useThemeStore } from '../../theme/themeStore';
+import { type CurveType } from '../../types/patch';
+import { generateCurvePoints, type CurvePoint } from '../../utils/envelopeCurve';
 
 const Container = styled.div`
   width: 100%;
@@ -22,7 +24,7 @@ const StyledSvg = styled.svg`
 const ValueLabels = styled.div`
   position: absolute;
   right: 10px;
-  top: 20px;
+  top: 10px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -78,13 +80,24 @@ interface Props {
   envelope: EnvelopeData;
   onChange: (envelope: EnvelopeData) => void;
   type: 'env1' | 'env2';  // Specify which envelope structure to use
+  attackCurve?: CurveType;
+  releaseCurve?: CurveType;
 }
 
 type PointTypeEnv1 = 'attack' | 'decay' | 'sustain' | 'release';
 type PointTypeEnv2 = 'silence' | 'attack' | 'release';
 type PointType = PointTypeEnv1 | PointTypeEnv2;
 
-export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }) => {
+const toLineCommands = (points: CurvePoint[]): string =>
+  points.slice(1).map((p) => `L ${p.x} ${p.y}`).join(' ');
+
+export const EnvelopeVisualizer: React.FC<Props> = ({
+  envelope,
+  onChange,
+  type,
+  attackCurve = 'linear',
+  releaseCurve = 'linear',
+}) => {
   const [draggingPoint, setDraggingPoint] = useState<PointType | null>(null);
   const [hoveredPoint, setHoveredPoint] = useState<PointType | null>(null);
   const [hoveredAxis, setHoveredAxis] = useState<'x' | 'y' | null>(null);
@@ -392,16 +405,16 @@ export const EnvelopeVisualizer: React.FC<Props> = ({ envelope, onChange, type }
   const pathData = isEnv1
     ? `
       M ${pointsEnv1!.start.x} ${pointsEnv1!.start.y}
-      L ${pointsEnv1!.attack.x} ${pointsEnv1!.attack.y}
-      L ${pointsEnv1!.decay.x} ${pointsEnv1!.decay.y}
+      ${toLineCommands(generateCurvePoints(pointsEnv1!.start, pointsEnv1!.attack, attackCurve))}
+      ${toLineCommands(generateCurvePoints(pointsEnv1!.attack, pointsEnv1!.decay, releaseCurve))}
       L ${pointsEnv1!.sustain.x} ${pointsEnv1!.sustain.y}
-      L ${pointsEnv1!.release.x} ${pointsEnv1!.release.y}
+      ${toLineCommands(generateCurvePoints(pointsEnv1!.sustain, pointsEnv1!.release, releaseCurve))}
     `
     : `
       M ${pointsEnv2!.start.x} ${pointsEnv2!.start.y}
       L ${pointsEnv2!.silence.x} ${pointsEnv2!.silence.y}
-      L ${pointsEnv2!.attack.x} ${pointsEnv2!.attack.y}
-      L ${pointsEnv2!.release.x} ${pointsEnv2!.release.y}
+      ${toLineCommands(generateCurvePoints(pointsEnv2!.silence, pointsEnv2!.attack, attackCurve))}
+      ${toLineCommands(generateCurvePoints(pointsEnv2!.attack, pointsEnv2!.release, releaseCurve))}
     `;
 
   // Build the fill path (envelope + bottom line back to start)

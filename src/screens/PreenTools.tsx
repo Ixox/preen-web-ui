@@ -19,7 +19,7 @@ const PatchEvolverContainer = styled.div`
   border-radius: 8px;
   padding: 16px;
   border: 1px solid ${props => props.theme.colors.border};
-  gap: 20px;
+  gap: 10px;
 `;
 
 export function PreenTools() {

@@ -36,7 +36,7 @@ const EnvTitle = styled.h3`
 const EnvTabs = styled.div`
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 `;
 
 const EnvTab = styled.button<{ $active: boolean }>`
@@ -248,6 +248,8 @@ export const LfoEnvEditor: React.FC = () => {
         envelope={toEnvelopeData()} 
         onChange={handleEnvelopeChange}
         type={activeEnv === 0 ? 'env1' : 'env2'}
+        attackCurve={env.attackCurve}
+        releaseCurve={env.releaseCurve}
       />
 
       <EnvControls>

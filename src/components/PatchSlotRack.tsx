@@ -144,7 +144,7 @@ const HelpPanel = styled.div`
 
   ul {
     margin: 8px 0;
-    padding-left: 20px;
+    padding-left: 10px;
   }
 
   li {

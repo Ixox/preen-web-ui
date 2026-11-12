@@ -100,8 +100,8 @@ const ValueBadge = styled.span`
 const CarriersContent = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 20px;
-  padding: 16px 20px;
+  gap: 10px;
+  padding: 16px 10px;
   background: ${props => props.theme.colors.panel};
   justify-content: center;
   align-items: center;
@@ -120,7 +120,7 @@ const OperatorControl = styled.div<{ $isHighlighted?: boolean }>`
   
   ${props => props.$isHighlighted && `
     border-color: ${props.theme.colors.highlight};
-    box-shadow: 0 0 20px ${props.theme.colors.highlightGlow};
+    box-shadow: 0 0 10px ${props.theme.colors.highlightGlow};
     transition: border-color 0.03s ease, box-shadow 0.03s ease;
   `}
 `;
@@ -159,7 +159,7 @@ const CarrierFooter = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: 10px;
   padding: 6px 16px;
   background: ${props => props.theme.colors.panelHover};
   border-top: 1px solid ${props => props.theme.colors.border};
