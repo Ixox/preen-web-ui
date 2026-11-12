@@ -13,7 +13,7 @@ import { useTranslation } from 'react-i18next';
 
 const PanelContainer = styled.div<{ $isHighlighted?: boolean }>`
   background-color: ${props => props.theme.colors.panelHover};
-  padding: 15px;
+  padding: 10px;
   border-radius: 8px;
   border: 2px solid ${props => props.$isHighlighted ? props.theme.colors.highlight : props.theme.colors.border};
   box-shadow: ${props => props.$isHighlighted ? `0 0 10px ${props.theme.colors.highlightGlow}` : 'none'};
@@ -21,7 +21,6 @@ const PanelContainer = styled.div<{ $isHighlighted?: boolean }>`
   margin: 14px;
   width:270px;
   h3 {
-    margin: -12px 0 0 0;
     color: ${props => props.theme.colors.text};
     font-size: 1rem;
     text-align: center;
@@ -33,7 +32,6 @@ const ControlsRow = styled.div`
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 0;
-  padding-top: 8px;
 `;
 
 interface OperatorPanelProps {

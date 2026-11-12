@@ -7,14 +7,14 @@ import { useFMSynthContext } from './FMSynthContext';
 import { useThemeStore } from '../../theme/themeStore';
 
 const VisualizationContainer = styled.div`
-  width: 280px;
+  width: 240px;
 
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0; /* Espacement autour du SVG */
   background: ${props => props.theme.colors.background};
-  zoom:1.4;
+  zoom:1.25;
 
   svg {
     max-width: 100%;

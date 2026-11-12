@@ -146,8 +146,8 @@ export function PatchEditor() {
       <FMSynthProvider patch={currentPatch}>
         <Row>
           <BaseFMGrid>
-            <FMAlgorithmSelector />
-            <ModulationIndexesEditor algorithm={currentPatch.algorithm} globalKnobs={globalKnobs} />
+            <FMAlgorithmSelector globalKnobs={globalKnobs} />
+            <ModulationIndexesEditor algorithm={currentPatch.algorithm} />
           </BaseFMGrid>
         </Row>
         

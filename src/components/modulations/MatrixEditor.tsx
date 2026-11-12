@@ -17,7 +17,7 @@ const MatrixContainer = styled.div`
 const MatrixTitle = styled.h3`
   color: ${props => props.theme.colors.text};
   font-size: 1rem;
-  margin: 0 0 15px 0;
+  margin: 0 0 10px 0;
   text-transform: uppercase;
   letter-spacing: 1px;
 `;

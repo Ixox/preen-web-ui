@@ -145,13 +145,32 @@ const VisualizationWrapper = styled.div`
 `;
 
 const VisualizationContainer = styled.div`
-  flex: 1 1 260px;
   min-width: 220px;
   background: ${props => props.theme.colors.background};
   border-radius: 8px;
   padding: 0;
   position: relative;
   min-height: 220px;
+`;
+
+const HeaderSection = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const GlobalKnobsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  @media (max-width: 768px) {
+    gap: 12px;
+    margin-left: 0;
+    flex: 1;
+    justify-content: space-evenly;
+  }
 `;
 
 function PatchNameEditorComponent() {
@@ -198,12 +217,16 @@ function PatchNameEditorComponent() {
   );
 }
 
-export const FMAlgorithmSelector = () => {
+interface FMAlgorithmSelectorProps {
+  globalKnobs?: React.ReactNode;
+}
+
+export const FMAlgorithmSelector: React.FC<FMAlgorithmSelectorProps> = ({ globalKnobs }) => {
 
   const currentPatch = useCurrentPatch();
   const currentAlgorithm = currentPatch?.algorithm;
   if(!currentAlgorithm) {
-    return;
+    return null;
   }
 
   const currentIndex = DEFAULT_ALGORITHMS.findIndex(a => a.id === currentAlgorithm.id);
@@ -267,6 +290,14 @@ export const FMAlgorithmSelector = () => {
         </VisualizationContainer>
 
       </VisualizationWrapper>
+
+      {globalKnobs && (
+        <HeaderSection>
+          <GlobalKnobsContainer>
+            {globalKnobs}
+          </GlobalKnobsContainer>
+        </HeaderSection>
+      )}
 
     </SelectorContainer>
   );

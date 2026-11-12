@@ -32,7 +32,26 @@
       "LFO_RANDOM": "Random S&H",
       "LFO_BROWNIAN": "Brownian S&H",
       "LFO_WANDERING": "Wandering",
-      "LFO_FLOW": "Flow"
+      "LFO_FLOW": "Flow",
+      "LFO_SAW_DOWN": "Saw Down",
+      "LFO_DECAY_EXP": "Decay Exp",
+      "LFO_DECAY_LOG": "Decay Log",
+      "LFO_RISE_EXP": "Rise Exp",
+      "LFO_RISE_LOG": "Rise Log",
+      "LFO_ATTACK_DECAY": "Attack Decay",
+      "LFO_ATTACK_HOLD_DECAY": "Attack Hold Decay",
+      "LFO_DECAY_S": "S-Curve Decay",
+      "LFO_BUCHLA_PLONG": "Plong",
+      "LFO_BUCHLA_PLONG2": "Plong 2",
+      "LFO_SIN_SQUARE": "Sin²",
+      "LFO_SIN_ZERO": "Sin Zero",
+      "LFO_SIN_POS": "Sin+",
+      "LFO_USER1": "User 1",
+      "LFO_USER2": "User 2",
+      "LFO_USER3": "User 3",
+      "LFO_USER4": "User 4",
+      "LFO_USER5": "User 5",
+      "LFO_USER6": "User 6"
     }
   },
   "operator": {

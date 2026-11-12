@@ -27,31 +27,10 @@ const EditorContainer = styled.div`
   }
 `;
 
-const HeaderSection = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-`;
-
-const GlobalKnobsContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-left: auto;
-
-  @media (max-width: 768px) {
-    gap: 12px;
-    margin-left: 0;
-    flex: 1;
-    justify-content: space-evenly;
-  }
-`;
-
 const ModulationList = styled.div`
   background: ${props => props.theme.colors.background};
   border-radius: 8px;
-  padding: 15px;
+  padding: 10px;
   min-height: 220px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -70,7 +49,7 @@ const ModulationItem = styled.div`
   align-items: center;
   gap: 8px;
   margin-bottom: 1px;
-  padding: 4px 8px;
+  padding: 0;
   background: ${props => props.theme.colors.background};
   border-radius: 4px;
   width: 100%;
@@ -108,10 +87,9 @@ const EmptyMessage = styled.p`
 
 interface ModulationIndexesEditorProps {
   algorithm: Algorithm;
-  globalKnobs?: React.ReactNode;
 }
 
-export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = ({ algorithm, globalKnobs }) => {
+export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = ({ algorithm }) => {
   const { t } = useTranslation();
   const { theme } = useThemeStore();
   const currentPatch = useCurrentPatch();
@@ -146,13 +124,6 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
   if (!currentPatch || !currentPatch.operators) {
     return (
       <EditorContainer>
-        {globalKnobs && (
-          <HeaderSection>
-            <GlobalKnobsContainer>
-              {globalKnobs}
-            </GlobalKnobsContainer>
-          </HeaderSection>
-        )}
         <ModulationList>
           <ModulationListTitle>{t('modulation.imIndex')}</ModulationListTitle>
           <EmptyMessage>{t('common.noPatch')}</EmptyMessage>
@@ -203,13 +174,6 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
   if (modulationLinks.length === 0) {
     return (
       <EditorContainer>
-        {globalKnobs && (
-          <HeaderSection>
-            <GlobalKnobsContainer>
-              {globalKnobs}
-            </GlobalKnobsContainer>
-          </HeaderSection>
-        )}
         <ModulationList>
           <ModulationListTitle>{t('modulation.imIndex')}</ModulationListTitle>
           <EmptyMessage>{t('modulation.noLinks')}</EmptyMessage>
@@ -220,13 +184,6 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
 
   return (
     <EditorContainer>
-      {globalKnobs && (
-        <HeaderSection>
-          <GlobalKnobsContainer>
-            {globalKnobs}
-          </GlobalKnobsContainer>
-        </HeaderSection>
-      )}
       <ModulationList>
         <ModulationListTitle>{t('modulation.imIndex')}</ModulationListTitle>
         {modulationLinks.map((link) => {

@@ -32,7 +32,26 @@
       "LFO_RANDOM": "Aléatoire S&H",
       "LFO_BROWNIAN": "Brownien S&H",
       "LFO_WANDERING": "Vagabond",
-      "LFO_FLOW": "Flux"
+      "LFO_FLOW": "Flux",
+      "LFO_SAW_DOWN": "Dent de scie ↓",
+      "LFO_DECAY_EXP": "Décroiss. Exp",
+      "LFO_DECAY_LOG": "Décroiss. Log",
+      "LFO_RISE_EXP": "Montée Exp",
+      "LFO_RISE_LOG": "Montée Log",
+      "LFO_ATTACK_DECAY": "Attaque-Déclin",
+      "LFO_ATTACK_HOLD_DECAY": "Attaque-Maintien-Déclin",
+      "LFO_DECAY_S": "Décroiss. en S",
+      "LFO_BUCHLA_PLONG": "Plong",
+      "LFO_BUCHLA_PLONG2": "Plong 2",
+      "LFO_SIN_SQUARE": "Sin²",
+      "LFO_SIN_ZERO": "Sin Zéro",
+      "LFO_SIN_POS": "Sin+",
+      "LFO_USER1": "User 1",
+      "LFO_USER2": "User 2",
+      "LFO_USER3": "User 3",
+      "LFO_USER4": "User 4",
+      "LFO_USER5": "User 5",
+      "LFO_USER6": "User 6"
     }
   },
   "operator": {
