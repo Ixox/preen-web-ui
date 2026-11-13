@@ -84,6 +84,12 @@ const StepColumn = styled.div<{ $isPastLoop?: boolean }>`
   transition: opacity 0.2s;
 `;
 
+const isRatchetMode = (mode?: StepSeqStepMode) =>
+  mode === '1/32' || mode === '1/48' || mode === '1/64';
+
+const isLfoTrigMode = (mode?: StepSeqStepMode) =>
+  mode?.startsWith('Lfo') ?? false;
+
 const StepBar = styled.div<{ $mode?: StepSeqStepMode }>`
   width: 100%;
   height: 120px;
@@ -93,12 +99,14 @@ const StepBar = styled.div<{ $mode?: StepSeqStepMode }>`
     if (props.$mode === 'Mute') return '#e53e3e80';
     if (props.$mode === 'Pass') return '#71809680';
     if (props.$mode?.startsWith('Gld')) return '#805ad5';
+    if (isLfoTrigMode(props.$mode)) return '#38b2ac';
+    if (isRatchetMode(props.$mode)) return '#4299e1';
     return props.theme.colors.border;
   }};
   border-style: ${props => props.$mode === 'Pass' ? 'dashed' : 'solid'};
   border-radius: 4px;
   position: relative;
-  cursor: ${props => !props.$mode || props.$mode === 'Norm' || props.$mode.startsWith('Gld') ? 'crosshair' : 'not-allowed'};
+  cursor: ${props => !props.$mode || (props.$mode !== 'Mute' && props.$mode !== 'Pass' && props.$mode !== 'Rset') ? 'crosshair' : 'not-allowed'};
   transition: border-color 0.2s;
   
   &:hover {
@@ -117,6 +125,8 @@ const StepFill = styled.div<{ $value: number; $mode?: StepSeqStepMode }>`
     if (props.$mode === 'Pass') return 'rgba(160, 174, 192, 0.4)';
     if (props.$mode === 'Rset') return 'linear-gradient(to top, #d69e2e 0%, #ecc94b 100%)';
     if (props.$mode?.startsWith('Gld')) return 'linear-gradient(to top, #6b46c1 0%, #9f7aea 100%)';
+    if (isLfoTrigMode(props.$mode)) return 'linear-gradient(to top, #2c7a7b 0%, #4fd1c5 100%)';
+    if (isRatchetMode(props.$mode)) return 'linear-gradient(to top, #2b6cb0 0%, #63b3ed 100%)';
     return `linear-gradient(to top, ${props.theme.colors.primary} 0%, ${props.theme.colors.accent} 100%)`;
   }};
   border-radius: 0 0 3px 3px;
@@ -142,6 +152,8 @@ const StepModeBadge = styled.button<{ $mode: StepSeqStepMode; $active?: boolean 
     if (props.$mode === 'Mute') return '#fc8181';
     if (props.$mode === 'Pass') return '#a0aec0';
     if (props.$mode.startsWith('Gld')) return '#b794f4';
+    if (isLfoTrigMode(props.$mode)) return '#4fd1c5';
+    if (isRatchetMode(props.$mode)) return '#63b3ed';
     return props.theme.colors.border;
   }};
   background: ${props => {
@@ -149,6 +161,8 @@ const StepModeBadge = styled.button<{ $mode: StepSeqStepMode; $active?: boolean 
     if (props.$mode === 'Mute') return '#e53e3e28';
     if (props.$mode === 'Pass') return '#71809628';
     if (props.$mode.startsWith('Gld')) return '#805ad528';
+    if (isLfoTrigMode(props.$mode)) return '#38b2ac28';
+    if (isRatchetMode(props.$mode)) return '#4299e128';
     return props.theme.colors.button;
   }};
   color: ${props => {
@@ -156,6 +170,8 @@ const StepModeBadge = styled.button<{ $mode: StepSeqStepMode; $active?: boolean 
     if (props.$mode === 'Mute') return '#fc8181';
     if (props.$mode === 'Pass') return '#a0aec0';
     if (props.$mode.startsWith('Gld')) return '#d6bcfa';
+    if (isLfoTrigMode(props.$mode)) return '#81e6d9';
+    if (isRatchetMode(props.$mode)) return '#90cdf4';
     return props.theme.colors.textMuted;
   }};
   cursor: pointer;
@@ -185,7 +201,9 @@ const ModePopupContainer = styled.div<{ $top: number; $left: number; $openBelow:
   flex-direction: column;
   gap: 2px;
   z-index: 2000;
-  min-width: 140px;
+  min-width: 148px;
+  max-height: min(380px, calc(100vh - 16px));
+  overflow-y: auto;
   white-space: nowrap;
 `;
 
@@ -198,6 +216,8 @@ const ModeOptionButton = styled.button<{ $isSelected: boolean; $mode: StepSeqSte
     if (props.$mode === 'Mute') return '#fc8181';
     if (props.$mode === 'Pass') return '#a0aec0';
     if (props.$mode.startsWith('Gld')) return '#d6bcfa';
+    if (isLfoTrigMode(props.$mode)) return '#81e6d9';
+    if (isRatchetMode(props.$mode)) return '#90cdf4';
     return props.theme.colors.text;
   }};
   font-size: 0.7rem;
@@ -371,7 +391,7 @@ export const SeqEditor: React.FC = () => {
   };
 
   const isEditableStepMode = (mode?: StepSeqStepMode) =>
-    !mode || mode === 'Norm' || mode.startsWith('Gld');
+    !mode || (mode !== 'Mute' && mode !== 'Pass' && mode !== 'Rset');
 
   const isStepEditable = (index: number) => isEditableStepMode(seq.stepModes?.[index]);
 
@@ -512,8 +532,8 @@ export const SeqEditor: React.FC = () => {
                       return;
                     }
                     const rect = e.currentTarget.getBoundingClientRect();
-                    const popupWidth = 148;
-                    const openBelow = rect.top < 220;
+                    const popupWidth = 156;
+                    const openBelow = rect.top < 360;
                     const top = openBelow ? rect.bottom + 6 : rect.top - 6;
                     const rawLeft = rect.left + rect.width / 2 - popupWidth / 2;
                     const left = Math.max(8, Math.min(window.innerWidth - popupWidth - 8, rawLeft));

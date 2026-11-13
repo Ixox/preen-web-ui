@@ -142,7 +142,13 @@
       "Gld3": "Glide 3",
       "Mute": "Mute",
       "Pass": "Pass (Skip)",
-      "Rset": "Reset (Loop)"
+      "Rset": "Reset (Loop)",
+      "Lfo1": "LFO 1 Trig",
+      "Lfo2": "LFO 2 Trig",
+      "Lfo3": "LFO 3 Trig",
+      "1/32": "Ratchet ×2",
+      "1/48": "Ratchet ×3",
+      "1/64": "Ratchet ×4"
     },
     "break": "Break",
     "gate": "Gate",

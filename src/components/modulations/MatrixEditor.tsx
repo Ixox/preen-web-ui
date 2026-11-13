@@ -5,7 +5,7 @@ import { useCurrentPatch, usePatchStore } from '../../stores/patchStore';
 import { useThemeStore } from '../../theme/themeStore';
 import KnobBase from '../knobs/KnobBase';
 import { sendModulationMatrixParam } from '../../midi/midiService';
-import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES } from '../../midi/preenFmConstants';
+import { MATRIX_SOURCE_NAMES, MATRIX_DEST_ORDERED_NAMES } from '../../midi/preenFmConstants';
 
 const MatrixContainer = styled.div`
   background: ${props => props.theme.colors.panel};
@@ -85,7 +85,7 @@ export const MatrixEditor: React.FC = () => {
   const updateModulationMatrixRow = usePatchStore((state) => state.updateModulationMatrixRow);
 
   const modulationSources = MATRIX_SOURCE_NAMES;
-  const destinations = MATRIX_DEST_NAMES;
+  const destinations = MATRIX_DEST_ORDERED_NAMES;
 
   const handleSourceChange = (rowIndex: number, source: string) => {
     updateModulationMatrixRow(rowIndex, { source });

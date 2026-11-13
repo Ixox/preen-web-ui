@@ -28,6 +28,7 @@ Documentation technique détaillée et exhaustive du protocole MIDI du PreenFM3 
   - [Note Curves (Éclaircissement technique)](#note-curves)
   - [Phase des Opérateurs (Détail NRPN)](#phase-des-opérateurs-détail-nrpn)
   - [Step Sequencers](#step-sequencers)
+  - [Destinations de la Matrice (`matrixTargetOrder`)](#destinations-de-la-matrice-matrixtargetorder)
   - [Timbre & Master FX (NRPN 512-515)](#timbre--master-fx-nrpn-512-515)
   - [Algorithme de transformation mémoire ↔ MIDI](#algorithme-de-transformation-mémoire--midi)
   - [Scalings des paramètres](#scalings-des-paramètres)
@@ -514,12 +515,88 @@ Les Step Sequencers 1 & 2 sont contrôlés **exclusivement via NRPN** (aucun CC 
 
 | `paramLSB` | Fonction | `valueLSB` | Description |
 |:---:|:---|:---:|:---|
-| **0..15** | Mode du pas 1 à 16 | **0..6** | `0`: `Norm`, `1`: `Gld1`, `2`: `Gld2`, `3`: `Gld3`, `4`: `Mute`, `5`: `Pass` (*step skip*), `6`: `Rset` (*loop reset*) |
+| **0..15** | Mode du pas 1 à 16 | **0..12** | `0`: `Norm`, `1`: `Gld1`, `2`: `Gld2`, `3`: `Gld3`, `4`: `Mute`, `5`: `Pass` (*step skip*), `6`: `Rset` (*loop reset*), `7`: `Lfo1`, `8`: `Lfo2`, `9`: `Lfo3` (*trig/ratchet piloté par LFO > 0*), `10`: `1/32` (*ratchet ×2*), `11`: `1/48` (*ratchet ×3*), `12`: `1/64` (*ratchet ×4*) |
 | **16** | Loop Length (Last Step) | **0..16** | `1..16` place `Rset` sur le pas `length - 1` et remet les autres `Rset` à `Norm` ; `0` efface tous les `Rset` |
 
 - **Sortie linéaire & compatibilité `Note+` / Scala / `Osc Freq`** : la sortie d'un Step Sequencer est linéaire (`stepVal / 12.0`, soit `0.0` à `1.25`, avec `12 = 1.0`), ce qui permet de piloter `Note+` (`MTX_DEST_NOTE_ADD`) directement en degrés de la gamme Scala active (ou en demi-tons) avec un multiplicateur `1.0`. Lorsque la matrice route `StepSeq 1/2` vers `OSC1_FREQ..ALL_OSC_FREQ`, le firmware convertit automatiquement en `(2^src - 1) * mul` pour préserver la justesse des anciens patches.
-- **Dump & MIDI Out bidirectionnel** : `sendCurrentPatchAsNrpns` émet à la fois les valeurs (`MSB = 2/3`) et les modes (`MSB = 5/6`) des 16 pas. En mode `MIDI Sends = NRPN`, l'édition de la valeur ou du mode (`ENCODER_STEPSEQ_GLIDE`) sur le synthé émet le NRPN correspondant.
+- **Dump & MIDI Out bidirectionnel** : `sendCurrentPatchAsNrpns` émet à la fois les valeurs (`MSB = 2/3`) et les modes (`MSB = 5/6`) des 16 pas. En mode `MIDI Sends = NRPN`, l'édition de la valeur ou du mode (`ENCODER_STEPSEQ_MODE`) sur le synthé émet le NRPN correspondant.
 - **Zéro collision** : les modes et longueurs de boucle sont isolés sur `paramMSB = 5` et `6` afin de ne pas entrer en conflit avec les paramètres de synthèse mappés sur `paramMSB = 2` (`LSB >= 16`).
+
+---
+
+### Destinations de la Matrice (`matrixTargetOrder`)
+
+Les **67 destinations** (`DESTINATION_MAX = 67`, `Common.h`) conservent leur **ID NRPN historique** (index dans `DestinationEnum`), mais sont regroupées par catégorie dans `matrixTargetOrder[]` (`FMDisplayEditor.cpp`) pour l'affichage UI/éditeur :
+
+| Ordre | ID NRPN | Nom écran | Enum firmware (`DestinationEnum`) | Groupe |
+|:---:|:---:|:---:|:---|:---|
+| 0 | `0` | `None ` | `DESTINATION_NONE` | Général & FM |
+| 1 | `1` | `Gate ` | `MAIN_GATE` | Général & FM |
+| 2 | `2` | `IM 1 ` | `INDEX_MODULATION1` | Général & FM |
+| 3 | `3` | `IM 2 ` | `INDEX_MODULATION2` | Général & FM |
+| 4 | `4` | `IM 3 ` | `INDEX_MODULATION3` | Général & FM |
+| 5 | `5` | `IM 4 ` | `INDEX_MODULATION4` | Général & FM |
+| 6 | `48` | `FdBck` | `MTX_DEST_FEEDBACK` | Général & FM |
+| 7 | `6` | `IMAll` | `INDEX_ALL_MODULATION` | Général & FM |
+| 8 | `7` | `Mix 1` | `MIX_OSC1` | Mix & Pan OP |
+| 9 | `8` | `Pan 1` | `PAN_OSC1` | Mix & Pan OP |
+| 10 | `9` | `Mix 2` | `MIX_OSC2` | Mix & Pan OP |
+| 11 | `10` | `Pan 2` | `PAN_OSC2` | Mix & Pan OP |
+| 12 | `11` | `Mix 3` | `MIX_OSC3` | Mix & Pan OP |
+| 13 | `12` | `Pan 3` | `PAN_OSC3` | Mix & Pan OP |
+| 14 | `13` | `Mix 4` | `MIX_OSC4` | Mix & Pan OP |
+| 15 | `14` | `Pan 4` | `PAN_OSC4` | Mix & Pan OP |
+| 16 | `15` | `Mix *` | `ALL_MIX` | Mix & Pan OP |
+| 17 | `16` | `Pan *` | `ALL_PAN` | Mix & Pan OP |
+| 18 | `17` | `o1 Fq` | `OSC1_FREQ` | Fréquence & Pitch |
+| 19 | `18` | `o2 Fq` | `OSC2_FREQ` | Fréquence & Pitch |
+| 20 | `19` | `o3 Fq` | `OSC3_FREQ` | Fréquence & Pitch |
+| 21 | `20` | `o4 Fq` | `OSC4_FREQ` | Fréquence & Pitch |
+| 22 | `21` | `o5 Fq` | `OSC5_FREQ` | Fréquence & Pitch |
+| 23 | `22` | `o6 Fq` | `OSC6_FREQ` | Fréquence & Pitch |
+| 24 | `23` | `o* Fq` | `ALL_OSC_FREQ` | Fréquence & Pitch |
+| 25 | `43` | `o* Fh` | `ALL_OSC_FREQ_HARM` | Fréquence & Pitch |
+| 26 | `66` | `Note+` | `MTX_DEST_NOTE_ADD` | Fréquence & Pitch (Scala) |
+| 27 | `54` | `o1 Ph` | `OSC1_PHASE` | Phase OP |
+| 28 | `55` | `o2 Ph` | `OSC2_PHASE` | Phase OP |
+| 29 | `56` | `o3 Ph` | `OSC3_PHASE` | Phase OP |
+| 30 | `57` | `o4 Ph` | `OSC4_PHASE` | Phase OP |
+| 31 | `58` | `o5 Ph` | `OSC5_PHASE` | Phase OP |
+| 32 | `59` | `o6 Ph` | `OSC6_PHASE` | Phase OP |
+| 33 | `60` | `o1 Wr` | `OSC1_WARP` | Warp OP |
+| 34 | `61` | `o2 Wr` | `OSC2_WARP` | Warp OP |
+| 35 | `62` | `o3 Wr` | `OSC3_WARP` | Warp OP |
+| 36 | `63` | `o4 Wr` | `OSC4_WARP` | Warp OP |
+| 37 | `64` | `o5 Wr` | `OSC5_WARP` | Warp OP |
+| 38 | `65` | `o6 Wr` | `OSC6_WARP` | Warp OP |
+| 39 | `24` | `Atk 1` | `ENV1_ATTACK` | Enveloppes |
+| 40 | `25` | `Atk 2` | `ENV2_ATTACK` | Enveloppes |
+| 41 | `26` | `Atk 3` | `ENV3_ATTACK` | Enveloppes |
+| 42 | `27` | `Atk 4` | `ENV4_ATTACK` | Enveloppes |
+| 43 | `28` | `Atk 5` | `ENV5_ATTACK` | Enveloppes |
+| 44 | `29` | `Atk 6` | `ENV6_ATTACK` | Enveloppes |
+| 45 | `30` | `Atk C` | `ALL_ENV_ATTACK` | Enveloppes |
+| 46 | `45` | `Atk M` | `ALL_ENV_ATTACK_MODULATOR` | Enveloppes |
+| 47 | `44` | `Dec C` | `ALL_ENV_DECAY` | Enveloppes |
+| 48 | `46` | `Dec M` | `ALL_ENV_DECAY_MODULATOR` | Enveloppes |
+| 49 | `31` | `Rel C` | `ALL_ENV_RELEASE` | Enveloppes |
+| 50 | `47` | `Rel M` | `ALL_ENV_RELEASE_MODULATOR` | Enveloppes |
+| 51 | `32` | `mtx 1` | `MTX1_MUL` | Matrice Mul |
+| 52 | `33` | `mtx 2` | `MTX2_MUL` | Matrice Mul |
+| 53 | `34` | `mtx 3` | `MTX3_MUL` | Matrice Mul |
+| 54 | `35` | `mtx 4` | `MTX4_MUL` | Matrice Mul |
+| 55 | `36` | `lfo1F` | `LFO1_FREQ` | Modulateurs |
+| 56 | `37` | `lfo2F` | `LFO2_FREQ` | Modulateurs |
+| 57 | `38` | `lfo3F` | `LFO3_FREQ` | Modulateurs |
+| 58 | `39` | `env2S` | `LFOENV2_SILENCE` | Modulateurs |
+| 59 | `40` | `stp1G` | `LFOSEQ1_GATE` | Modulateurs |
+| 60 | `41` | `stp2G` | `LFOSEQ2_GATE` | Modulateurs |
+| 61 | `42` | `Fx1 1` | `FILTER1_PARAM1` | Filtres / FX 1 & 2 |
+| 62 | `49` | `Fx1 2` | `FILTER1_PARAM2` | Filtres / FX 1 & 2 |
+| 63 | `50` | `fx1Am` | `FILTER1_AMP` | Filtres / FX 1 & 2 |
+| 64 | `51` | `Fx2 1` | `FILTER2_PARAM1` | Filtres / FX 1 & 2 |
+| 65 | `52` | `Fx2 2` | `FILTER2_PARAM2` | Filtres / FX 1 & 2 |
+| 66 | `53` | `Fx2Am` | `FILTER2_AMP` | Filtres / FX 1 & 2 |
 
 ---
 

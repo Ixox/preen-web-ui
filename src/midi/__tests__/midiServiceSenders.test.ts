@@ -58,11 +58,22 @@ import {
   sendStepSequencerBpm,
   sendStepSequencerMode,
   sendStepSequencerLoopLength,
+  sendModulationMatrixParam,
   setMidiOutput,
   clearNRPNQueue,
   drainNRPNQueue,
 } from '../midiService';
-import { PREENFM3_CC, NoteCurveType, LFO_TYPES, LFO_SHAPE_MAX, nrpnToStepSeqSync, stepSeqSyncToNrpnBpm } from '../preenFmConstants';
+import {
+  PREENFM3_CC,
+  NoteCurveType,
+  LFO_TYPES,
+  LFO_SHAPE_MAX,
+  nrpnToStepSeqSync,
+  stepSeqSyncToNrpnBpm,
+  MATRIX_DEST_NAMES,
+  MATRIX_DEST_ORDER,
+  MATRIX_DEST_ORDERED_NAMES,
+} from '../preenFmConstants';
 import { parseLfoShape, encodeLfoShape } from '../../types/lfo';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -528,7 +539,11 @@ describe('Step Sequencer Modes & Loop Length (MSB=5/6) — senders', () => {
   it('sends step modes on MSB=5 for Seq1 and MSB=6 for Seq2', async () => {
     sendStepSequencerMode(0, 0, 'Norm', 1);
     sendStepSequencerMode(0, 4, 'Mute', 1);
+    sendStepSequencerMode(0, 5, 'Lfo1', 1);
+    sendStepSequencerMode(0, 6, 'Lfo3', 1);
     sendStepSequencerMode(1, 7, 'Pass', 1);
+    sendStepSequencerMode(1, 8, '1/32', 1);
+    sendStepSequencerMode(1, 9, '1/64', 1);
     sendStepSequencerMode(1, 15, 'Rset', 1);
     await flushQueue();
 
@@ -536,7 +551,11 @@ describe('Step Sequencer Modes & Loop Length (MSB=5/6) — senders', () => {
     expect(nrpns).toEqual([
       { paramMSB: 5, paramLSB: 0, valueMSB: 0, valueLSB: 0 },
       { paramMSB: 5, paramLSB: 4, valueMSB: 0, valueLSB: 4 },
+      { paramMSB: 5, paramLSB: 5, valueMSB: 0, valueLSB: 7 },
+      { paramMSB: 5, paramLSB: 6, valueMSB: 0, valueLSB: 9 },
       { paramMSB: 6, paramLSB: 7, valueMSB: 0, valueLSB: 5 },
+      { paramMSB: 6, paramLSB: 8, valueMSB: 0, valueLSB: 10 },
+      { paramMSB: 6, paramLSB: 9, valueMSB: 0, valueLSB: 12 },
       { paramMSB: 6, paramLSB: 15, valueMSB: 0, valueLSB: 6 },
     ]);
   });
@@ -574,5 +593,41 @@ describe('Step Sequencer Modes & Loop Length (MSB=5/6) — senders', () => {
     expect(nrpnToStepSeqSync(245)).toEqual({ syncMode: 'Ext', bpm: 245, midiClockMode: 'Ck*4' });
     expect(nrpnToStepSeqSync(246)).toEqual({ syncMode: 'Note', bpm: 246, midiClockMode: 'Ck/4' });
     expect(stepSeqSyncToNrpnBpm({ syncMode: 'Note', bpm: 120, midiClockMode: 'Ck/4' })).toBe(246);
+  });
+});
+
+describe('Modulation Matrix destinations (matrixTargetOrder & Note+)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    mockSend.mockClear();
+    clearNRPNQueue();
+    setMidiOutput(mockOutput as unknown as Parameters<typeof setMidiOutput>[0]);
+  });
+
+  afterEach(() => {
+    clearNRPNQueue();
+    setMidiOutput(null);
+    vi.useRealTimers();
+  });
+
+  it('includes Note+ at NRPN ID 66 and defines a 67-item bijection in MATRIX_DEST_ORDER', () => {
+    expect(MATRIX_DEST_NAMES).toHaveLength(67);
+    expect(MATRIX_DEST_NAMES[66]).toBe('Note+');
+    expect(MATRIX_DEST_ORDER).toHaveLength(67);
+    expect(new Set(MATRIX_DEST_ORDER).size).toBe(67);
+    expect([...MATRIX_DEST_ORDER].sort((a, b) => a - b)).toEqual(
+      Array.from({ length: 67 }, (_, i) => i)
+    );
+    expect(MATRIX_DEST_ORDERED_NAMES[26]).toBe('Note+');
+    expect(MATRIX_DEST_ORDERED_NAMES[6]).toBe('Mtx FB');
+  });
+
+  it('sends Note+ (ID 66) via sendModulationMatrixParam', async () => {
+    sendModulationMatrixParam(0, 'destination1', 'Note+', 1);
+    await flushQueue();
+
+    expect(allSentNRPNs()).toEqual([
+      { paramMSB: 0, paramLSB: 118, valueMSB: 0, valueLSB: 66 },
+    ]);
   });
 });

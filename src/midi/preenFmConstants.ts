@@ -402,7 +402,28 @@ export const MATRIX_DEST_NAMES = [
   'o4 Wp',   // 63 - OSC4_WARP
   'o5 Wp',   // 64 - OSC5_WARP
   'o6 Wp',   // 65 - OSC6_WARP
+  'Note+',   // 66 - MTX_DEST_NOTE_ADD
 ] as const;
+
+/**
+ * UI display order for matrix destinations (`matrixTargetOrder[]` in FMDisplayEditor.cpp).
+ * Maps display index (0..66) -> NRPN ID (index in `MATRIX_DEST_NAMES`).
+ */
+export const MATRIX_DEST_ORDER = [
+  0, 1, 2, 3, 4, 5, 48, 6,
+  7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+  17, 18, 19, 20, 21, 22, 23, 43, 66,
+  54, 55, 56, 57, 58, 59,
+  60, 61, 62, 63, 64, 65,
+  24, 25, 26, 27, 28, 29, 30, 45, 44, 46, 31, 47,
+  32, 33, 34, 35,
+  36, 37, 38, 39, 40, 41,
+  42, 49, 50, 51, 52, 53,
+] as const;
+
+export const MATRIX_DEST_ORDERED_NAMES = MATRIX_DEST_ORDER.map(
+  (id) => MATRIX_DEST_NAMES[id]
+);
 
 // ============================================================================
 // Waveforms — oscShapeNames / oscShapeNamesOrder (FMDisplayEditor.cpp)
@@ -789,10 +810,17 @@ export type StepSeqStepMode =
   | 'Gld3'
   | 'Mute'
   | 'Pass'
-  | 'Rset';
+  | 'Rset'
+  | 'Lfo1'
+  | 'Lfo2'
+  | 'Lfo3'
+  | '1/32'
+  | '1/48'
+  | '1/64';
 
 export const STEP_SEQ_STEP_MODES: StepSeqStepMode[] = [
   'Norm', 'Gld1', 'Gld2', 'Gld3', 'Mute', 'Pass', 'Rset',
+  'Lfo1', 'Lfo2', 'Lfo3', '1/32', '1/48', '1/64',
 ];
 
 export const STEP_SEQ_STEP_MODE_LABELS: Record<StepSeqStepMode, string> = {
@@ -803,6 +831,12 @@ export const STEP_SEQ_STEP_MODE_LABELS: Record<StepSeqStepMode, string> = {
   Mute: 'Mute',
   Pass: 'Pass (Skip)',
   Rset: 'Reset (Loop)',
+  Lfo1: 'LFO 1 Trig',
+  Lfo2: 'LFO 2 Trig',
+  Lfo3: 'LFO 3 Trig',
+  '1/32': 'Ratchet ×2',
+  '1/48': 'Ratchet ×3',
+  '1/64': 'Ratchet ×4',
 };
 
 export const STEP_SEQ_MODE_TO_NRPN: Record<StepSeqStepMode, number> = {
@@ -813,6 +847,12 @@ export const STEP_SEQ_MODE_TO_NRPN: Record<StepSeqStepMode, number> = {
   Mute: 4,
   Pass: 5,
   Rset: 6,
+  Lfo1: 7,
+  Lfo2: 8,
+  Lfo3: 9,
+  '1/32': 10,
+  '1/48': 11,
+  '1/64': 12,
 };
 
 export function nrpnToStepSeqMode(val: number | undefined, defaultMode: StepSeqStepMode = 'Norm'): StepSeqStepMode {
