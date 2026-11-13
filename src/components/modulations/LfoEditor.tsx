@@ -8,6 +8,7 @@ import { useLfo, updateLfo } from '../../stores/patchStore';
 import { sendLfoParamNRPN } from '../../midi/midiService';
 import { LFO_TYPES } from '../../types/lfo';
 import { useThemeStore } from '../../theme/themeStore';
+import { StyledSelect } from '../StyledSelect';
 
 const LfoContainer = styled.div`
   background: ${props => props.theme.colors.panel};
@@ -91,24 +92,6 @@ const ControlLabel = styled.label`
   color: ${props => props.theme.colors.textMuted};
   font-size: 0.75rem;
   text-transform: uppercase;
-`;
-
-const Select = styled.select`
-  background: ${props => props.theme.colors.button};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  color: ${props => props.theme.colors.text};
-  padding: 6px 28px 6px 8px;
-  font-size: 0.75rem;
-  width: 90px;
-  max-width: 90px;
-  height: 32px;
-  box-sizing: border-box;
-  
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme.colors.primary};
-  }
 `;
 
 /**
@@ -212,7 +195,8 @@ export const LfoEditor: React.FC = () => {
           ) : (
             <div>
               <ControlLabel>{t('lfo.midiClock')}</ControlLabel>
-              <Select
+              <StyledSelect
+                $width="90px"
                 value={lfo.midiClockMode}
                 onChange={(e) => {
                   const mode = e.target.value as MidiClockMode;
@@ -225,7 +209,7 @@ export const LfoEditor: React.FC = () => {
                     {MIDI_CLOCK_LABELS[mode]}
                   </option>
                 ))}
-              </Select>
+              </StyledSelect>
             </div>
           )}
         </ControlGroup>

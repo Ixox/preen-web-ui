@@ -13,6 +13,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
 import { useThemeStore } from '../theme/themeStore';
+import { StyledSelect } from './StyledSelect';
 
 // ============================================================
 // Constants
@@ -578,31 +579,6 @@ const SelectLabel = styled.label`
   color: ${({ theme }) => theme.colors.textMuted};
   text-transform: uppercase;
   letter-spacing: 0.06em;
-`;
-
-const StyledSelect = styled.select`
-  background: ${({ theme }) => theme.colors.button};
-  color: ${({ theme }) => theme.colors.text};
-  border: 1px solid ${({ theme }) => theme.colors.border};
-  border-radius: 6px;
-  padding: 5px 8px;
-  font-size: 0.82rem;
-  font-family: inherit;
-  cursor: pointer;
-  width: 100%;
-
-  &:focus {
-    outline: 1px solid ${({ theme }) => theme.colors.primary};
-  }
-
-  &:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
-
-  option {
-    background: ${({ theme }) => theme.colors.panel};
-  }
 `;
 
 const RefreshButton = styled.button`
@@ -1447,6 +1423,7 @@ const PreenSpectrogram = forwardRef<PreenSpectrogramHandle>(
           <SelectGroup>
             <SelectLabel htmlFor="spectrogram-device">{t('spectrogram.deviceLabel')}</SelectLabel>
             <StyledSelect
+              $variant="full"
               id="spectrogram-device"
               value={selectedDeviceId}
               onChange={e => setSelectedDeviceId(e.target.value)}
@@ -1468,6 +1445,7 @@ const PreenSpectrogram = forwardRef<PreenSpectrogramHandle>(
               {t('spectrogram.channelLabel')}{channelCount > 1 ? ` ${t('spectrogram.channelAvailable', { max: channelCount })}` : ''}
             </SelectLabel>
             <StyledSelect
+              $variant="full"
               id="spectrogram-channel"
               value={selectedChannel}
               onChange={e => changeChannel(Number(e.target.value))}

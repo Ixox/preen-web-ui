@@ -11,6 +11,7 @@ import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { LfoType, LFO_TYPES } from '../../types/lfo';
 import { useThemeStore } from '../../theme/themeStore';
+import { StyledSelect } from '../StyledSelect';
 
 const SelectorContainer = styled.div`
   display: flex;
@@ -32,26 +33,6 @@ const WaveformVisualization = styled.div`
 const WaveformCanvas = styled.svg`
   width: 100%;
   height: 50px;
-`;
-
-const Select = styled.select`
-  background: ${props => props.theme.colors.button};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  color: ${props => props.theme.colors.text};
-  padding: 8px 12px;
-  font-size: 0.75rem;
-  min-width: 140px;
-  cursor: pointer;
-  
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme.colors.primary};
-  }
-  
-  &:hover {
-    background: ${props => props.theme.colors.buttonHover};
-  }
 `;
 
 interface LfoWaveformSelectorProps {
@@ -304,13 +285,13 @@ const LfoWaveformSelector: React.FC<LfoWaveformSelectorProps> = ({ value, onChan
           />
         </WaveformCanvas>
       </WaveformVisualization>
-      <Select value={value} onChange={(e) => onChange(e.target.value as LfoType)}>
+      <StyledSelect $minWidth="140px" value={value} onChange={(e) => onChange(e.target.value as LfoType)}>
         {LFO_TYPES.map((type) => (
           <option key={type} value={type}>
             {t(`lfo.types.${type}`)}
           </option>
         ))}
-      </Select>
+      </StyledSelect>
     </SelectorContainer>
   );
 };

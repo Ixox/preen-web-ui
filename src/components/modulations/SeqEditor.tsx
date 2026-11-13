@@ -7,6 +7,7 @@ import { useStepSequencer, updateStepSequencer } from '../../stores/patchStore';
 import type { StepSeqSyncMode, StepSeqMidiClockMode, StepSeqStepMode } from '../../types/modulation';
 import { STEP_SEQ_STEP_MODES, STEP_SEQ_MIDI_CLOCK_MODES, STEP_SEQ_NOTE_SYNC_BPM } from '../../types/modulation';
 import { useThemeStore } from '../../theme/themeStore';
+import { StyledSelect } from '../StyledSelect';
 
 const SeqContainer = styled.div`
   background: ${props => props.theme.colors.panel};
@@ -248,21 +249,6 @@ const ControlLabel = styled.label`
   font-size: 0.65rem;
   text-transform: uppercase;
   white-space: nowrap;
-`;
-
-const Select = styled.select`
-  background: ${props => props.theme.colors.button};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  color: ${props => props.theme.colors.text};
-  padding: 6px 8px;
-  font-size: 0.75rem;
-  min-width: 80px;
-  
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme.colors.primary};
-  }
 `;
 
 /**
@@ -610,7 +596,8 @@ export const SeqEditor: React.FC = () => {
 
         <ControlGroup>
           <ControlLabel>Sync</ControlLabel>
-          <Select 
+          <StyledSelect 
+            $minWidth="80px"
             value={seq.syncMode}
             onChange={handleSyncModeChange}
           >
@@ -619,7 +606,7 @@ export const SeqEditor: React.FC = () => {
                 {mode === 'Int' ? 'Internal' : mode === 'Ext' ? 'External' : 'Note (NoteOn)'}
               </option>
             ))}
-          </Select>
+          </StyledSelect>
         </ControlGroup>
 
         {seq.syncMode === 'Int' && (
@@ -644,14 +631,15 @@ export const SeqEditor: React.FC = () => {
         {seq.syncMode === 'Ext' && (
           <ControlGroup>
             <ControlLabel>MIDI Clock</ControlLabel>
-            <Select 
+            <StyledSelect 
+              $minWidth="80px"
               value={seq.midiClockMode}
               onChange={handleMidiClockModeChange}
             >
               {STEP_SEQ_MIDI_CLOCK_MODES.map(mode => (
                 <option key={mode} value={mode}>{mode}</option>
               ))}
-            </Select>
+            </StyledSelect>
           </ControlGroup>
         )}
       </SeqControls>

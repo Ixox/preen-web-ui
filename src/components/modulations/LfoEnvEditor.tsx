@@ -8,6 +8,7 @@ import type { LfoEnvLoopMode } from '../../types/modulation';
 import { ADSR_CURVE_TYPES, type CurveType } from '../../types/patch';
 import { EnvelopeVisualizer, type EnvelopeDataADSR, type EnvelopeDataSAR } from './EnvelopeVisualizer';
 import { useThemeStore } from '../../theme/themeStore';
+import { StyledSelect } from '../StyledSelect';
 
 const EnvContainer = styled.div`
   background: ${props => props.theme.colors.panel};
@@ -83,24 +84,6 @@ const ControlLabel = styled.label`
   color: ${props => props.theme.colors.textMuted};
   font-size: 0.75rem;
   text-transform: uppercase;
-`;
-
-const Select = styled.select`
-  background: ${props => props.theme.colors.button};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: 4px;
-  color: ${props => props.theme.colors.text};
-  padding: 8px 28px 8px 8px;
-  font-size: 0.875rem;
-  width: 80px;
-  max-width: 80px;
-  height: 36px;
-  box-sizing: border-box;
-  
-  &:focus {
-    outline: none;
-    border-color: ${props => props.theme.colors.primary};
-  }
 `;
 
 /**
@@ -473,7 +456,8 @@ export const LfoEnvEditor: React.FC = () => {
         {/* Attack & Release Curves (NRPN 280-283) */}
         <ControlGroup>
           <ControlLabel>{t('modulation.attackCurve', 'Atk Curve')}</ControlLabel>
-          <Select
+          <StyledSelect
+            $width="80px"
             value={env.attackCurve ?? 'linear'}
             onChange={(e) => {
               const curve = e.target.value as CurveType;
@@ -486,12 +470,13 @@ export const LfoEnvEditor: React.FC = () => {
                 {curve.charAt(0).toUpperCase() + curve.slice(1)}
               </option>
             ))}
-          </Select>
+          </StyledSelect>
         </ControlGroup>
 
         <ControlGroup>
           <ControlLabel>{t('modulation.releaseCurve', 'Rel Curve')}</ControlLabel>
-          <Select
+          <StyledSelect
+            $width="80px"
             value={env.releaseCurve ?? 'linear'}
             onChange={(e) => {
               const curve = e.target.value as CurveType;
@@ -504,14 +489,15 @@ export const LfoEnvEditor: React.FC = () => {
                 {curve.charAt(0).toUpperCase() + curve.slice(1)}
               </option>
             ))}
-          </Select>
+          </StyledSelect>
         </ControlGroup>
 
         {/* Loop Mode only for Env2 */}
         {activeEnv === 1 && (
           <ControlGroup>
             <ControlLabel>Loop Mode</ControlLabel>
-            <Select 
+            <StyledSelect 
+              $width="80px"
               value={env.loopMode}
               onChange={(e) => {
                 const newMode = e.target.value as LfoEnvLoopMode;
@@ -531,7 +517,7 @@ export const LfoEnvEditor: React.FC = () => {
                   {mode}
                 </option>
               ))}
-            </Select>
+            </StyledSelect>
           </ControlGroup>
         )}
       </EnvControls>
