@@ -104,8 +104,6 @@ Le PreenFM3 propose deux niveaux de contrôle MIDI :
 | **57** | LFO2 Freq | Fréquence LFO 2 |
 | **58** | LFO3 Freq | Fréquence LFO 3 |
 | **59** | LFO Env2 Silence | Temps de silence LFO Free Env 2 (0-16s) |
-| **60** | StepSeq 1 Gate | Longueur de gate Step Sequencer 1 (0.0 - 1.0) |
-| **61** | StepSeq 2 Gate | Longueur de gate Step Sequencer 2 (0.0 - 1.0) |
 | **62** | Env Atk All Mod | Attaque de tous les modulateurs de l'algo |
 | **63** | Env Rel All Mod | Relâchement de tous les modulateurs de l'algo |
 | **64** | Hold Pedal | Pédale de sustain standard |
@@ -335,8 +333,6 @@ Les temps d'attaque et de relâchement peuvent être modulés en temps réel ind
 | **LFO2 Freq** | **57** | 0-127 | `0.0` à `25.4 Hz` |
 | **LFO3 Freq** | **58** | 0-127 | `0.0` à `25.4 Hz` |
 | **LFO Env2 Silence** | **59** | 0-127 | `valeur = CC * 0.125` (0 à 15.8 secondes) |
-| **StepSeq 1 Gate** | **60** | 0-127 | `0.0` à `1.27` (`valeur = CC * 0.01`) |
-| **StepSeq 2 Gate** | **61** | 0-127 | `0.0` à `1.27` (`valeur = CC * 0.01`) |
 | **LFO1 Phase** | **88** | 0-127 | `-4.0` à `+1.0` (`valeur = -4.0 + CC * (5.0 / 127.0)`) |
 | **LFO2 Phase** | **89** | 0-127 | `-4.0` à `+1.0` |
 | **LFO3 Phase** | **90** | 0-127 | `-4.0` à `+1.0` |
@@ -346,6 +342,9 @@ Les temps d'attaque et de relâchement peuvent être modulés en temps réel ind
 | **LFO1 Shape** | **94** | 0-7 | 0: Sin, 1: Saw, 2: Tri, 3: Sqr, 4: Rand, 5: Brown, 6: Wand, 7: Flow |
 | **LFO2 Shape** | **95** | 0-7 | Idem |
 | **LFO3 Shape** | **96** | 0-7 | Idem |
+
+> [!NOTE]
+> Les **Step Sequencers 1 & 2** (`BPM`, `Gate`, valeurs, modes de pas et longueur de boucle) n'utilisent plus de CC dédiés (les anciens CC 60 et 61 ont été retirés) et sont contrôlés **exclusivement via NRPN** (voir [Step Sequencers](#step-sequencers)).
 
 ---
 
@@ -501,11 +500,26 @@ const valueLSB    = valueToSend & 0x7F;        // 180 & 0x7F = 52
 
 ### Step Sequencers
 
-Le Step Sequencer utilise des messages dédiés avec `paramMSB` valant 2 ou 3 :
+Les Step Sequencers 1 & 2 sont contrôlés **exclusivement via NRPN** (aucun CC dédié) :
 
-- **Step Sequencer 1** : `paramMSB = 2`, `paramLSB = 0..15` (Step 1 à 16)
-- **Step Sequencer 2** : `paramMSB = 3`, `paramLSB = 0..15` (Step 1 à 16)
-- Valeur : `valueLSB` contient la hauteur de note / gate du pas.
+1. **Paramètres globaux (`BPM` et `Gate`)** : utilisent le mapping NRPN standard de `ROW_LFOSEQ1` / `ROW_LFOSEQ2` (`encodeur 0` = `BPM`, `encodeur 1` = `Gate`).
+   - Plage `BPM` (`10..246`) : `10..240` = BPM interne (`Int`), `241..245` = MIDI Clock (`Ext` : `Ck/4`, `Ck/2`, `Ck  `, `Ck*2`, `Ck*4`), `246` = `Note` (`LFO_SEQ_STEP_ON_NOTE`, avance d'un pas à chaque `NoteOn`).
+2. **Valeurs des pas (`paramMSB = 2` ou `3`)** :
+   - **Step Sequencer 1** : `paramMSB = 2`, `paramLSB = 0..15` (Step 1 à 16)
+   - **Step Sequencer 2** : `paramMSB = 3`, `paramLSB = 0..15` (Step 1 à 16)
+   - `valueLSB = 0..15` : hauteur / valeur du pas (`steps[step] & 0x0F`).
+3. **Modes des pas et longueur de boucle (`paramMSB = 5` ou `6`)** :
+   - **Step Sequencer 1** : `paramMSB = 5`
+   - **Step Sequencer 2** : `paramMSB = 6`
+
+| `paramLSB` | Fonction | `valueLSB` | Description |
+|:---:|:---|:---:|:---|
+| **0..15** | Mode du pas 1 à 16 | **0..6** | `0`: `Norm`, `1`: `Gld1`, `2`: `Gld2`, `3`: `Gld3`, `4`: `Mute`, `5`: `Pass` (*step skip*), `6`: `Rset` (*loop reset*) |
+| **16** | Loop Length (Last Step) | **0..16** | `1..16` place `Rset` sur le pas `length - 1` et remet les autres `Rset` à `Norm` ; `0` efface tous les `Rset` |
+
+- **Sortie linéaire & compatibilité `Note+` / Scala / `Osc Freq`** : la sortie d'un Step Sequencer est linéaire (`stepVal / 12.0`, soit `0.0` à `1.25`, avec `12 = 1.0`), ce qui permet de piloter `Note+` (`MTX_DEST_NOTE_ADD`) directement en degrés de la gamme Scala active (ou en demi-tons) avec un multiplicateur `1.0`. Lorsque la matrice route `StepSeq 1/2` vers `OSC1_FREQ..ALL_OSC_FREQ`, le firmware convertit automatiquement en `(2^src - 1) * mul` pour préserver la justesse des anciens patches.
+- **Dump & MIDI Out bidirectionnel** : `sendCurrentPatchAsNrpns` émet à la fois les valeurs (`MSB = 2/3`) et les modes (`MSB = 5/6`) des 16 pas. En mode `MIDI Sends = NRPN`, l'édition de la valeur ou du mode (`ENCODER_STEPSEQ_GLIDE`) sur le synthé émet le NRPN correspondant.
+- **Zéro collision** : les modes et longueurs de boucle sont isolés sur `paramMSB = 5` et `6` afin de ne pas entrer en conflit avec les paramètres de synthèse mappés sur `paramMSB = 2` (`LSB >= 16`).
 
 ---
 
@@ -522,7 +536,7 @@ Les réglages de mixage FX et dynamique par timbre/global (non contenus dans `On
 
 > [!NOTE]
 > **Pourquoi `paramMSB = 4` ?**  
-> L'espace `paramMSB = 4` (`512..515`) est totalement isolé des paramètres de synthèse (`0..275`), du nom de preset (`228..239`), des courbes d'enveloppes (`300..323`) et du Step Sequencer (`paramMSB = 2..3, LSB = 0..15`), garantissant zéro collision lors des dumps et éditions bidirectionnelles. Les CC 40, 41, 44 et 45 restent également actifs en réception dans `controlChange`.
+> L'espace `paramMSB = 4` (`512..515`) est totalement isolé des paramètres de synthèse (`0..275`), du nom de preset (`228..239`), des courbes d'enveloppes (`300..323`) et du Step Sequencer (`paramMSB = 2..3, LSB = 0..15` et `paramMSB = 5..6, LSB = 0..16`), garantissant zéro collision lors des dumps et éditions bidirectionnelles. Les CC 40, 41, 44 et 45 restent également actifs en réception dans `controlChange`.
 
 ---
 

@@ -46,6 +46,10 @@ import {
   ARP_DURATIONS,
   ARP_LATCH,
 } from '../types/patch';
+import {
+  type StepSeqStepMode,
+  STEP_SEQ_MODE_TO_NRPN,
+} from './preenFmConstants';
 /**
  * Send Filter2 type to PreenFM3 via NRPN (MSB=1, LSB=116)
  */
@@ -163,23 +167,29 @@ export function sendStepSequencerMidiClockMode(seqIndex: 0 | 1, midiClockMode: s
  *   Seq2: MSB=1, LSB=64
  */
 /**
- * Envoie le BPM du step sequencer via NRPN
+ * Envoie le BPM / mode de synchro du step sequencer via NRPN
  * @param seqIndex 0 ou 1 (Seq1 ou Seq2)
- * @param bpm valeur BPM (10-240 pour mode interne, >240 pour mode sync)
- * @param midiClockMode (optionnel) : string ("Ck/4", "Ck/2", "Ck  ", "Ck*2", "Ck*4")
+ * @param bpm valeur BPM (10-240 pour Int, 241-245 pour Ext MIDI Clock, 246 pour Note)
+ * @param midiClockMode (optionnel) : string ("Ck/4", "Ck/2", "Ck", "Ck*2", "Ck*4")
  * @param channel MIDI channel (défaut: currentChannel)
  * Mapping PreenFM3 :
  *   Seq1: MSB=1, LSB=60
  *   Seq2: MSB=1, LSB=64
- *   Si bpm > 240, valeur = 240 + index du mode clock
+ *   10..240 = Int, 241..245 = Ext (Ck/4..Ck*4), 246 = Note (LFO_SEQ_STEP_ON_NOTE)
  */
 export function sendStepSequencerBpm(seqIndex: 0 | 1, bpm: number, midiClockMode?: string, channel: number = currentChannel) {
   let valueToSend = Math.round(bpm);
-  if (bpm > 240 && midiClockMode) {
-    // Mode sync : encoder l'index du mode clock dans la valeur
-    const MODES = ["Ck/4", "Ck/2", "Ck  ", "Ck*2", "Ck*4"];
-    const idx = MODES.indexOf(midiClockMode);
-    valueToSend = 240 + (idx >= 0 ? idx : 0);
+  if (valueToSend >= 246) {
+    valueToSend = 246;
+  } else if (valueToSend > 240) {
+    if (midiClockMode) {
+      const normalizedMode = midiClockMode.trim();
+      const MODES = ["Ck/4", "Ck/2", "Ck", "Ck*2", "Ck*4"];
+      const idx = MODES.indexOf(normalizedMode);
+      valueToSend = idx >= 0 ? 241 + idx : Math.max(241, Math.min(245, valueToSend));
+    } else {
+      valueToSend = Math.max(241, Math.min(245, valueToSend));
+    }
   } else {
     valueToSend = Math.max(10, Math.min(240, valueToSend));
   }
@@ -261,6 +271,69 @@ export function sendStepSequencerStep(
   console.log('📤 Sending Step Sequencer Step via NRPN:', { seqIndex, stepIndex, uiValue, firmwareValue, nrpn, channel });
   sendNRPN(nrpn, channel);
 }
+
+/**
+ * Send a step mode for the step sequencer via NRPN (MSB=5 for Seq1, MSB=6 for Seq2)
+ * @param seqIndex 0 or 1 (StepSeq1 or StepSeq2)
+ * @param stepIndex 0-15 (step number)
+ * @param mode 'Norm' | 'Gld1' | 'Gld2' | 'Gld3' | 'Mute' | 'Pass' | 'Rset' (0-6)
+ * @param channel MIDI channel (default: currentChannel)
+ */
+export function sendStepSequencerMode(
+  seqIndex: 0 | 1,
+  stepIndex: number,
+  mode: StepSeqStepMode,
+  channel: number = currentChannel
+) {
+  if (seqIndex !== 0 && seqIndex !== 1) {
+    console.error('Invalid step sequencer index:', seqIndex);
+    return;
+  }
+  if (stepIndex < 0 || stepIndex > 15) {
+    console.error('Invalid step index:', stepIndex);
+    return;
+  }
+  const modeVal = STEP_SEQ_MODE_TO_NRPN[mode] ?? 0;
+  const paramMSB = seqIndex === 0 ? 5 : 6;
+  const paramLSB = stepIndex;
+  const nrpn = {
+    paramMSB,
+    paramLSB,
+    valueMSB: 0,
+    valueLSB: modeVal & 0x7F,
+  };
+  console.log('📤 Sending Step Sequencer Mode via NRPN:', { seqIndex, stepIndex, mode, modeVal, nrpn, channel });
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send step sequencer loop length via NRPN (MSB=5 for Seq1, MSB=6 for Seq2, LSB=16)
+ * @param seqIndex 0 or 1 (StepSeq1 or StepSeq2)
+ * @param length 0-16 (1-16 sets Rset at length-1; 0 clears all Rset)
+ * @param channel MIDI channel (default: currentChannel)
+ */
+export function sendStepSequencerLoopLength(
+  seqIndex: 0 | 1,
+  length: number,
+  channel: number = currentChannel
+) {
+  if (seqIndex !== 0 && seqIndex !== 1) {
+    console.error('Invalid step sequencer index:', seqIndex);
+    return;
+  }
+  const clamped = Math.max(0, Math.min(16, Math.round(length)));
+  const paramMSB = seqIndex === 0 ? 5 : 6;
+  const paramLSB = 16;
+  const nrpn = {
+    paramMSB,
+    paramLSB,
+    valueMSB: 0,
+    valueLSB: clamped & 0x7F,
+  };
+  console.log('📤 Sending Step Sequencer Loop Length via NRPN:', { seqIndex, length: clamped, nrpn, channel });
+  sendNRPN(nrpn, channel);
+}
+
 /**
  * Envoie tous les paramètres d'un LFO au PreenFM3 via CC
  * lfoIndex: 0 = LFO1, 1 = LFO2, 2 = LFO3

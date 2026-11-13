@@ -55,11 +55,14 @@ import {
   sendMixerVolume,
   sendMixerPan,
   sendMixerSend,
+  sendStepSequencerBpm,
+  sendStepSequencerMode,
+  sendStepSequencerLoopLength,
   setMidiOutput,
   clearNRPNQueue,
   drainNRPNQueue,
 } from '../midiService';
-import { PREENFM3_CC, NoteCurveType, LFO_TYPES, LFO_SHAPE_MAX } from '../preenFmConstants';
+import { PREENFM3_CC, NoteCurveType, LFO_TYPES, LFO_SHAPE_MAX, nrpnToStepSeqSync, stepSeqSyncToNrpnBpm } from '../preenFmConstants';
 import { parseLfoShape, encodeLfoShape } from '../../types/lfo';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -518,5 +521,58 @@ describe('LFO shapes (0..26) — parseLfoShape / encodeLfoShape', () => {
     expect(parseLfoShape(26)).toBe('LFO_USER6');
     expect(parseLfoShape(-1)).toBe('LFO_SIN');
     expect(parseLfoShape(99)).toBe('LFO_USER6');
+  });
+});
+
+describe('Step Sequencer Modes & Loop Length (MSB=5/6) — senders', () => {
+  it('sends step modes on MSB=5 for Seq1 and MSB=6 for Seq2', async () => {
+    sendStepSequencerMode(0, 0, 'Norm', 1);
+    sendStepSequencerMode(0, 4, 'Mute', 1);
+    sendStepSequencerMode(1, 7, 'Pass', 1);
+    sendStepSequencerMode(1, 15, 'Rset', 1);
+    await flushQueue();
+
+    const nrpns = allSentNRPNs();
+    expect(nrpns).toEqual([
+      { paramMSB: 5, paramLSB: 0, valueMSB: 0, valueLSB: 0 },
+      { paramMSB: 5, paramLSB: 4, valueMSB: 0, valueLSB: 4 },
+      { paramMSB: 6, paramLSB: 7, valueMSB: 0, valueLSB: 5 },
+      { paramMSB: 6, paramLSB: 15, valueMSB: 0, valueLSB: 6 },
+    ]);
+  });
+
+  it('sends loop length on LSB=16 for Seq1 and Seq2', async () => {
+    sendStepSequencerLoopLength(0, 8, 1);
+    sendStepSequencerLoopLength(1, 12, 1);
+    await flushQueue();
+
+    const nrpns = allSentNRPNs();
+    expect(nrpns).toEqual([
+      { paramMSB: 5, paramLSB: 16, valueMSB: 0, valueLSB: 8 },
+      { paramMSB: 6, paramLSB: 16, valueMSB: 0, valueLSB: 12 },
+    ]);
+  });
+
+  it('encodes Int (10..240), Ext (241..245), and Note (246) sync modes for Seq1 & Seq2', async () => {
+    sendStepSequencerBpm(0, 120, undefined, 1);
+    sendStepSequencerBpm(1, 245, 'Ck*4', 1);
+    await flushQueue();
+
+    sendStepSequencerBpm(0, 241, 'Ck/4', 1);
+    sendStepSequencerBpm(1, 246, undefined, 1);
+    await flushQueue();
+
+    const nrpns = allSentNRPNs();
+    expect(nrpns).toEqual([
+      { paramMSB: 1, paramLSB: 60, valueMSB: 0, valueLSB: 120 },
+      { paramMSB: 1, paramLSB: 64, valueMSB: 1, valueLSB: 117 }, // 245 = (1 << 7) | 117
+      { paramMSB: 1, paramLSB: 60, valueMSB: 1, valueLSB: 113 }, // 241 = (1 << 7) | 113
+      { paramMSB: 1, paramLSB: 64, valueMSB: 1, valueLSB: 118 }, // 246 = (1 << 7) | 118
+    ]);
+
+    expect(nrpnToStepSeqSync(241)).toEqual({ syncMode: 'Ext', bpm: 241, midiClockMode: 'Ck/4' });
+    expect(nrpnToStepSeqSync(245)).toEqual({ syncMode: 'Ext', bpm: 245, midiClockMode: 'Ck*4' });
+    expect(nrpnToStepSeqSync(246)).toEqual({ syncMode: 'Note', bpm: 246, midiClockMode: 'Ck/4' });
+    expect(stepSeqSyncToNrpnBpm({ syncMode: 'Note', bpm: 120, midiClockMode: 'Ck/4' })).toBe(246);
   });
 });

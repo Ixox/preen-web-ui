@@ -317,11 +317,11 @@ export const CarrierControls: React.FC = () => {
 
       {/* Footer ultra-compact : Paramètres globaux Master FX Reverb (CC 44, 45) */}
       <CarrierFooter>
-        <FooterTitle>Global Master FX</FooterTitle>
+        <FooterTitle>Global FX</FooterTitle>
 
         {/* CC 44: Master FX Return Level */}
         <FooterControlGroup title="Master FX Global Reverb Return Level (CC 44)">
-          <CompactLabel>MFX Return:</CompactLabel>
+          <CompactLabel>Reverb level:</CompactLabel>
           <CompactRange
             type="range"
             min="0"
@@ -335,7 +335,7 @@ export const CarrierControls: React.FC = () => {
 
         {/* CC 45: Master FX Preset */}
         <FooterControlGroup title="Master FX Global Reverb Preset (CC 45)">
-          <CompactLabel>MFX Preset:</CompactLabel>
+          <CompactLabel>Reverb Preset:</CompactLabel>
           <CompactSelect
             value={mfxPresetValue}
             onChange={(e) => updateGlobal({ mfxPreset: Number(e.target.value) })}

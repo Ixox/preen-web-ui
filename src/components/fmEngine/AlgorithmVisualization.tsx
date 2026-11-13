@@ -7,7 +7,7 @@ import { useFMSynthContext } from './FMSynthContext';
 import { useThemeStore } from '../../theme/themeStore';
 
 const VisualizationContainer = styled.div`
-  width: 240px;
+  width: 280px;
 
   display: flex;
   align-items: center;

@@ -13,7 +13,7 @@ import {
 } from '../types/patch';
 // import type { Filter1Type, Filter2Type } from '../types/patch';
 import type { NRPNMessage } from './preenFM3MidiMap';
-import { formatTimbreMfxNrpnDetail, nrpnToCurveType } from './preenFmConstants';
+import { formatTimbreMfxNrpnDetail, nrpnToCurveType, nrpnToStepSeqSync, STEP_SEQ_STEP_MODES, type StepSeqStepMode } from './preenFmConstants';
 import { DEFAULT_ALGORITHMS, DEFAULT_LFO_ENVELOPE, ARP_CLOCKS, ARP_DIRECTIONS, ARP_PATTERNS, ARP_DIVISIONS, ARP_DURATIONS, ARP_LATCH } from '../types/patch';
 import type { 
   ArpClock,
@@ -728,10 +728,11 @@ export class PreenFM3Parser {
         },
       ] as [typeof DEFAULT_LFO_ENVELOPE, typeof DEFAULT_LFO_ENVELOPE],
       
-      // Step Sequencers: parser les steps à partir des NRPN reçus (MSB=2/3, LSB=0-15)
+      // Step Sequencers: parser les steps à partir des NRPN reçus (MSB=2/3, LSB=0-15) et modes (MSB=5/6, LSB=0-15/16)
       stepSequencers: (() => {
         const arr = [0, 1].map(seqIdx => {
           const steps: number[] = [];
+          const stepModes: StepSeqStepMode[] = [];
           for (let i = 0; i < 16; i++) {
             // NRPN: MSB=2 (Seq1) ou 3 (Seq2), LSB=0-15
             const value = this.getValue(seqIdx + 2, i);
@@ -741,17 +742,33 @@ export class PreenFM3Parser {
             } else {
               steps.push(50);
             }
+
+            // Modes NRPN: MSB=5 (Seq1) ou 6 (Seq2), LSB=0-15 (0-6)
+            const rawMode = this.getValue(seqIdx + 5, i);
+            stepModes.push(
+              typeof rawMode === 'number'
+                ? (STEP_SEQ_STEP_MODES[rawMode] ?? 'Norm')
+                : 'Norm'
+            );
           }
-          // Gate et BPM (MSB=1, LSB=61/62 et 60/64)
+          // Loop length: MSB=5/6, LSB=16
+          const rawLoopLength = this.getValue(seqIdx + 5, 16);
+          const loopLength = typeof rawLoopLength === 'number'
+            ? Math.max(0, Math.min(16, rawLoopLength))
+            : (stepModes.indexOf('Rset') >= 0 ? stepModes.indexOf('Rset') + 1 : 16);
+
+          // Gate et BPM / SyncMode (MSB=1, LSB=61/62 et 60/64)
           const gate = (this.getValue(1, seqIdx === 0 ? 61 : 62) ?? 50) / 100;
-          const bpm = this.getValue(1, seqIdx === 0 ? 60 : 64) ?? 120;
-          // SyncMode et midiClockMode non parsés ici (à compléter si besoin)
+          const bpmRaw = this.getValue(1, seqIdx === 0 ? 60 : 64);
+          const { syncMode, bpm, midiClockMode } = nrpnToStepSeqSync(bpmRaw);
           return {
             steps,
+            stepModes,
+            loopLength,
             gate,
             bpm,
-            syncMode: 'Int', // valeur par défaut, à parser si possible
-            midiClockMode: 'Ck/4', // valeur par défaut, à parser si besoin
+            syncMode,
+            midiClockMode,
           };
         });
         return [arr[0], arr[1]] as [import('../types/modulation').StepSequencer, import('../types/modulation').StepSequencer];

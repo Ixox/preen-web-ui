@@ -7,7 +7,7 @@ import {
   sendOperatorMix, sendOperatorPan, sendOperatorFrequency, sendOperatorDetune,
   sendOperatorPhase, sendOperatorWarp, sendOperatorWaveform, sendOperatorKeyboardTracking,
   sendOperatorADSR, sendModulationIM, sendModulationVelo, calculateIMIndex,
-  sendStepSequencerStep, sendStepSequencerBpm, sendStepSequencerGate, sendAlgorithmChange,
+  sendStepSequencerStep, sendStepSequencerBpm, sendStepSequencerGate, sendStepSequencerMode, sendStepSequencerLoopLength, sendAlgorithmChange,
   sendGlobalVelocitySensitivity, sendPlayMode, sendPlayModeCC, sendGlideTime, sendNoteCurve,
   sendPatchName, sendFilterType, sendFilterParam1, sendFilterParam2, sendFilterGain,
   sendFilter2Type, sendFilter2Param1, sendFilter2Param2, sendFilter2Gain,
@@ -507,6 +507,20 @@ export const usePatchStore = create<PatchStore>()(
                 }
               }
             }
+          }
+          // MIDI : envoyer les modes modifiés
+          if (changes.stepModes) {
+            if (Array.isArray(changes.stepModes) && changes.stepModes.length === 16) {
+              for (let i = 0; i < 16; i++) {
+                if (!prev.stepModes || prev.stepModes[i] !== changes.stepModes[i]) {
+                  sendStepSequencerMode(seqIndex, i, changes.stepModes[i]);
+                }
+              }
+            }
+          }
+          // MIDI : envoyer la longueur de boucle modifiée (uniquement si stepModes n'est pas déjà envoyé)
+          if (!changes.stepModes && typeof changes.loopLength === 'number' && prev.loopLength !== changes.loopLength) {
+            sendStepSequencerLoopLength(seqIndex, changes.loopLength);
           }
           // MIDI : envoyer le BPM modifié (mode sync inclus)
           if (typeof changes.bpm === 'number' && prev.bpm !== changes.bpm) {

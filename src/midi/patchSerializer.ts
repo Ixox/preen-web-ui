@@ -65,7 +65,7 @@ import {
   encodeLfoShape,
 } from '../types/lfo';
 import { PreenFM3Parser } from './preenFM3Parser';
-import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES, formatTimbreMfxNrpnDetail, curveTypeToNrpn } from './preenFmConstants';
+import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES, formatTimbreMfxNrpnDetail, curveTypeToNrpn, STEP_SEQ_MODE_TO_NRPN, stepSeqSyncToNrpnBpm } from './preenFmConstants';
 // ── Binary layout constants ───────────────────────────────────────────────────
 
 const PRESET_SIZE = 1024; // bytes per preset (FlashSynthParams)
@@ -392,8 +392,8 @@ export function patchToFlashSynthParams(patch: Patch): Uint8Array<ArrayBuffer> {
   const seqs = patch.stepSequencers;
   if (seqs) {
     // StepSequencerParams: {bpm, gate, unused, unused}
-    writeFloats(view, OFF_LFO_SEQ1, [seqs[0].bpm, Math.round(seqs[0].gate * 100), 0, 0]);
-    writeFloats(view, OFF_LFO_SEQ2, [seqs[1].bpm, Math.round(seqs[1].gate * 100), 0, 0]);
+    writeFloats(view, OFF_LFO_SEQ1, [stepSeqSyncToNrpnBpm(seqs[0]), Math.round(seqs[0].gate * 100), 0, 0]);
+    writeFloats(view, OFF_LFO_SEQ2, [stepSeqSyncToNrpnBpm(seqs[1]), Math.round(seqs[1].gate * 100), 0, 0]);
   }
 
   // ── Step Sequencer Steps (offsets 688, 704) as chars (not floats!) ──────────
@@ -1006,11 +1006,11 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
   // ── StepSeq params ──────────────────────────────────────────────────────────
   const seqs = patch.stepSequencers;
   if (seqs) {
-    push(nrpnMsg(1, 60, seqs[0].bpm));
+    push(nrpnMsg(1, 60, stepSeqSyncToNrpnBpm(seqs[0])));
     push(nrpnMsg(1, 61, seqs[0].gate * 100));
     push(nrpnMsg(1, 62, seqs[1].gate * 100));
     push(nrpnMsg(1, 63, 0));  // unused
-    push(nrpnMsg(1, 64, seqs[1].bpm));
+    push(nrpnMsg(1, 64, stepSeqSyncToNrpnBpm(seqs[1])));
     push(nrpnMsg(1, 65, 0));  // unused
     push(nrpnMsg(1, 66, 0));  // unused
     push(nrpnMsg(1, 67, 0));  // unused
@@ -1042,17 +1042,27 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
     push(nrpnMsg(1, baseLsb + 3, 0)); // unused
   }
 
-  // ── StepSeq Steps (MSB=2/3, LSB=0-15) ──────────────────────────────────────
+  // ── StepSeq Steps (MSB=2/3, LSB=0-15) & Modes (MSB=5/6, LSB=0-15/16) ──────────
   // ⚠️ ATTENTION: StepSeq1 (MSB=2, LSB=0-15) écrase les adresses OP3-6 phase/warp!
   // Les phase/warp sont donc envoyés APRÈS pour corriger l'écrasement.
   if (seqs) {
     for (let s = 0; s < 2; s++) {
       const msbSeq = s + 2; // MSB=2 for seq1, MSB=3 for seq2
+      const msbModes = s + 5; // MSB=5 for seq1 modes, MSB=6 for seq2 modes
+      const modes = seqs[s].stepModes;
       for (let i = 0; i < 16; i++) {
         const uiValue = seqs[s].steps[i] ?? 50;
         const firmwareValue = Math.round((uiValue * 15) / 100);
         push(nrpnMsg(msbSeq, i, firmwareValue));
+
+        // Step Modes (MSB=5/6, LSB=0-15)
+        const mode = modes?.[i] ?? 'Norm';
+        const modeValue = STEP_SEQ_MODE_TO_NRPN[mode] ?? 0;
+        push(nrpnMsg(msbModes, i, modeValue));
       }
+      // Loop length (MSB=5/6, LSB=16)
+      const loopLen = seqs[s].loopLength ?? (modes?.indexOf('Rset') !== undefined && modes.indexOf('Rset') >= 0 ? modes.indexOf('Rset') + 1 : 16);
+      push(nrpnMsg(msbModes, 16, Math.max(0, Math.min(16, loopLen))));
     }
   }
 

@@ -727,14 +727,99 @@ export const MIDI_CLOCK_NRPN: Record<MidiClockMode, number> = {
 };
 
 // ============================================================================
-// Step Sequencer MIDI Clock modes
+// Step Sequencer MIDI Clock modes & Step Modes
 // ============================================================================
 
 export type StepSeqMidiClockMode =
-  | 'C/16' | 'Ck/8' | 'Ck/4' | 'Ck/2'
-  | 'Ck'
-  | 'Ck*2' | 'Ck*3' | 'Ck*4' | 'Ck*8';
+  | 'Ck/4' | 'Ck/2' | 'Ck' | 'Ck*2' | 'Ck*4';
 
 export const STEP_SEQ_MIDI_CLOCK_MODES: StepSeqMidiClockMode[] = [
-  'C/16', 'Ck/8', 'Ck/4', 'Ck/2', 'Ck', 'Ck*2', 'Ck*3', 'Ck*4', 'Ck*8',
+  'Ck/4', 'Ck/2', 'Ck', 'Ck*2', 'Ck*4',
 ];
+
+export type StepSeqSyncMode = 'Int' | 'Ext' | 'Note';
+
+export const STEP_SEQ_NOTE_SYNC_BPM = 246;
+
+export function nrpnToStepSeqSync(rawBpm: number | undefined): {
+  syncMode: StepSeqSyncMode;
+  bpm: number;
+  midiClockMode: StepSeqMidiClockMode;
+} {
+  if (typeof rawBpm !== 'number') {
+    return { syncMode: 'Int', bpm: 120, midiClockMode: 'Ck/4' };
+  }
+  const rounded = Math.round(rawBpm);
+  if (rounded >= STEP_SEQ_NOTE_SYNC_BPM) {
+    return { syncMode: 'Note', bpm: STEP_SEQ_NOTE_SYNC_BPM, midiClockMode: 'Ck/4' };
+  }
+  if (rounded >= 241 && rounded <= 245) {
+    return {
+      syncMode: 'Ext',
+      bpm: rounded,
+      midiClockMode: STEP_SEQ_MIDI_CLOCK_MODES[rounded - 241] ?? 'Ck/4',
+    };
+  }
+  return {
+    syncMode: 'Int',
+    bpm: Math.max(10, Math.min(240, rounded)),
+    midiClockMode: 'Ck/4',
+  };
+}
+
+export function stepSeqSyncToNrpnBpm(seq: {
+  syncMode: StepSeqSyncMode;
+  bpm: number;
+  midiClockMode: StepSeqMidiClockMode;
+}): number {
+  if (seq.syncMode === 'Note' || seq.bpm === STEP_SEQ_NOTE_SYNC_BPM) {
+    return STEP_SEQ_NOTE_SYNC_BPM;
+  }
+  if (seq.syncMode === 'Ext') {
+    const idx = STEP_SEQ_MIDI_CLOCK_MODES.indexOf(seq.midiClockMode);
+    return 241 + (idx >= 0 ? idx : 0);
+  }
+  return Math.max(10, Math.min(240, Math.round(seq.bpm)));
+}
+
+export type StepSeqStepMode =
+  | 'Norm'
+  | 'Gld1'
+  | 'Gld2'
+  | 'Gld3'
+  | 'Mute'
+  | 'Pass'
+  | 'Rset';
+
+export const STEP_SEQ_STEP_MODES: StepSeqStepMode[] = [
+  'Norm', 'Gld1', 'Gld2', 'Gld3', 'Mute', 'Pass', 'Rset',
+];
+
+export const STEP_SEQ_STEP_MODE_LABELS: Record<StepSeqStepMode, string> = {
+  Norm: 'Normal',
+  Gld1: 'Glide 1',
+  Gld2: 'Glide 2',
+  Gld3: 'Glide 3',
+  Mute: 'Mute',
+  Pass: 'Pass (Skip)',
+  Rset: 'Reset (Loop)',
+};
+
+export const STEP_SEQ_MODE_TO_NRPN: Record<StepSeqStepMode, number> = {
+  Norm: 0,
+  Gld1: 1,
+  Gld2: 2,
+  Gld3: 3,
+  Mute: 4,
+  Pass: 5,
+  Rset: 6,
+};
+
+export function nrpnToStepSeqMode(val: number | undefined, defaultMode: StepSeqStepMode = 'Norm'): StepSeqStepMode {
+  if (typeof val !== 'number') return defaultMode;
+  return STEP_SEQ_STEP_MODES[val] ?? defaultMode;
+}
+
+export function stepSeqModeToNrpn(mode: StepSeqStepMode): number {
+  return STEP_SEQ_MODE_TO_NRPN[mode] ?? 0;
+}

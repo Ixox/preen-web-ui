@@ -134,6 +134,16 @@
     "arpeggiator": "Arpégiateur",
     "imIndex": "Index de modulation",
     "noLinks": "Aucune liaison de modulation",
+    "loopLength": "Longueur boucle",
+    "stepModes": {
+      "Norm": "Normal",
+      "Gld1": "Glide 1",
+      "Gld2": "Glide 2",
+      "Gld3": "Glide 3",
+      "Mute": "Muet",
+      "Pass": "Saut (Pass)",
+      "Rset": "Reset (Boucle)"
+    },
     "break": "Coupure",
     "gate": "Porte",
     "clockSource": "Horloge",

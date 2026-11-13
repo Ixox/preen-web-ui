@@ -134,6 +134,16 @@
     "arpeggiator": "Arpeggiator",
     "imIndex": "Modulation Index",
     "noLinks": "No modulation links",
+    "loopLength": "Loop Length",
+    "stepModes": {
+      "Norm": "Normal",
+      "Gld1": "Glide 1",
+      "Gld2": "Glide 2",
+      "Gld3": "Glide 3",
+      "Mute": "Mute",
+      "Pass": "Pass (Skip)",
+      "Rset": "Reset (Loop)"
+    },
     "break": "Break",
     "gate": "Gate",
     "clockSource": "Clock",
