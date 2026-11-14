@@ -544,19 +544,21 @@ describe('Step Sequencer Modes & Loop Length (MSB=5/6) — senders', () => {
     sendStepSequencerMode(1, 7, 'Pass', 1);
     sendStepSequencerMode(1, 8, '1/32', 1);
     sendStepSequencerMode(1, 9, '1/64', 1);
-    sendStepSequencerMode(1, 15, 'Rset', 1);
+    sendStepSequencerMode(1, 14, 'Alt2', 1);
+    sendStepSequencerMode(1, 15, 'Alt3', 1);
     await flushQueue();
 
     const nrpns = allSentNRPNs();
     expect(nrpns).toEqual([
       { paramMSB: 5, paramLSB: 0, valueMSB: 0, valueLSB: 0 },
       { paramMSB: 5, paramLSB: 4, valueMSB: 0, valueLSB: 4 },
-      { paramMSB: 5, paramLSB: 5, valueMSB: 0, valueLSB: 7 },
-      { paramMSB: 5, paramLSB: 6, valueMSB: 0, valueLSB: 9 },
+      { paramMSB: 5, paramLSB: 5, valueMSB: 0, valueLSB: 6 },
+      { paramMSB: 5, paramLSB: 6, valueMSB: 0, valueLSB: 8 },
       { paramMSB: 6, paramLSB: 7, valueMSB: 0, valueLSB: 5 },
-      { paramMSB: 6, paramLSB: 8, valueMSB: 0, valueLSB: 10 },
-      { paramMSB: 6, paramLSB: 9, valueMSB: 0, valueLSB: 12 },
-      { paramMSB: 6, paramLSB: 15, valueMSB: 0, valueLSB: 6 },
+      { paramMSB: 6, paramLSB: 8, valueMSB: 0, valueLSB: 9 },
+      { paramMSB: 6, paramLSB: 9, valueMSB: 0, valueLSB: 11 },
+      { paramMSB: 6, paramLSB: 14, valueMSB: 0, valueLSB: 12 },
+      { paramMSB: 6, paramLSB: 15, valueMSB: 0, valueLSB: 13 },
     ]);
   });
 
@@ -610,15 +612,19 @@ describe('Modulation Matrix destinations (matrixTargetOrder & Note+)', () => {
     vi.useRealTimers();
   });
 
-  it('includes Note+ at NRPN ID 66 and defines a 67-item bijection in MATRIX_DEST_ORDER', () => {
-    expect(MATRIX_DEST_NAMES).toHaveLength(67);
+  it('includes Note+ (66) and stp1L/stp2L (67/68) and defines a 69-item bijection in MATRIX_DEST_ORDER', () => {
+    expect(MATRIX_DEST_NAMES).toHaveLength(69);
     expect(MATRIX_DEST_NAMES[66]).toBe('Note+');
-    expect(MATRIX_DEST_ORDER).toHaveLength(67);
-    expect(new Set(MATRIX_DEST_ORDER).size).toBe(67);
+    expect(MATRIX_DEST_NAMES[67]).toBe('stp1L');
+    expect(MATRIX_DEST_NAMES[68]).toBe('stp2L');
+    expect(MATRIX_DEST_ORDER).toHaveLength(69);
+    expect(new Set(MATRIX_DEST_ORDER).size).toBe(69);
     expect([...MATRIX_DEST_ORDER].sort((a, b) => a - b)).toEqual(
-      Array.from({ length: 67 }, (_, i) => i)
+      Array.from({ length: 69 }, (_, i) => i)
     );
     expect(MATRIX_DEST_ORDERED_NAMES[26]).toBe('Note+');
+    expect(MATRIX_DEST_ORDERED_NAMES[61]).toBe('stp1L');
+    expect(MATRIX_DEST_ORDERED_NAMES[62]).toBe('stp2L');
     expect(MATRIX_DEST_ORDERED_NAMES[6]).toBe('Mtx FB');
   });
 

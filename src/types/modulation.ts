@@ -65,7 +65,7 @@ export interface LFOEnvelope {
  */
 export interface StepSequencer {
   steps: number[];              // 16 valeurs (0-100)
-  stepModes?: StepSeqStepMode[]; // 16 modes (Norm, Gld1-3, Mute, Pass, Rset) (NRPN MSB=5/6, LSB=0-15)
+  stepModes?: StepSeqStepMode[]; // 16 modes (0..13: Norm, Gld1-3, Mute, Pass, Lfo1-3, 1/32-1/64, Alt2-3) (NRPN MSB=5/6, LSB=0-15)
   loopLength?: number;          // 0-16 (NRPN MSB=5/6, LSB=16)
   gate: number;                 // Gate global (0-1, 0-100%)
   syncMode: StepSeqSyncMode;    // Synchronisation interne ou externe (MIDI Clock)

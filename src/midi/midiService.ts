@@ -276,7 +276,7 @@ export function sendStepSequencerStep(
  * Send a step mode for the step sequencer via NRPN (MSB=5 for Seq1, MSB=6 for Seq2)
  * @param seqIndex 0 or 1 (StepSeq1 or StepSeq2)
  * @param stepIndex 0-15 (step number)
- * @param mode 'Norm' | 'Gld1' | 'Gld2' | 'Gld3' | 'Mute' | 'Pass' | 'Rset' (0-6)
+ * @param mode 'Norm' | 'Gld1' | 'Gld2' | 'Gld3' | 'Mute' | 'Pass' | 'Lfo1' | 'Lfo2' | 'Lfo3' | '1/32' | '1/48' | '1/64' | 'Alt2' | 'Alt3' (0-13)
  * @param channel MIDI channel (default: currentChannel)
  */
 export function sendStepSequencerMode(
@@ -309,7 +309,7 @@ export function sendStepSequencerMode(
 /**
  * Send step sequencer loop length via NRPN (MSB=5 for Seq1, MSB=6 for Seq2, LSB=16)
  * @param seqIndex 0 or 1 (StepSeq1 or StepSeq2)
- * @param length 0-16 (1-16 sets Rset at length-1; 0 clears all Rset)
+ * @param length 0-16 (1-16 sets loop length; 0 resets to 16)
  * @param channel MIDI channel (default: currentChannel)
  */
 export function sendStepSequencerLoopLength(

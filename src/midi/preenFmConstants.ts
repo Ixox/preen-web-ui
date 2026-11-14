@@ -403,11 +403,13 @@ export const MATRIX_DEST_NAMES = [
   'o5 Wp',   // 64 - OSC5_WARP
   'o6 Wp',   // 65 - OSC6_WARP
   'Note+',   // 66 - MTX_DEST_NOTE_ADD
+  'stp1L',   // 67 - LFOSEQ1_LENGTH
+  'stp2L',   // 68 - LFOSEQ2_LENGTH
 ] as const;
 
 /**
  * UI display order for matrix destinations (`matrixTargetOrder[]` in FMDisplayEditor.cpp).
- * Maps display index (0..66) -> NRPN ID (index in `MATRIX_DEST_NAMES`).
+ * Maps display index (0..68) -> NRPN ID (index in `MATRIX_DEST_NAMES`).
  */
 export const MATRIX_DEST_ORDER = [
   0, 1, 2, 3, 4, 5, 48, 6,
@@ -417,7 +419,7 @@ export const MATRIX_DEST_ORDER = [
   60, 61, 62, 63, 64, 65,
   24, 25, 26, 27, 28, 29, 30, 45, 44, 46, 31, 47,
   32, 33, 34, 35,
-  36, 37, 38, 39, 40, 41,
+  36, 37, 38, 39, 40, 41, 67, 68,
   42, 49, 50, 51, 52, 53,
 ] as const;
 
@@ -810,17 +812,19 @@ export type StepSeqStepMode =
   | 'Gld3'
   | 'Mute'
   | 'Pass'
-  | 'Rset'
   | 'Lfo1'
   | 'Lfo2'
   | 'Lfo3'
   | '1/32'
   | '1/48'
-  | '1/64';
+  | '1/64'
+  | 'Alt2'
+  | 'Alt3';
 
 export const STEP_SEQ_STEP_MODES: StepSeqStepMode[] = [
-  'Norm', 'Gld1', 'Gld2', 'Gld3', 'Mute', 'Pass', 'Rset',
+  'Norm', 'Gld1', 'Gld2', 'Gld3', 'Mute', 'Pass',
   'Lfo1', 'Lfo2', 'Lfo3', '1/32', '1/48', '1/64',
+  'Alt2', 'Alt3',
 ];
 
 export const STEP_SEQ_STEP_MODE_LABELS: Record<StepSeqStepMode, string> = {
@@ -830,13 +834,14 @@ export const STEP_SEQ_STEP_MODE_LABELS: Record<StepSeqStepMode, string> = {
   Gld3: 'Glide 3',
   Mute: 'Mute',
   Pass: 'Pass (Skip)',
-  Rset: 'Reset (Loop)',
   Lfo1: 'LFO 1 Trig',
   Lfo2: 'LFO 2 Trig',
   Lfo3: 'LFO 3 Trig',
   '1/32': 'Ratchet ×2',
   '1/48': 'Ratchet ×3',
   '1/64': 'Ratchet ×4',
+  Alt2: 'Alt 1/2',
+  Alt3: 'Alt 1/3',
 };
 
 export const STEP_SEQ_MODE_TO_NRPN: Record<StepSeqStepMode, number> = {
@@ -846,13 +851,14 @@ export const STEP_SEQ_MODE_TO_NRPN: Record<StepSeqStepMode, number> = {
   Gld3: 3,
   Mute: 4,
   Pass: 5,
-  Rset: 6,
-  Lfo1: 7,
-  Lfo2: 8,
-  Lfo3: 9,
-  '1/32': 10,
-  '1/48': 11,
-  '1/64': 12,
+  Lfo1: 6,
+  Lfo2: 7,
+  Lfo3: 8,
+  '1/32': 9,
+  '1/48': 10,
+  '1/64': 11,
+  Alt2: 12,
+  Alt3: 13,
 };
 
 export function nrpnToStepSeqMode(val: number | undefined, defaultMode: StepSeqStepMode = 'Norm'): StepSeqStepMode {

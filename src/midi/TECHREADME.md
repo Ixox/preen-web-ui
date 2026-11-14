@@ -515,18 +515,18 @@ Les Step Sequencers 1 & 2 sont contrôlés **exclusivement via NRPN** (aucun CC 
 
 | `paramLSB` | Fonction | `valueLSB` | Description |
 |:---:|:---|:---:|:---|
-| **0..15** | Mode du pas 1 à 16 | **0..12** | `0`: `Norm`, `1`: `Gld1`, `2`: `Gld2`, `3`: `Gld3`, `4`: `Mute`, `5`: `Pass` (*step skip*), `6`: `Rset` (*loop reset*), `7`: `Lfo1`, `8`: `Lfo2`, `9`: `Lfo3` (*trig/ratchet piloté par LFO > 0*), `10`: `1/32` (*ratchet ×2*), `11`: `1/48` (*ratchet ×3*), `12`: `1/64` (*ratchet ×4*) |
-| **16** | Loop Length (Last Step) | **0..16** | `1..16` place `Rset` sur le pas `length - 1` et remet les autres `Rset` à `Norm` ; `0` efface tous les `Rset` |
+| **0..15** | Mode du pas 1 à 16 | **0..13** | `0`: `Norm`, `1`: `Gld1`, `2`: `Gld2`, `3`: `Gld3`, `4`: `Mute`, `5`: `Pass` (*step skip*), `6`: `Lfo1`, `7`: `Lfo2`, `8`: `Lfo3` (*trig/ratchet piloté par LFO > 0*), `9`: `1/32` (*ratchet ×2*), `10`: `1/48` (*ratchet ×3*), `11`: `1/64` (*ratchet ×4*), `12`: `Alt2` (*joué 1 boucle sur 2*), `13`: `Alt3` (*joué 1 boucle sur 3*) |
+| **16** | Loop Length (`Len `, `StepSequencerParams::loopLength`) | **0..16** | `1..16` fixe la longueur de boucle (flèche rouge de retour vers la gauche affichée sous les pas actifs, point jaune au-dessus du pas sélectionné ; modulable par `stp1L`/`stp2L` dans la matrice à l'échelle `× 12`, borné à `1..16`) ; `0` remet la longueur à `16` |
 
 - **Sortie linéaire & compatibilité `Note+` / Scala / `Osc Freq`** : la sortie d'un Step Sequencer est linéaire (`stepVal / 12.0`, soit `0.0` à `1.25`, avec `12 = 1.0`), ce qui permet de piloter `Note+` (`MTX_DEST_NOTE_ADD`) directement en degrés de la gamme Scala active (ou en demi-tons) avec un multiplicateur `1.0`. Lorsque la matrice route `StepSeq 1/2` vers `OSC1_FREQ..ALL_OSC_FREQ`, le firmware convertit automatiquement en `(2^src - 1) * mul` pour préserver la justesse des anciens patches.
-- **Dump & MIDI Out bidirectionnel** : `sendCurrentPatchAsNrpns` émet à la fois les valeurs (`MSB = 2/3`) et les modes (`MSB = 5/6`) des 16 pas. En mode `MIDI Sends = NRPN`, l'édition de la valeur ou du mode (`ENCODER_STEPSEQ_MODE`) sur le synthé émet le NRPN correspondant.
+- **Dump & MIDI Out bidirectionnel** : `sendCurrentPatchAsNrpns` émet les valeurs (`MSB = 2/3`), les modes des 16 pas (`MSB = 5/6, LSB = 0..15`) et la longueur de boucle (`MSB = 5/6, LSB = 16`). En mode `MIDI Sends = NRPN`, l'édition de la valeur, du mode (`ENCODER_STEPSEQ_MODE`) ou de la longueur de boucle (`ENCODER_STEPSEQ_LEN`) sur le synthé émet le NRPN correspondant.
 - **Zéro collision** : les modes et longueurs de boucle sont isolés sur `paramMSB = 5` et `6` afin de ne pas entrer en conflit avec les paramètres de synthèse mappés sur `paramMSB = 2` (`LSB >= 16`).
 
 ---
 
 ### Destinations de la Matrice (`matrixTargetOrder`)
 
-Les **67 destinations** (`DESTINATION_MAX = 67`, `Common.h`) conservent leur **ID NRPN historique** (index dans `DestinationEnum`), mais sont regroupées par catégorie dans `matrixTargetOrder[]` (`FMDisplayEditor.cpp`) pour l'affichage UI/éditeur :
+Les **69 destinations** (`DESTINATION_MAX = 69`, `Common.h`) conservent leur **ID NRPN historique** (index dans `DestinationEnum`), mais sont regroupées par catégorie dans `matrixTargetOrder[]` (`FMDisplayEditor.cpp`) pour l'affichage UI/éditeur :
 
 | Ordre | ID NRPN | Nom écran | Enum firmware (`DestinationEnum`) | Groupe |
 |:---:|:---:|:---:|:---|:---|
@@ -591,12 +591,14 @@ Les **67 destinations** (`DESTINATION_MAX = 67`, `Common.h`) conservent leur **I
 | 58 | `39` | `env2S` | `LFOENV2_SILENCE` | Modulateurs |
 | 59 | `40` | `stp1G` | `LFOSEQ1_GATE` | Modulateurs |
 | 60 | `41` | `stp2G` | `LFOSEQ2_GATE` | Modulateurs |
-| 61 | `42` | `Fx1 1` | `FILTER1_PARAM1` | Filtres / FX 1 & 2 |
-| 62 | `49` | `Fx1 2` | `FILTER1_PARAM2` | Filtres / FX 1 & 2 |
-| 63 | `50` | `fx1Am` | `FILTER1_AMP` | Filtres / FX 1 & 2 |
-| 64 | `51` | `Fx2 1` | `FILTER2_PARAM1` | Filtres / FX 1 & 2 |
-| 65 | `52` | `Fx2 2` | `FILTER2_PARAM2` | Filtres / FX 1 & 2 |
-| 66 | `53` | `Fx2Am` | `FILTER2_AMP` | Filtres / FX 1 & 2 |
+| 61 | `67` | `stp1L` | `LFOSEQ1_LENGTH` | Modulateurs |
+| 62 | `68` | `stp2L` | `LFOSEQ2_LENGTH` | Modulateurs |
+| 63 | `42` | `Fx1 1` | `FILTER1_PARAM1` | Filtres / FX 1 & 2 |
+| 64 | `49` | `Fx1 2` | `FILTER1_PARAM2` | Filtres / FX 1 & 2 |
+| 65 | `50` | `fx1Am` | `FILTER1_AMP` | Filtres / FX 1 & 2 |
+| 66 | `51` | `Fx2 1` | `FILTER2_PARAM1` | Filtres / FX 1 & 2 |
+| 67 | `52` | `Fx2 2` | `FILTER2_PARAM2` | Filtres / FX 1 & 2 |
+| 68 | `53` | `Fx2Am` | `FILTER2_AMP` | Filtres / FX 1 & 2 |
 
 ---
 

@@ -743,7 +743,7 @@ export class PreenFM3Parser {
               steps.push(50);
             }
 
-            // Modes NRPN: MSB=5 (Seq1) ou 6 (Seq2), LSB=0-15 (0-6)
+            // Modes NRPN: MSB=5 (Seq1) ou 6 (Seq2), LSB=0-15 (0-13)
             const rawMode = this.getValue(seqIdx + 5, i);
             stepModes.push(
               typeof rawMode === 'number'
@@ -751,11 +751,11 @@ export class PreenFM3Parser {
                 : 'Norm'
             );
           }
-          // Loop length: MSB=5/6, LSB=16
+          // Loop length: MSB=5/6, LSB=16 (1..16 ; 0 remet à 16)
           const rawLoopLength = this.getValue(seqIdx + 5, 16);
           const loopLength = typeof rawLoopLength === 'number'
-            ? Math.max(0, Math.min(16, rawLoopLength))
-            : (stepModes.indexOf('Rset') >= 0 ? stepModes.indexOf('Rset') + 1 : 16);
+            ? (rawLoopLength === 0 ? 16 : Math.max(1, Math.min(16, rawLoopLength)))
+            : 16;
 
           // Gate et BPM / SyncMode (MSB=1, LSB=61/62 et 60/64)
           const gate = (this.getValue(1, seqIdx === 0 ? 61 : 62) ?? 50) / 100;

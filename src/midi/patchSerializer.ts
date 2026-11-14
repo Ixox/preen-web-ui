@@ -1061,7 +1061,7 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
         push(nrpnMsg(msbModes, i, modeValue));
       }
       // Loop length (MSB=5/6, LSB=16)
-      const loopLen = seqs[s].loopLength ?? (modes?.indexOf('Rset') !== undefined && modes.indexOf('Rset') >= 0 ? modes.indexOf('Rset') + 1 : 16);
+      const loopLen = seqs[s].loopLength ?? 16;
       push(nrpnMsg(msbModes, 16, Math.max(0, Math.min(16, loopLen))));
     }
   }

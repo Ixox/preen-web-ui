@@ -142,13 +142,14 @@
       "Gld3": "Glide 3",
       "Mute": "Muet",
       "Pass": "Saut (Pass)",
-      "Rset": "Reset (Boucle)",
       "Lfo1": "Trig LFO 1",
       "Lfo2": "Trig LFO 2",
       "Lfo3": "Trig LFO 3",
       "1/32": "Ratchet ×2",
       "1/48": "Ratchet ×3",
-      "1/64": "Ratchet ×4"
+      "1/64": "Ratchet ×4",
+      "Alt2": "Alt 1/2",
+      "Alt3": "Alt 1/3"
     },
     "break": "Coupure",
     "gate": "Porte",
