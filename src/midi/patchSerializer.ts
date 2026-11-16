@@ -979,6 +979,9 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
     push(nrpnMsg(1, baseLsb + 3, encodeLfoKeysync(lfo.keysync)));
   }
 
+  // ── Engine Voice Priority (NRPN 276 -> MSB=2, LSB=20) ───────────────────────
+  push(nrpnMsg(2, 20, Math.max(0, Math.min(4, Math.round(patch.global.voicePriority ?? 0)))));
+
   // ── LFO Env1 (MSB=1, LSB=52-55) & Curves (MSB=2, LSB=24-25 / idx 280-281) ─
   const lfoEnv1 = patch.lfoEnvelopes?.[0];
   if (lfoEnv1) {

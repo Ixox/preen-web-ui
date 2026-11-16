@@ -1197,11 +1197,27 @@ export function sendTimbreDynamics(profile: number, channel: number = currentCha
 
 /**
  * Send Engine Decimation / Lo-fi effect (CC 42)
- * 0..18: 1-bit..19-bit, 19: Full (default), 20: HQ
+ * 0..18: 1-bit..19-bit, 19: FULL (default), 20: HQx2
  */
 export function sendEngineDecimation(decimation: number, channel: number = currentChannel) {
   const clamped = Math.max(0, Math.min(20, Math.round(decimation)));
   sendCC(PREENFM3_CC.ENGINE_DECIMATION, clamped, channel);
+}
+
+/**
+ * Send Engine Voice Priority (NRPN 276 -> paramMSB = 2, paramLSB = 20)
+ * 0: Last, 1: High, 2: Low, 3: BassP, 4: Cycl
+ */
+export function sendVoicePriority(priority: number, channel: number = currentChannel) {
+  const clamped = Math.max(0, Math.min(4, Math.round(priority)));
+  const nrpn = {
+    paramMSB: 2,
+    paramLSB: 20,
+    valueMSB: 0,
+    valueLSB: clamped,
+  };
+  console.log('📤 Sending Voice Priority via NRPN:', { priority: clamped, nrpn, channel });
+  sendNRPN(nrpn, channel);
 }
 
 /**

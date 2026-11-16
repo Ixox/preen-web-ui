@@ -840,12 +840,14 @@ export class PreenFM3Parser {
       // import type { Filter1Type, Filter2Type } from '../types/patch';
       global: (() => {
         const playModeRaw = this.getValue(0, 2);
+        const voicePriorityRaw = this.getValue(2, 20);
         const dryWetRaw = this.getValue(4, 0);
         const dynamicsRaw = this.getValue(4, 1);
         const mfxReturnRaw = this.getValue(4, 2);
         const mfxPresetRaw = this.getValue(4, 3);
 
         const playMode = typeof playModeRaw === 'number' && playModeRaw >= 0 && playModeRaw <= 2 ? playModeRaw : 1;
+        const voicePriority = typeof voicePriorityRaw === 'number' && voicePriorityRaw >= 0 && voicePriorityRaw <= 4 ? Math.round(voicePriorityRaw) : 0;
         const reverbDryWet = typeof dryWetRaw === 'number' ? Math.max(0, Math.min(1, dryWetRaw / 100)) : 0.2;
         const dynamics = typeof dynamicsRaw === 'number' ? Math.max(0, Math.min(6, Math.round(dynamicsRaw))) : 0;
         const mfxReturn = typeof mfxReturnRaw === 'number' ? Math.max(0, Math.min(1, mfxReturnRaw / 100)) : 0.5;
@@ -864,6 +866,7 @@ export class PreenFM3Parser {
           fineTune: 0,
           polyphony: voices,
           playMode,
+          voicePriority,
           glideTime: glide,
           bendRange: 2,
           velocitySensitivity: velocity,

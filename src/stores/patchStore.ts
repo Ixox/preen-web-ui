@@ -12,7 +12,7 @@ import {
   sendPatchName, sendFilterType, sendFilterParam1, sendFilterParam2, sendFilterGain,
   sendFilter2Type, sendFilter2Param1, sendFilter2Param2, sendFilter2Gain,
   sendMixerVolume, sendMixerPan, sendTimbreDynamics, sendTimbreDryWet, sendEngineDecimation,
-  sendMfxReturnLevel, sendMfxPreset
+  sendVoicePriority, sendMfxReturnLevel, sendMfxPreset
 } from '../midi/midiService';
 import { sanitizePatchName } from '../utils/patchNameUtils';
 
@@ -93,12 +93,13 @@ const createDefaultPatch = (): Patch => ({
     fineTune: 0,
     polyphony: 8,
     playMode: 1, // 0: Mono, 1: Poly, 2: Unison
+    voicePriority: 0, // 0: Last, 1: High, 2: Low, 3: BassP, 4: Cycl
     glideTime: 0,
     bendRange: 2,
     velocitySensitivity: 8, // Valeur médiane 0-16
     dynamics: 0, // 0: Off
     reverbDryWet: 0.2, // 20%
-    decimation: 19, // 19: Full (FM_DECIMATION_CURRENT)
+    decimation: 19, // 19: FULL (FM_DECIMATION_CURRENT)
     mfxReturn: 0.5,
     mfxPreset: 0,
   },
@@ -1047,6 +1048,9 @@ export const updateGlobal = (changes: Partial<Patch['global']>) => {
   }
   if (changes.playMode !== undefined) {
     sendPlayModeCC(changes.playMode);
+  }
+  if (changes.voicePriority !== undefined) {
+    sendVoicePriority(changes.voicePriority);
   }
   if (changes.glideTime !== undefined) {
     sendGlideTime(changes.glideTime);

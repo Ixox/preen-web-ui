@@ -187,8 +187,8 @@ export const ENGINE_DECIMATION_MODES = [
   '17-bit',
   '18-bit',
   '19-bit',
-  'Full',
-  'HQ',
+  'FULL',
+  'HQx2',
 ] as const;
 export type EngineDecimationMode = typeof ENGINE_DECIMATION_MODES[number];
 export const ENGINE_DECIMATION_DEFAULT = 19; // FM_DECIMATION_FULL = FM_DECIMATION_CURRENT
@@ -199,6 +199,15 @@ export const PLAY_MODES = [
   'Unison',
 ] as const;
 export type PlayMode = typeof PLAY_MODES[number];
+
+export const VOICE_PRIORITIES = [
+  'Last',
+  'High',
+  'Low',
+  'BassP',
+  'Cycl',
+] as const;
+export type VoicePriority = typeof VOICE_PRIORITIES[number];
 
 export const MFX_REVERB_PRESETS = [
   'XSmal1',
@@ -245,6 +254,8 @@ export const NRPN_COMMANDS = {
   TIMBRE_DYNAMICS: { paramMSB: 4, paramLSB: 1 },
   MFX_RETURN:      { paramMSB: 4, paramLSB: 2 },
   MFX_PRESET:      { paramMSB: 4, paramLSB: 3 },
+  // Engine Voice Priority (index 276 -> MSB 2, LSB 20)
+  ENGINE_VOICE_PRIORITY: { paramMSB: 2, paramLSB: 20 },
   // Free Envelope Attack & Release Curves (indices 280..283 -> MSB 2, LSB 24..27)
   FREE_ENV1_ATK_CRV: { paramMSB: 2, paramLSB: 24 },
   FREE_ENV1_REL_CRV: { paramMSB: 2, paramLSB: 25 },
@@ -405,11 +416,16 @@ export const MATRIX_DEST_NAMES = [
   'Note+',   // 66 - MTX_DEST_NOTE_ADD
   'stp1L',   // 67 - LFOSEQ1_LENGTH
   'stp2L',   // 68 - LFOSEQ2_LENGTH
+  'Arp+',    // 69 - MTX_DEST_ARP_NOTE
+  'ArpVl',   // 70 - MTX_DEST_ARP_VEL
+  'ArpGt',   // 71 - MTX_DEST_ARP_GATE
+  'ArpDv',   // 72 - MTX_DEST_ARP_DIV
+  'ArpRt',   // 73 - MTX_DEST_ARP_RATCHET
 ] as const;
 
 /**
  * UI display order for matrix destinations (`matrixTargetOrder[]` in FMDisplayEditor.cpp).
- * Maps display index (0..68) -> NRPN ID (index in `MATRIX_DEST_NAMES`).
+ * Maps display index (0..73) -> NRPN ID (index in `MATRIX_DEST_NAMES`).
  */
 export const MATRIX_DEST_ORDER = [
   0, 1, 2, 3, 4, 5, 48, 6,
@@ -420,6 +436,7 @@ export const MATRIX_DEST_ORDER = [
   24, 25, 26, 27, 28, 29, 30, 45, 44, 46, 31, 47,
   32, 33, 34, 35,
   36, 37, 38, 39, 40, 41, 67, 68,
+  69, 70, 71, 72, 73,
   42, 49, 50, 51, 52, 53,
 ] as const;
 

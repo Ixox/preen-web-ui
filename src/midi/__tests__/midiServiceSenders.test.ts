@@ -49,6 +49,7 @@ import {
   sendTimbreDryWet,
   sendTimbreDynamics,
   sendEngineDecimation,
+  sendVoicePriority,
   sendPlayModeCC,
   sendMfxReturnLevel,
   sendMfxPreset,
@@ -612,28 +613,46 @@ describe('Modulation Matrix destinations (matrixTargetOrder & Note+)', () => {
     vi.useRealTimers();
   });
 
-  it('includes Note+ (66) and stp1L/stp2L (67/68) and defines a 69-item bijection in MATRIX_DEST_ORDER', () => {
-    expect(MATRIX_DEST_NAMES).toHaveLength(69);
+  it('includes Note+ (66), stp1L/stp2L (67/68), and Arp destinations (69..73) in a 74-item bijection in MATRIX_DEST_ORDER', () => {
+    expect(MATRIX_DEST_NAMES).toHaveLength(74);
     expect(MATRIX_DEST_NAMES[66]).toBe('Note+');
     expect(MATRIX_DEST_NAMES[67]).toBe('stp1L');
     expect(MATRIX_DEST_NAMES[68]).toBe('stp2L');
-    expect(MATRIX_DEST_ORDER).toHaveLength(69);
-    expect(new Set(MATRIX_DEST_ORDER).size).toBe(69);
+    expect(MATRIX_DEST_NAMES[69]).toBe('Arp+');
+    expect(MATRIX_DEST_NAMES[70]).toBe('ArpVl');
+    expect(MATRIX_DEST_NAMES[71]).toBe('ArpGt');
+    expect(MATRIX_DEST_NAMES[72]).toBe('ArpDv');
+    expect(MATRIX_DEST_NAMES[73]).toBe('ArpRt');
+    expect(MATRIX_DEST_ORDER).toHaveLength(74);
+    expect(new Set(MATRIX_DEST_ORDER).size).toBe(74);
     expect([...MATRIX_DEST_ORDER].sort((a, b) => a - b)).toEqual(
-      Array.from({ length: 69 }, (_, i) => i)
+      Array.from({ length: 74 }, (_, i) => i)
     );
     expect(MATRIX_DEST_ORDERED_NAMES[26]).toBe('Note+');
     expect(MATRIX_DEST_ORDERED_NAMES[61]).toBe('stp1L');
     expect(MATRIX_DEST_ORDERED_NAMES[62]).toBe('stp2L');
+    expect(MATRIX_DEST_ORDERED_NAMES[63]).toBe('Arp+');
+    expect(MATRIX_DEST_ORDERED_NAMES[67]).toBe('ArpRt');
     expect(MATRIX_DEST_ORDERED_NAMES[6]).toBe('Mtx FB');
   });
 
-  it('sends Note+ (ID 66) via sendModulationMatrixParam', async () => {
+  it('sends Note+ (ID 66) and ArpRt (ID 73) via sendModulationMatrixParam', async () => {
     sendModulationMatrixParam(0, 'destination1', 'Note+', 1);
+    sendModulationMatrixParam(0, 'destination2', 'ArpRt', 1);
     await flushQueue();
 
     expect(allSentNRPNs()).toEqual([
       { paramMSB: 0, paramLSB: 118, valueMSB: 0, valueLSB: 66 },
+      { paramMSB: 0, paramLSB: 119, valueMSB: 0, valueLSB: 73 },
+    ]);
+  });
+
+  it('sends Engine Voice Priority via NRPN [2, 20] clamped to 0..4', async () => {
+    sendVoicePriority(3, 1); // BassP
+    await flushQueue();
+
+    expect(allSentNRPNs()).toEqual([
+      { paramMSB: 2, paramLSB: 20, valueMSB: 0, valueLSB: 3 },
     ]);
   });
 });

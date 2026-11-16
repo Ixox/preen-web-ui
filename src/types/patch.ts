@@ -211,12 +211,13 @@ export interface Patch {
     fineTune: number;         // Accord fin en cents
     polyphony: number;        // Nombre de voix de polyphonie
     playMode?: number;        // Mode de jeu (CC 43: 0: Mono, 1: Poly, 2: Unison)
+    voicePriority?: number;   // Priorité de voix (NRPN 276 [2,20]: 0: Last, 1: High, 2: Low, 3: BassP, 4: Cycl)
     glideTime: number;        // Portamento (CC 5)
     bendRange: number;        // Plage de pitch bend
     velocitySensitivity: number; // Sensibilité globale à la vélocité (0-16)
     dynamics?: number;        // CC 41: Profil dynamique (0: Off, 1: Glue, 2: Punch, 3: Tube, 4: Limit, 5: Drive, 6: Fuzz)
     reverbDryWet?: number;    // CC 40: Reverb Dry/Wet (0.0 à 1.0)
-    decimation?: number;      // CC 42: Décimation (0..18: 1-bit..19-bit, 19: Full, 20: HQ)
+    decimation?: number;      // CC 42: Décimation (0..18: 1-bit..19-bit, 19: FULL, 20: HQx2)
     mfxReturn?: number;       // CC 44: Master FX Return Level (0.0 à 1.0)
     mfxPreset?: number;       // CC 45 / NRPN [4,3]: Master FX Preset (0 à 18)
   };

@@ -9,6 +9,7 @@ import {
   ENGINE_DECIMATION_MODES,
   ENGINE_DECIMATION_DEFAULT,
   PLAY_MODES,
+  VOICE_PRIORITIES,
   MFX_REVERB_PRESETS,
 } from '../../midi/preenFmConstants';
 
@@ -192,6 +193,7 @@ export const CarrierControls: React.FC = () => {
   const reverbDryWetValue = global.reverbDryWet ?? 0.2;
   const decimationValue = global.decimation ?? ENGINE_DECIMATION_DEFAULT;
   const playModeValue = global.playMode ?? 1;
+  const voicePriorityValue = global.voicePriority ?? 0;
   const mfxReturnValue = global.mfxReturn ?? 0.5;
   const mfxPresetValue = global.mfxPreset ?? 0;
 
@@ -231,7 +233,7 @@ export const CarrierControls: React.FC = () => {
             </CompactSelect>
           </HeaderControlItem>
 
-          {/* CC 42: Engine Decimation (1-bit .. 19-bit, Full, HQ) */}
+          {/* CC 42: Engine Decimation (1-bit .. 19-bit, FULL, HQx2) */}
           <HeaderControlItem title="Engine Decimation lo-fi bit reduction (CC 42)">
             <CompactLabel>Decim:</CompactLabel>
             <CompactSelect
@@ -256,6 +258,21 @@ export const CarrierControls: React.FC = () => {
               {PLAY_MODES.map((mode, idx) => (
                 <option key={mode} value={idx}>
                   {mode}
+                </option>
+              ))}
+            </CompactSelect>
+          </HeaderControlItem>
+
+          {/* NRPN 276 [2,20]: Voice Priority (Last, High, Low, BassP, Cycl) */}
+          <HeaderControlItem title="Voice Priority (NRPN 276 [2,20])">
+            <CompactLabel>Prio:</CompactLabel>
+            <CompactSelect
+              value={voicePriorityValue}
+              onChange={(e) => updateGlobal({ voicePriority: Number(e.target.value) })}
+            >
+              {VOICE_PRIORITIES.map((prio, idx) => (
+                <option key={prio} value={idx}>
+                  {prio}
                 </option>
               ))}
             </CompactSelect>

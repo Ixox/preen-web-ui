@@ -87,7 +87,7 @@ Le PreenFM3 propose deux niveaux de contrôle MIDI :
 | **39** | Pan OP6 | Panoramique OP6 (-1.0 à +1.0) |
 | **40** | Timbre Dry/Wet | Reverb Dry/Wet du timbre courant (0.0 - 1.0) |
 | **41** | Timbre Dynamics | Profil de compression/saturation (0:Off, 1:Glue, 2:Punch, 3:Tube, 4:Limit, 5:Drive, 6:Fuzz) |
-| **42** | Engine Decimation | Effet lo-fi décimation (0..18: 1bit..19bit, 19: Full, 20: HQ) |
+| **42** | Engine Decimation | Effet lo-fi décimation (0..18: 1bit..19bit, 19: FULL, 20: HQx2) |
 | **43** | Play Mode | Mode de jeu (0:Mono, 1:Poly, 2:Unison) |
 | **44** | MFX Return Level | Niveau global de retour de réverbération (`reverbLevel_`) |
 | **45** | MFX Preset | Sélection du preset d'effet Master (0-18) |
@@ -182,7 +182,7 @@ Le PreenFM3 supporte 32 algorithmes FM à 6 opérateurs, 5 index de modulation (
 | **IM4** | **20** | 0-100 | `0.0f` à `10.0f` | `valeur = CC * 0.1` |
 | **IM5** | **21** | 0-100 | `0.0f` à `10.0f` | `valeur = CC * 0.1` |
 | **Feedback (IM6)** | **30** | 0-127 | `0.0f` à `1.0f` | `valeur = CC / 127.0` |
-| **Engine Decimation** | **42** | 0-20 | 0 à 20 | Entier direct (0..18: 1bit..19bit, 19: Full, 20: HQ ; >= 21 borné à 20) |
+| **Engine Decimation** | **42** | 0-20 | 0 à 20 | Entier direct (0..18: 1bit..19bit, 19: FULL, 20: HQx2 [`HQ` est legacy] ; >= 21 borné à 20) |
 | **Play Mode** | **43** | 0-127 | 0 à 2 | 0: Mono, 1: Poly, 2: Unison (`Unis`) |
 
 > [!NOTE]
@@ -499,6 +499,24 @@ const valueLSB    = valueToSend & 0x7F;        // 180 & 0x7F = 52
 
 ---
 
+### Nouveaux paramètres Engine, Courbes d'enveloppes & Arpégiateur (NRPN)
+
+En plus des paramètres historiques et des destinations matrice (`matrixTargetOrder` ci-dessous), les éléments suivants sont désormais exposés en NRPN :
+
+1. **Priorité de voix (`ROW_ENGINE_PRIORITY`, index `276`, `paramMSB = 2, paramLSB = 20`)** :
+   - `ENCODER_ENGINE_VOICE_PRIORITY` (`Prio`) : `0: Last`, `1: High`, `2: Low`, `3: BassP` (*Bass-protect*), `4: Cycl`.
+2. **Courbes d'attaque / relâchement des Free Envelopes (`ROW_LFO_ENV_CURVES`, index `280..283`, `paramMSB = 2, paramLSB = 24..27`)** :
+   - `280` (`LSB 24`) : Free Env 1 Attack Curve
+   - `281` (`LSB 25`) : Free Env 1 Release Curve
+   - `282` (`LSB 26`) : Free Env 2 Attack Curve
+   - `283` (`LSB 27`) : Free Env 2 Release Curve
+3. **Courbes des enveloppes d'opérateurs (`NRPN 300..323`, `paramMSB = 2, paramLSB = 44..67`)** :
+   - 6 enveloppes (`env1`..`env6`) × 4 segments (`0: Attack`, `1: Decay`, `2: Sustain`, `3: Release`), indexés par `300 + envNum * 4 + pointNum` (`setEnvelopeCurvePointFromMidi`).
+4. **Arpégiateur (`ROW_ARPEGGIATOR1..3` & pas d'arpège)** :
+   - En complément des CC 100..105, les modes de pas d'arpège étendus supportent `Norm`, `Tie `, `Oct+`, `Rt*2` (*Ratchet*), `Chrd` (*Chord*) et `Slap` (*Strumming*), et la matrice expose `Arp+ `, `ArpVl`, `ArpGt`, `ArpDv`, `ArpRt` (IDs NRPN `69..73`).
+
+---
+
 ### Step Sequencers
 
 Les Step Sequencers 1 & 2 sont contrôlés **exclusivement via NRPN** (aucun CC dédié) :
@@ -526,7 +544,7 @@ Les Step Sequencers 1 & 2 sont contrôlés **exclusivement via NRPN** (aucun CC 
 
 ### Destinations de la Matrice (`matrixTargetOrder`)
 
-Les **69 destinations** (`DESTINATION_MAX = 69`, `Common.h`) conservent leur **ID NRPN historique** (index dans `DestinationEnum`), mais sont regroupées par catégorie dans `matrixTargetOrder[]` (`FMDisplayEditor.cpp`) pour l'affichage UI/éditeur :
+Les **74 destinations** (`DESTINATION_MAX = 74`, `Common.h`) conservent leur **ID NRPN historique** (index dans `DestinationEnum`), mais sont regroupées par catégorie dans `matrixTargetOrder[]` (`FMDisplayEditor.cpp`) pour l'affichage UI/éditeur :
 
 | Ordre | ID NRPN | Nom écran | Enum firmware (`DestinationEnum`) | Groupe |
 |:---:|:---:|:---:|:---|:---|
@@ -593,12 +611,17 @@ Les **69 destinations** (`DESTINATION_MAX = 69`, `Common.h`) conservent leur **I
 | 60 | `41` | `stp2G` | `LFOSEQ2_GATE` | Modulateurs |
 | 61 | `67` | `stp1L` | `LFOSEQ1_LENGTH` | Modulateurs |
 | 62 | `68` | `stp2L` | `LFOSEQ2_LENGTH` | Modulateurs |
-| 63 | `42` | `Fx1 1` | `FILTER1_PARAM1` | Filtres / FX 1 & 2 |
-| 64 | `49` | `Fx1 2` | `FILTER1_PARAM2` | Filtres / FX 1 & 2 |
-| 65 | `50` | `fx1Am` | `FILTER1_AMP` | Filtres / FX 1 & 2 |
-| 66 | `51` | `Fx2 1` | `FILTER2_PARAM1` | Filtres / FX 1 & 2 |
-| 67 | `52` | `Fx2 2` | `FILTER2_PARAM2` | Filtres / FX 1 & 2 |
-| 68 | `53` | `Fx2Am` | `FILTER2_AMP` | Filtres / FX 1 & 2 |
+| 63 | `69` | `Arp+ ` | `MTX_DEST_ARP_NOTE` | Arpégiateur |
+| 64 | `70` | `ArpVl` | `MTX_DEST_ARP_VEL` | Arpégiateur |
+| 65 | `71` | `ArpGt` | `MTX_DEST_ARP_GATE` | Arpégiateur |
+| 66 | `72` | `ArpDv` | `MTX_DEST_ARP_DIV` | Arpégiateur |
+| 67 | `73` | `ArpRt` | `MTX_DEST_ARP_RATCHET` | Arpégiateur |
+| 68 | `42` | `Fx1 1` | `FILTER1_PARAM1` | Filtres / FX 1 & 2 |
+| 69 | `49` | `Fx1 2` | `FILTER1_PARAM2` | Filtres / FX 1 & 2 |
+| 70 | `50` | `fx1Am` | `FILTER1_AMP` | Filtres / FX 1 & 2 |
+| 71 | `51` | `Fx2 1` | `FILTER2_PARAM1` | Filtres / FX 1 & 2 |
+| 72 | `52` | `Fx2 2` | `FILTER2_PARAM2` | Filtres / FX 1 & 2 |
+| 73 | `53` | `Fx2Am` | `FILTER2_AMP` | Filtres / FX 1 & 2 |
 
 ---
 
