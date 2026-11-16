@@ -268,6 +268,9 @@ interface PatchStore extends EditorState {
   /** Indique qu'un push est en cours (suspendre l'envoi MIDI). */
   setPushing: (isPushing: boolean) => void;
 
+  /** Applique une mise à jour locale depuis un message MIDI entrant sans réémission. */
+  applyIncomingPatchUpdate: (updater: (patch: Patch) => void) => void;
+
   // Utilitaires
   markModified: (modified?: boolean) => void;
   getPatch: () => Patch;
@@ -798,6 +801,14 @@ export const usePatchStore = create<PatchStore>()(
     
     setPushing: (isPushing: boolean) =>
       set((state) => { state.isPushing = isPushing; }),
+
+    // Mise à jour purement locale depuis un message MIDI entrant (aucune réémission MIDI)
+    applyIncomingPatchUpdate: (updater: (patch: Patch) => void) =>
+      set((state) => {
+        updater(state.currentPatch);
+        state.isModified = true;
+        updateLastModified(state.currentPatch);
+      }),
 
     // Utilitaires
     markModified: (modified: boolean = true) =>

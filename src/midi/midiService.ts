@@ -728,6 +728,20 @@ import { MIDI_CC, PREENFM3_CC, NRPNMessage, NRPN_COMMANDS } from './preenFM3Midi
 let midiInput: Input | null = null;
 let midiOutput: Output | null = null;
 let currentChannel = 1; // MIDI channel 1-16
+let suppressMidiOutputDepth = 0;
+
+/**
+ * Execute `fn` while suppressing all outgoing CC and NRPN messages.
+ * Used as a defense-in-depth guard when applying incoming MIDI updates.
+ */
+export function runWithoutMidiOutput<T>(fn: () => T): T {
+  suppressMidiOutputDepth += 1;
+  try {
+    return fn();
+  } finally {
+    suppressMidiOutputDepth -= 1;
+  }
+}
 
 type DevicesChangedCallback = (devices: { inputs: Input[]; outputs: Output[] }) => void;
 const devicesChangedListeners = new Set<DevicesChangedCallback>();
@@ -830,6 +844,7 @@ export function sendProgramChange(program: number, channel: number = currentChan
  * Send a Control Change message
  */
 export function sendCC(controller: number, value: number, channel: number = currentChannel) {
+  if (suppressMidiOutputDepth > 0) return;
   // Block sustain pedal (CC 64 = hold pedal).  This app never needs to send
   // it; an accidental CC 64 would lock notes in sustain on the PreenFM3.
   if (controller === MIDI_CC.HOLD_PEDAL) {
@@ -964,6 +979,7 @@ function processNrpnQueue() {
  * updated in place (latest-value-wins deduplication).
  */
 export function sendNRPN(nrpn: NRPNMessage, channel: number = currentChannel) {
+  if (suppressMidiOutputDepth > 0) return;
   if (!midiOutput) {
     console.warn('No MIDI output selected');
     return;
@@ -1574,8 +1590,8 @@ export function sendOperatorDetune(opNumber: number, value: number, channel: num
   }
 
   // value is the detune (-9 to +9 typically)
-  // PreenFM3 stores as (detune * 100) + 1600 (centered at 1600 for 0 detune)
-  const scaledValue = Math.round((value * 100) + 1600);
+  // PreenFM3 stores as (detune * 100) + 900 (centered at 900 for 0 detune)
+  const scaledValue = Math.round((value * 100) + 900);
 
   const oscRowBase = 44 + (opNumber - 1) * 4;
   const nrpn: NRPNMessage = {
@@ -1912,6 +1928,38 @@ export function onControlChange(callback: (controller: number, value: number, ch
 }
 
 /**
+ * Listen to incoming CC messages (raw 0-127 value) — scoped version.
+ * Returns an unsubscribe function that removes ONLY this listener.
+ */
+export function onControlChangeScoped(
+  callback: (controller: number, rawValue: number, channel: number) => void,
+  targetInput?: Input | null,
+): (() => void) | null {
+  const input = targetInput ?? midiInput;
+  if (!input) {
+    console.warn('No MIDI input selected');
+    return null;
+  }
+  const handler = (e: any) => {
+    const controller = e.controller.number;
+    const rawValue =
+      typeof e.rawValue === 'number'
+        ? e.rawValue
+        : typeof e.value === 'number'
+          ? Math.round(e.value * 127)
+          : 0;
+    const channel = e.message.channel || 1;
+    callback(controller, rawValue, channel);
+  };
+
+  input.addListener('controlchange', handler);
+
+  return () => {
+    input.removeListener('controlchange', handler);
+  };
+}
+
+/**
  * Listen to incoming NRPN messages
  */
 export function onNRPN(callback: (nrpn: NRPNMessage, channel: number) => void) {
@@ -1966,13 +2014,14 @@ export function onNRPN(callback: (nrpn: NRPNMessage, channel: number) => void) {
  */
 export function onNRPNScoped(
   callback: (nrpn: NRPNMessage, channel: number) => void,
+  targetInput?: Input | null,
 ): (() => void) | null {
-  if (!midiInput) {
+  const input = targetInput ?? midiInput;
+  if (!input) {
     console.warn('No MIDI input selected');
     return null;
   }
 
-  const input = midiInput; // capture ref
   const nrpnBuffer: Map<number, Partial<NRPNMessage>> = new Map();
 
   const handler = (e: any) => {

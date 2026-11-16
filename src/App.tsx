@@ -14,6 +14,7 @@ import { StarfieldCanvas } from './components/StarfieldCanvas';
 import { useThemeStore } from './theme/themeStore';
 import { GlobalStyles } from './theme/GlobalStyles';
 import { useMidiActions } from './midi/useMidiActions';
+import { useLiveMidiListener } from './midi/liveMidiListener';
 import { useUIStore } from './stores/uiStore';
 import { useSpectrogramBridge } from './stores/spectrogramBridge';
 import { useAuthStore } from './stores/authStore';
@@ -226,6 +227,7 @@ export default function App() {
   const { t } = useTranslation();
   const { theme } = useThemeStore();
   const { sendPatch, receivePatch, isReceiving, isSending, midi } = useMidiActions();
+  useLiveMidiListener(midi.selectedInput, midi.channel);
   const { isListening: audioListening, requestedListening, setRequestedListening } = useSpectrogramBridge();
   const { restoreSession } = useAuthStore();
 

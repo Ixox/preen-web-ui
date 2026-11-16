@@ -227,8 +227,6 @@ export function usePreenFM3Midi() {
         const selectedOutput = savedOutput || null;
         const selectedChannel = prefs.channel || 1;
         
-        useMidiStore.getState()._setInitialized(devices, selectedInput, selectedOutput, selectedChannel);
-
         // Auto-connect uniquement si des périphériques étaient explicitement sauvés
         if (selectedInput) {
           console.log('🎹 Restauration MIDI Input:', selectedInput.name, selectedInput.id);
@@ -239,6 +237,8 @@ export function usePreenFM3Midi() {
           setMidiOutput(selectedOutput);
         }
         setMidiChannel(selectedChannel);
+
+        useMidiStore.getState()._setInitialized(devices, selectedInput, selectedOutput, selectedChannel);
         
         // Ne sauvegarder que si on a des périphériques sélectionnés
         // Évite de sauvegarder null de manière non intentionnelle

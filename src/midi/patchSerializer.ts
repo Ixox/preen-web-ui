@@ -292,8 +292,8 @@ export function patchToFlashSynthParams(patch: Patch): Uint8Array<ArrayBuffer> {
     else freqType = 2;                                   // Finetune
     // frequencyMul: frequency × 100
     const freqMul = Math.round(op.frequency * 100);
-    // detune: (detune × 100) + 1600 (centered on 1600)
-    const detune = Math.round(op.detune * 100) + 1600;
+    // detune: (detune × 100) + 900 (centered on 900, min = -9.00)
+    const detune = Math.round(op.detune * 100) + 900;
 
     writeFloats(view, oscOffset, [shape, freqType, freqMul, detune]);
   }
@@ -934,7 +934,7 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
     else if (op.keyboardTracking === 1) freqType = 0;
     else freqType = 2;
     const freqMul = Math.round(op.frequency * 100);
-    const detune = Math.round(op.detune * 100) + 1600;
+    const detune = Math.round(op.detune * 100) + 900;
     push(nrpnMsg(0, baseLsb, shape));
     push(nrpnMsg(0, baseLsb + 1, freqType));
     push(nrpnMsg(0, baseLsb + 2, freqMul));

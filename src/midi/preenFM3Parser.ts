@@ -405,9 +405,9 @@ export class PreenFM3Parser {
       // Fréquence (encoder 2: frequencyMul)
       const freqValue = this.getValue(0, oscRowBase + 2) ?? 1600;
       const frequency = freqValue / 100; // PreenFM3 stocke freq * 100
-      // Détune (encoder 3: detune)
-      const detuneValue = this.getValue(0, oscRowBase + 3) ?? 1600;
-      const detune = (detuneValue - 1600) / 100; // Centré sur 1600 pour 0
+      // Détune (encoder 3: detune, min = -9.00 -> centré sur 900 pour 0)
+      const detuneValue = this.getValue(0, oscRowBase + 3) ?? 900;
+      const detune = (detuneValue - 900) / 100;
       // Phase (ROW_OP_PHASE): absolute NRPN = 248 + opIndex * 4
       const phaseNrpnAbs = 248 + opIndex * 4;
       const phaseMSB = (phaseNrpnAbs >> 7) & 0x7F;
