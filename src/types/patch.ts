@@ -4,7 +4,9 @@ import {
   type Filter1Type, FILTER1_TYPE_LIST,
   type Filter2Type, FILTER2_TYPE_LIST,
   type ArpClock, type ArpDirection, type ArpPattern, type ArpDivision, type ArpDuration, type ArpLatch,
+  type ArpStepMode, type ArpUserPatternKey, type ArpPatternData, type ArpPresetMasks,
   ARP_CLOCKS, ARP_DIRECTIONS, ARP_PATTERNS, ARP_DIVISIONS, ARP_DURATIONS, ARP_LATCH,
+  ARP_STEP_MODES, ARP_FACTORY_PATTERN_MASKS, computeArpPresetMasks, getArpFactoryPatternData, createDefaultArpUserPattern,
   NoteCurveType,
   NOTE_CURVE_NRPN_MAPPING, NOTE_CURVE_TYPE_TO_NRPN, NOTE_CURVE_TYPES_LIST,
   TIMBRE_DYNAMICS_PROFILES, type TimbreDynamicsProfile,
@@ -17,7 +19,9 @@ export {
   type Filter1Type, FILTER1_TYPE_LIST,
   type Filter2Type, FILTER2_TYPE_LIST,
   type ArpClock, type ArpDirection, type ArpPattern, type ArpDivision, type ArpDuration, type ArpLatch,
+  type ArpStepMode, type ArpUserPatternKey, type ArpPatternData, type ArpPresetMasks,
   ARP_CLOCKS, ARP_DIRECTIONS, ARP_PATTERNS, ARP_DIVISIONS, ARP_DURATIONS, ARP_LATCH,
+  ARP_STEP_MODES, ARP_FACTORY_PATTERN_MASKS, computeArpPresetMasks, getArpFactoryPatternData, createDefaultArpUserPattern,
   NoteCurveType,
   NOTE_CURVE_NRPN_MAPPING, NOTE_CURVE_TYPE_TO_NRPN, NOTE_CURVE_TYPES_LIST,
   TIMBRE_DYNAMICS_PROFILES, type TimbreDynamicsProfile,
@@ -129,6 +133,8 @@ export interface ArpeggiatorSettings {
   division: ArpDivision;   // NRPN LSB=33 (0-16)
   duration: ArpDuration;   // NRPN LSB=34 (0-16)
   latch: ArpLatch;         // NRPN LSB=35 (0-1)
+  euclideanSeed?: number;  // NRPN 516 [4,4] (0-15)
+  userPatterns?: Partial<Record<ArpUserPatternKey, ArpPatternData>>;
 }
 
 export const NoteCurveUtils = {
@@ -329,7 +335,8 @@ export const DEFAULT_ARPEGGIATOR: ArpeggiatorSettings = {
   pattern: '1',
   division: '1/16',
   duration: '1/16',
-  latch: 'Off'
+  latch: 'Off',
+  euclideanSeed: 0,
 };
 
 export const DEFAULT_NOTE_CURVE: NoteCurve = {

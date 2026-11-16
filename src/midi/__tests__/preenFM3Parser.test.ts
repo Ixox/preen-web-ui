@@ -533,7 +533,7 @@ describe('Timbre & Master FX NRPN (MSB=4, LSB=0..3 / indices 512..515)', () => {
     const patch = parser.toPatch();
 
     const msgs = patchToNRPNMessages(patch);
-    const msb4 = msgs.filter(m => m.paramMSB === 4);
+    const msb4 = msgs.filter(m => m.paramMSB === 4 && m.paramLSB <= 3);
     expect(msb4).toEqual([
       { paramMSB: 4, paramLSB: 0, valueMSB: 0, valueLSB: 40 },
       { paramMSB: 4, paramLSB: 1, valueMSB: 0, valueLSB: 6 },
@@ -542,7 +542,59 @@ describe('Timbre & Master FX NRPN (MSB=4, LSB=0..3 / indices 512..515)', () => {
     ]);
 
     const mutationMsgs = patchToNRPNMessages(patch, { exclude: MUTATION_EXCLUDED_NRPNS });
-    expect(mutationMsgs.filter(m => m.paramMSB === 4).map(m => m.paramLSB)).toEqual([0, 1]);
+    expect(mutationMsgs.filter(m => m.paramMSB === 4 && m.paramLSB <= 3).map(m => m.paramLSB)).toEqual([0, 1]);
+  });
+
+  it('parses and serializes ARP_EUCLIDEAN_SEED (MSB=4, LSB=4 / idx=516)', () => {
+    const parser = new PreenFM3Parser();
+    parser.addNRPN({ paramMSB: 0, paramLSB: 0, valueMSB: 0, valueLSB: 0 });
+    parser.addNRPN({ paramMSB: 4, paramLSB: 4, valueMSB: 0, valueLSB: 12 });
+    const patch = parser.toPatch();
+
+    expect(patch.arpeggiator.euclideanSeed).toBe(12);
+    const msgs = patchToNRPNMessages(patch);
+    expect(msgs).toContainEqual({ paramMSB: 4, paramLSB: 4, valueMSB: 0, valueLSB: 12 });
+  });
+
+  it('parses and serializes ARP_USER_PATTERN1..4_LEN (MSB=4, LSB=5..8 / idx=517..520)', () => {
+    const parser = new PreenFM3Parser();
+    parser.addNRPN({ paramMSB: 0, paramLSB: 0, valueMSB: 0, valueLSB: 0 });
+    parser.addNRPN({ paramMSB: 4, paramLSB: 5, valueMSB: 0, valueLSB: 7 });
+    parser.addNRPN({ paramMSB: 4, paramLSB: 8, valueMSB: 0, valueLSB: 12 });
+    const patch = parser.toPatch();
+
+    expect(patch.arpeggiator.userPatterns?.Usr1?.length).toBe(7);
+    expect(patch.arpeggiator.userPatterns?.Usr4?.length).toBe(12);
+    const msgs = patchToNRPNMessages(patch);
+    expect(msgs).toContainEqual({ paramMSB: 4, paramLSB: 5, valueMSB: 0, valueLSB: 7 });
+    expect(msgs).toContainEqual({ paramMSB: 4, paramLSB: 6, valueMSB: 0, valueLSB: 16 });
+    expect(msgs).toContainEqual({ paramMSB: 4, paramLSB: 7, valueMSB: 0, valueLSB: 16 });
+    expect(msgs).toContainEqual({ paramMSB: 4, paramLSB: 8, valueMSB: 0, valueLSB: 12 });
+  });
+
+  it('parses and serializes ARP_USER_PATTERN step states & actions (MSB=7..10, LSB=0..31)', () => {
+    const parser = new PreenFM3Parser();
+    parser.addNRPN({ paramMSB: 0, paramLSB: 0, valueMSB: 0, valueLSB: 0 });
+    parser.addNRPN({ paramMSB: 7, paramLSB: 0, valueMSB: 0, valueLSB: 2 });  // Usr1 step 0 = Accent
+    parser.addNRPN({ paramMSB: 7, paramLSB: 16, valueMSB: 0, valueLSB: 4 }); // Usr1 step 0 = Chrd
+    parser.addNRPN({ paramMSB: 7, paramLSB: 1, valueMSB: 0, valueLSB: 0 });  // Usr1 step 1 = Off
+    parser.addNRPN({ paramMSB: 9, paramLSB: 5, valueMSB: 0, valueLSB: 1 });  // Usr3 step 5 = On
+    parser.addNRPN({ paramMSB: 9, paramLSB: 21, valueMSB: 0, valueLSB: 5 }); // Usr3 step 5 = Slap
+    const patch = parser.toPatch();
+
+    expect(patch.arpeggiator.userPatterns?.Usr1?.steps[0]).toBe(100);
+    expect(patch.arpeggiator.userPatterns?.Usr1?.modes[0]).toBe('Chrd');
+    expect(patch.arpeggiator.userPatterns?.Usr1?.steps[1]).toBe(0);
+    expect(patch.arpeggiator.userPatterns?.Usr1?.modes[1]).toBe('Off');
+    expect(patch.arpeggiator.userPatterns?.Usr3?.steps[5]).toBe(75);
+    expect(patch.arpeggiator.userPatterns?.Usr3?.modes[5]).toBe('Slap');
+
+    const msgs = patchToNRPNMessages(patch);
+    expect(msgs).toContainEqual({ paramMSB: 7, paramLSB: 0, valueMSB: 0, valueLSB: 2 });
+    expect(msgs).toContainEqual({ paramMSB: 7, paramLSB: 16, valueMSB: 0, valueLSB: 4 });
+    expect(msgs).toContainEqual({ paramMSB: 7, paramLSB: 1, valueMSB: 0, valueLSB: 0 });
+    expect(msgs).toContainEqual({ paramMSB: 9, paramLSB: 5, valueMSB: 0, valueLSB: 1 });
+    expect(msgs).toContainEqual({ paramMSB: 9, paramLSB: 21, valueMSB: 0, valueLSB: 5 });
   });
 });
 

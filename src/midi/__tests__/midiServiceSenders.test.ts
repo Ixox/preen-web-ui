@@ -38,6 +38,10 @@ import {
   sendArpeggiatorDivision,
   sendArpeggiatorDuration,
   sendArpeggiatorLatch,
+  sendArpeggiatorEuclideanSeed,
+  sendArpeggiatorUserPatternLength,
+  sendArpeggiatorUserStepState,
+  sendArpeggiatorUserStepAction,
   sendLfoEnvelope,
   sendLfoEnvelopeCurve,
   sendPatchName,
@@ -74,6 +78,10 @@ import {
   MATRIX_DEST_NAMES,
   MATRIX_DEST_ORDER,
   MATRIX_DEST_ORDERED_NAMES,
+  ARP_FACTORY_PATTERN_MASKS,
+  computeArpPresetMasks,
+  getArpFactoryPatternData,
+  arpStepValueToState,
 } from '../preenFmConstants';
 import { parseLfoShape, encodeLfoShape } from '../../types/lfo';
 
@@ -138,11 +146,15 @@ describe('Arpeggiator senders — guard against unknown values', () => {
   it('sendArpeggiatorDirection sends correct value for known direction', async () => {
     sendArpeggiatorDirection('Down', 1); // index 1
     await flushQueue();
-    expect(sentNRPNCount()).toBe(1);
-    const sent = allSentNRPNs()[0];
-    expect(sent.paramMSB).toBe(0);
-    expect(sent.paramLSB).toBe(30);
-    expect(sent.valueLSB).toBe(1);
+    sendArpeggiatorDirection('Rotate UD', 1); // index 8
+    await flushQueue();
+    sendArpeggiatorDirection('Shift UD', 1); // index 11
+    await flushQueue();
+    expect(allSentNRPNs()).toEqual([
+      { paramMSB: 0, paramLSB: 30, valueMSB: 0, valueLSB: 1 },
+      { paramMSB: 0, paramLSB: 30, valueMSB: 0, valueLSB: 8 },
+      { paramMSB: 0, paramLSB: 30, valueMSB: 0, valueLSB: 11 },
+    ]);
   });
 
   it('sendArpeggiatorPattern does not send for unknown pattern', async () => {
@@ -654,5 +666,82 @@ describe('Modulation Matrix destinations (matrixTargetOrder & Note+)', () => {
     expect(allSentNRPNs()).toEqual([
       { paramMSB: 2, paramLSB: 20, valueMSB: 0, valueLSB: 3 },
     ]);
+  });
+
+  it('sends Arpeggiator Euclidean Seed via NRPN [4, 4] clamped to 0..15', async () => {
+    sendArpeggiatorEuclideanSeed(11, 1);
+    await flushQueue();
+    sendArpeggiatorEuclideanSeed(99, 1);
+    await flushQueue();
+
+    expect(allSentNRPNs()).toEqual([
+      { paramMSB: 4, paramLSB: 4, valueMSB: 0, valueLSB: 11 },
+      { paramMSB: 4, paramLSB: 4, valueMSB: 0, valueLSB: 15 },
+    ]);
+  });
+
+  it('sends Arpeggiator User Pattern Length via NRPN [4, 5..8] clamped to 1..16', async () => {
+    sendArpeggiatorUserPatternLength(0, 8, 1);  // Usr1 -> LSB 5
+    sendArpeggiatorUserPatternLength(3, 20, 1); // Usr4 -> LSB 8, clamped to 16
+    await flushQueue();
+
+    expect(allSentNRPNs()).toEqual([
+      { paramMSB: 4, paramLSB: 5, valueMSB: 0, valueLSB: 8 },
+      { paramMSB: 4, paramLSB: 8, valueMSB: 0, valueLSB: 16 },
+    ]);
+  });
+
+  it('sends Arpeggiator User Pattern Step State (LSB 0..15) and Action (LSB 16..31) on MSB 7..10', async () => {
+    sendArpeggiatorUserStepState(0, 2, 2, 1);      // Usr1 step 2 -> Accent (2)
+    sendArpeggiatorUserStepAction(0, 2, 'Chrd', 1); // Usr1 step 2 -> Chrd (4) at LSB 18
+    sendArpeggiatorUserStepState(3, 15, 0, 1);     // Usr4 step 15 -> Off (0)
+    sendArpeggiatorUserStepAction(3, 15, 'Slap', 1);// Usr4 step 15 -> Slap (5) at LSB 31
+    await flushQueue();
+
+    expect(allSentNRPNs()).toEqual([
+      { paramMSB: 7, paramLSB: 2, valueMSB: 0, valueLSB: 2 },
+      { paramMSB: 7, paramLSB: 18, valueMSB: 0, valueLSB: 4 },
+      { paramMSB: 10, paramLSB: 15, valueMSB: 0, valueLSB: 0 },
+      { paramMSB: 10, paramLSB: 31, valueMSB: 0, valueLSB: 5 },
+    ]);
+
+    expect(arpStepValueToState(0, 'Norm')).toBe(1);
+    expect(arpStepValueToState(75, 'Norm')).toBe(1);
+    expect(arpStepValueToState(100, 'Norm')).toBe(2);
+    expect(arpStepValueToState(100, 'Off')).toBe(0);
+  });
+
+  it('computes Euclidean arp factory pattern masks (seed 0, 1, 8, 12, 15)', () => {
+    const p0 = ARP_FACTORY_PATTERN_MASKS[0]; // 0x5555, 0x1041, 0x0041
+    expect(ARP_FACTORY_PATTERN_MASKS).toHaveLength(22);
+
+    const seed0 = computeArpPresetMasks(p0.stepMask, p0.baseAccent, p0.baseTie, 0);
+    expect(seed0).toEqual({
+      stepMask: 21845,
+      accentMask: 0,
+      tieMask: 0,
+      octUpMask: 0,
+      ratchet2Mask: 0,
+      length: 16,
+    });
+
+    const seed1 = computeArpPresetMasks(p0.stepMask, p0.baseAccent, p0.baseTie, 1);
+    expect(seed1.accentMask).toBe(p0.baseAccent);
+    expect(seed1.tieMask).toBe(p0.baseTie);
+    expect(seed1.octUpMask).toBe(0);
+    expect(seed1.ratchet2Mask).toBe(0);
+
+    const seed8 = computeArpPresetMasks(p0.stepMask, p0.baseAccent, p0.baseTie, 8);
+    expect(seed8.octUpMask).not.toBe(0);
+    expect(seed8.ratchet2Mask).toBe(0);
+
+    const seed12 = computeArpPresetMasks(p0.stepMask, p0.baseAccent, p0.baseTie, 12);
+    expect(seed12.octUpMask).not.toBe(0);
+    expect(seed12.ratchet2Mask).not.toBe(0);
+
+    const data15 = getArpFactoryPatternData(0, 15);
+    expect(data15.length).toBe(7);
+    expect(data15.steps).toHaveLength(16);
+    expect(data15.modes).toHaveLength(16);
   });
 });

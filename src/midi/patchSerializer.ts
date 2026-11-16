@@ -65,7 +65,16 @@ import {
   encodeLfoShape,
 } from '../types/lfo';
 import { PreenFM3Parser } from './preenFM3Parser';
-import { MATRIX_SOURCE_NAMES, MATRIX_DEST_NAMES, formatTimbreMfxNrpnDetail, curveTypeToNrpn, STEP_SEQ_MODE_TO_NRPN, stepSeqSyncToNrpnBpm } from './preenFmConstants';
+import {
+  MATRIX_SOURCE_NAMES,
+  MATRIX_DEST_NAMES,
+  formatTimbreMfxNrpnDetail,
+  curveTypeToNrpn,
+  STEP_SEQ_MODE_TO_NRPN,
+  stepSeqSyncToNrpnBpm,
+  arpStepValueToState,
+  arpStepActionToNrpn,
+} from './preenFmConstants';
 // ── Binary layout constants ───────────────────────────────────────────────────
 
 const PRESET_SIZE = 1024; // bytes per preset (FlashSynthParams)
@@ -870,6 +879,21 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
   push(nrpnMsg(0, 33, indexOf(ARP_DIVISIONS, arp.division, 12)));
   push(nrpnMsg(0, 34, indexOf(ARP_DURATIONS, arp.duration, 12)));
   push(nrpnMsg(0, 35, indexOf(ARP_LATCH, arp.latch)));
+  push(nrpnMsg(4, 4, Math.max(0, Math.min(15, Math.round(arp.euclideanSeed ?? 0)))));
+  (['Usr1', 'Usr2', 'Usr3', 'Usr4'] as const).forEach((key, idx) => {
+    const pattern = arp.userPatterns?.[key];
+    const len = pattern?.length ?? 16;
+    push(nrpnMsg(4, 5 + idx, Math.max(1, Math.min(16, Math.round(len)))));
+    if (pattern) {
+      const msb = 7 + idx;
+      for (let s = 0; s < 16; s++) {
+        const val = pattern.steps[s] ?? 75;
+        const mode = pattern.modes[s] ?? 'Norm';
+        push(nrpnMsg(msb, s, arpStepValueToState(val, mode)));
+        push(nrpnMsg(msb, 16 + s, arpStepActionToNrpn(mode)));
+      }
+    }
+  });
 
   // ── Filter ──────────────────────────────────────────────────────────────────
   const filter1 = patch.filters?.[0];

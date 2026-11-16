@@ -49,6 +49,8 @@ import {
 import {
   type StepSeqStepMode,
   STEP_SEQ_MODE_TO_NRPN,
+  arpStepActionToNrpn,
+  type ArpStepMode,
 } from './preenFmConstants';
 /**
  * Send Filter2 type to PreenFM3 via NRPN (MSB=1, LSB=116)
@@ -629,6 +631,89 @@ export function sendArpeggiatorLatch(latch: string, channel: number = currentCha
     valueLSB: value & 0x7F
   };
   console.log('📤 Sending Arpeggiator Latch via NRPN:', { latch, value, nrpn, channel });
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send arpeggiator Euclidean seed via NRPN
+ * NRPN 516: MSB=4, LSB=4 (Seed: 0-15)
+ */
+export function sendArpeggiatorEuclideanSeed(seed: number, channel: number = currentChannel) {
+  const clamped = Math.max(0, Math.min(15, Math.round(seed)));
+  const nrpn = {
+    paramMSB: 4,
+    paramLSB: 4,
+    valueMSB: 0,
+    valueLSB: clamped,
+  };
+  console.log('📤 Sending Arpeggiator Euclidean Seed via NRPN:', { seed: clamped, nrpn, channel });
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send arpeggiator user pattern length via NRPN
+ * NRPN 517..520: MSB=4, LSB=5..8 (Usr1..Usr4, length: 1-16)
+ */
+export function sendArpeggiatorUserPatternLength(
+  userPatternIndex: 0 | 1 | 2 | 3,
+  length: number,
+  channel: number = currentChannel
+) {
+  const clamped = Math.max(1, Math.min(16, Math.round(length)));
+  const nrpn = {
+    paramMSB: 4,
+    paramLSB: 5 + userPatternIndex,
+    valueMSB: 0,
+    valueLSB: clamped,
+  };
+  console.log('📤 Sending Arpeggiator User Pattern Length via NRPN:', {
+    userPattern: `Usr${userPatternIndex + 1}`,
+    length: clamped,
+    nrpn,
+    channel,
+  });
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send arpeggiator user pattern step state via NRPN
+ * NRPN MSB = 7 + userPatternIndex (7..10), LSB = 0..15 (0: Off, 1: On, 2: Accent)
+ */
+export function sendArpeggiatorUserStepState(
+  userPatternIndex: 0 | 1 | 2 | 3,
+  stepIndex: number,
+  state: 0 | 1 | 2,
+  channel: number = currentChannel
+) {
+  if (stepIndex < 0 || stepIndex >= 16) return;
+  const clampedState = Math.max(0, Math.min(2, Math.round(state)));
+  const nrpn = {
+    paramMSB: 7 + userPatternIndex,
+    paramLSB: stepIndex,
+    valueMSB: 0,
+    valueLSB: clampedState,
+  };
+  sendNRPN(nrpn, channel);
+}
+
+/**
+ * Send arpeggiator user pattern step action/mode via NRPN
+ * NRPN MSB = 7 + userPatternIndex (7..10), LSB = 16..31 (0: Norm, 1: Tie, 2: Oct+, 3: Rt*2, 4: Chrd, 5: Slap)
+ */
+export function sendArpeggiatorUserStepAction(
+  userPatternIndex: 0 | 1 | 2 | 3,
+  stepIndex: number,
+  mode: ArpStepMode,
+  channel: number = currentChannel
+) {
+  if (stepIndex < 0 || stepIndex >= 16) return;
+  const actionVal = arpStepActionToNrpn(mode);
+  const nrpn = {
+    paramMSB: 7 + userPatternIndex,
+    paramLSB: 16 + stepIndex,
+    valueMSB: 0,
+    valueLSB: actionVal,
+  };
   sendNRPN(nrpn, channel);
 }
 

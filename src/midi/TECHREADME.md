@@ -29,7 +29,7 @@ Documentation technique détaillée et exhaustive du protocole MIDI du PreenFM3 
   - [Phase des Opérateurs (Détail NRPN)](#phase-des-opérateurs-détail-nrpn)
   - [Step Sequencers](#step-sequencers)
   - [Destinations de la Matrice (`matrixTargetOrder`)](#destinations-de-la-matrice-matrixtargetorder)
-  - [Timbre & Master FX (NRPN 512-515)](#timbre--master-fx-nrpn-512-515)
+  - [Timbre, Master FX & Arp (NRPN 512-520)](#timbre-master-fx--arp-nrpn-512-520)
   - [Algorithme de transformation mémoire ↔ MIDI](#algorithme-de-transformation-mémoire--midi)
   - [Scalings des paramètres](#scalings-des-paramètres)
 - [LFO MIDI Clock Mode](#lfo-midi-clock-mode)
@@ -141,12 +141,12 @@ Le PreenFM3 propose deux niveaux de contrôle MIDI :
 | **95** | LFO2 Shape | Forme d'onde LFO 2 (0-7) |
 | **96** | LFO3 Shape | Forme d'onde LFO 3 (0-7) |
 | **96-99** | *Réservés NRPN* | Standard MIDI : 96=Data Inc, 97=Data Dec, 98=LSB, 99=MSB |
-| **100** | Arp Clock | Synchronisation d'horloge Arpeggiateur |
-| **101** | Arp Direction | Direction de l'arpeggiateur (Up, Down, UpDown, Random) |
-| **102** | Arp Octave | Nombre d'octaves de l'arpeggiateur (1-4) |
-| **103** | Arp Pattern | Motif de l'arpeggiateur |
-| **104** | Arp Division | Division rythmique de l'arpeggiateur |
-| **105** | Arp Duration | Durée de note de l'arpeggiateur |
+| **100** | Arp Clock | Synchronisation d'horloge Arpeggiateur (`0: Off`, `1: Int`, `2: Ext`) |
+| **101** | Arp Direction | Direction de l'arpeggiateur (`0..11`: Up, Down, U&D, Play, Rand, Chrd, RtUp..ShUD) |
+| **102** | Arp Octave | Nombre d'octaves de l'arpeggiateur (`1..3`) |
+| **103** | Arp Pattern | Motif de l'arpeggiateur (`0..21`: Presets `1..22`, `22..25`: `Usr1..Usr4`) |
+| **104** | Arp Division | Division rythmique (`0..16`: `2/1` à `1/96`) |
+| **105** | Arp Duration | Durée de note (`0..16`: `2/1` à `1/96`) |
 | **106** | Seq Start All | Démarrage global des séquenceurs (tous timbres) |
 | **107** | Seq Start Inst | Démarrage séquenceur du timbre courant |
 | **108** | Seq Record Inst | Mode enregistrement séquenceur |
@@ -399,14 +399,177 @@ Les paramètres de mixage, de dynamique et d'effets globaux sont accessibles en 
 
 ### Arpeggiateur et Séquenceur
 
+#### Arpeggiateur (CC 100-105 & NRPN)
+
+Les paramètres de l'arpeggiateur sont répartis sur `ROW_ARPEGGIATOR1` (row 7, NRPN `28..31`) et `ROW_ARPEGGIATOR2` (row 8, NRPN `32..35`). **BPM** et **Latch** n'ont pas de CC dédié et se pilotent uniquement en **NRPN** (`paramMSB = 0`).
+
+| Paramètre | CC | NRPN (`MSB`/`LSB`) | Plage brute | Valeurs / Description |
+|:---|:---:|:---:|:---:|:---|
+| **Arp Clock** | **100** | `0 / 28` | `0-2` | `0: Off`, `1: Int`, `2: Ext` (MIDI Clock) |
+| **Arp BPM** | *NRPN* | `0 / 29` | `10-240` | Tempo interne en BPM (entier direct) |
+| **Arp Direction** | **101** | `0 / 30` | `0-11` | `0: Up`, `1: Down`, `2: U&D`, `3: Play`, `4: Rand`, `5: Chrd`, `6: RtUp`, `7: RtDn`, `8: RtUD`, `9: ShUp`, `10: ShDn`, `11: ShUD` |
+| **Arp Octave** | **102** | `0 / 31` | `1-3` | Nombre d'octaves (`1`, `2` ou `3`) |
+| **Arp Pattern** | **103** | `0 / 32` | `0-25` | `0..21` : Presets `1..22` ; `22..25` : `Usr1..Usr4` |
+| **Arp Division** | **104** | `0 / 33` | `0-16` | `0: 2/1`, `1: 3/2`, `2: 1/1`, `3: 3/4`, `4: 2/3`, `5: 1/2`, `6: 3/8`, `7: 1/3`, `8: 1/4`, `9: 1/6`, `10: 1/8`, `11: 1/12`, `12: 1/16`, `13: 1/24`, `14: 1/32`, `15: 1/48`, `16: 1/96` |
+| **Arp Duration** | **105** | `0 / 34` | `0-16` | Mêmes 17 valeurs que **Division** (`2/1` à `1/96`) |
+| **Arp Latch** | *NRPN* | `0 / 35` | `0-1` | `0: Off`, `1: On` |
+| **Arp Seed** | *NRPN* | `4 / 4` | `0-15` | Seed euclidien des patterns d'usine `0..21` (index `516`, émis en dump et temps réel) |
+| **Arp Usr1..4 Len** | *NRPN* | `4 / 5..8` | `1-16` | Longueur des patterns utilisateur `Usr1..Usr4` (index `517..520`, émis en dump et temps réel) |
+
+> [!NOTE]
+> **Patterns utilisateur (`Usr1..Usr4`)** : Les 4 motifs utilisateur (16 pas avec masque de déclenchement et d'accent dans `ROW_ARPEGGIATOR3`) ne disposent pas d'un encodage NRPN dédié dans `decodeNrpn` et s'éditent directement sur le PreenFM3 (ou via sauvegarde de preset/mixer).
+> **Patterns utilisateur (`Usr1..Usr4`) — Édition par pas en NRPN (`MSB = 7..10`)** :  
+> Chaque pattern utilisateur `Usr1..Usr4` (`userIdx = 0..3`) est exposé en NRPN sous `paramMSB = 7 + userIdx` (émis en dump de patch, reçu dans `decodeNrpn`, et émis en temps réel en mode `NRPN`) :
+> - **`paramLSB = 0..15`** (pas `0..15`) : **État du pas** (`0: Off`, `1: On`, `2: Accent`)
+> - **`paramLSB = 16..31`** (`16 + pas`) : **Action / Mode du pas** (`0: Norm`, `1: Tie`, `2: Oct+`, `3: Rt*2`, `4: Chrd`, `5: Slap`)
+
+#### Calcul des patterns d'usine (`0..21`)
+
+Les 22 motifs d'usine (`Timbre.cpp`) reposent sur trois masques 16 bits (`stepMask`, `baseAccent`, `baseTie` — bit `s` = pas `s` de `0` à `15`) modulés par un **`seed` euclidien** (`0..15`, stocké dans les bits `16..19` de `lfoPhases.unused1`) via `computeArpPresetMasks` et `getArpPresetLength` (`Common.h`).
+
+**Table des 22 patterns d'usine (`stepMask`, `baseAccent`, `baseTie`) :**
+
+| Index | `stepMask` | `baseAccent` | `baseTie` | Index | `stepMask` | `baseAccent` | `baseTie` |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **0** (`1`) | `21845` (`0x5555`) | `0x1041` | `0x0041` | **11** (`12`) | `54553` (`0xD519`) | `0x4101` | `0x0101` |
+| **1** (`2`) | `62965` (`0xF5F5`) | `0x50A1` | `0x0001` | **12** (`13`) | `27499` (`0x6B6B`) | `0x0841` | `0x0840` |
+| **2** (`3`) | `46517` (`0xB5B5`) | `0x1081` | `0x0001` | **13** (`14`) | `23387` (`0x5B5B`) | `0x1111` | `0x1010` |
+| **3** (`4`) | `54741` (`0xD5D5`) | `0x4141` | `0x0101` | **14** (`15`) | `30583` (`0x7777`) | `0x1111` | `0x0444` |
+| **4** (`5`) | `43861` (`0xAB55`) | `0x0841` | `0x0041` | **15** (`16`) | `28087` (`0x6DB7`) | `0x2111` | `0x0100` |
+| **5** (`6`) | `22869` (`0x5955`) | `0x1041` | `0x0041` | **16** (`17`) | `22359` (`0x5757`) | `0x0441` | `0x0440` |
+| **6** (`7`) | `38293` (`0x9595`) | `0x1081` | `0x1001` | **17** (`18`) | `28527` (`0x6F6F`) | `0x2449` | `0x0048` |
+| **7** (`8`) | `2313` (`0x0909`) | `0x0101` | `0x0001` | **18** (`19`) | `30431` (`0x76DF`) | `0x2449` | `0x0400` |
+| **8** (`9`) | `37449` (`0x9249`) | `0x0201` | `0x0001` | **19** (`20`) | `43281` (`0xA911`) | `0x0801` | `0x0001` |
+| **9** (`10`) | `21065` (`0x5249`) | `0x0201` | `0x0001` | **20** (`21`) | `28609` (`0x6FC1`) | `0x0901` | `0x0801` |
+| **10** (`11`) | `18761` (`0x4949`) | `0x0101` | `0x0001` | **21** (`22`) | `53505` (`0xD101`) | `0x4001` | `0x0001` |
+
+**Longueur selon `seed` (`0..15`) :**  
+`presetLengths = [16, 16, 16, 16, 16, 12, 14, 15, 16, 13, 11, 15, 16, 12, 10, 7]`
+
+**Algorithme de calcul (`computeArpPresetMasks`, TypeScript) :**
+```typescript
+export interface ArpPresetMasks {
+  stepMask: number;
+  accentMask: number;
+  tieMask: number;
+  octUpMask: number;
+  ratchet2Mask: number;
+  length: number;
+}
+
+const PRESET_LENGTHS = [16, 16, 16, 16, 16, 12, 14, 15, 16, 13, 11, 15, 16, 12, 10, 7];
+
+export function computeArpPresetMasks(
+  stepMask: number,
+  baseAccent: number,
+  baseTie: number,
+  seed: number
+): ArpPresetMasks {
+  const length = PRESET_LENGTHS[Math.max(0, Math.min(15, seed))];
+  if (seed <= 0) {
+    return { stepMask, accentMask: 0, tieMask: 0, octUpMask: 0, ratchet2Mask: 0, length };
+  }
+  if (seed === 1) {
+    return { stepMask, accentMask: baseAccent, tieMask: baseTie, octUpMask: 0, ratchet2Mask: 0, length };
+  }
+
+  const rawSeed = seed;
+  const sIdx = seed - 1;
+  const active: number[] = [];
+  let baseK = 0;
+  let baseTies = 0;
+
+  for (let s = 0; s < 16; s++) {
+    const bit = 1 << s;
+    if (stepMask & bit) {
+      active.push(s);
+      if (baseAccent & bit) baseK++;
+      if (baseTie & bit) baseTies++;
+    }
+  }
+  const n = active.length;
+  if (n === 0) {
+    return { stepMask, accentMask: 0, tieMask: 0, octUpMask: 0, ratchet2Mask: 0, length };
+  }
+
+  // 1) Accents euclidiens sur les pas actifs
+  let k = Math.max(1, baseK) + (Math.floor(sIdx / 4) % 3) - 1;
+  if (k < 1) k = 1;
+  if (n > 1 && k >= n) k = n - 1;
+
+  const rot = sIdx % n;
+  let accentMask = 0;
+  for (let i = 0; i < n; i++) {
+    const pos = (i + n - rot) % n;
+    if (((pos * k) % n) < k) {
+      accentMask |= 1 << active[i];
+    }
+  }
+
+  // 2) Ties sur les pas suivis d'un silence (en priorité accentués)
+  let tieMask = 0;
+  if (baseTies > 0) {
+    const cand: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const s = active[(i + rot) % n];
+      if ((accentMask & (1 << s)) && !(stepMask & (1 << ((s + 1) & 15)))) cand.push(s);
+    }
+    if (cand.length === 0) {
+      for (let i = 0; i < n; i++) {
+        const s = active[(i + rot) % n];
+        if (!(stepMask & (1 << ((s + 1) & 15)))) cand.push(s);
+      }
+    }
+    if (cand.length > 0) {
+      const stepPick = Math.max(1, Math.floor(cand.length / baseTies));
+      for (let i = 0, picked = 0; i < cand.length && picked < baseTies; i += stepPick, picked++) {
+        tieMask |= 1 << cand[i];
+      }
+    }
+  }
+
+  // 3) Oct+ (rawSeed >= 8) et Ratchet x2 (rawSeed >= 12)
+  let octUpMask = 0;
+  if (rawSeed >= 8 && n > 2) {
+    const octTarget = (rawSeed >= 10 && n >= 6) ? 2 : 1;
+    const octCand: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const s = active[(i + rot + 1) % n];
+      if (!(tieMask & (1 << s))) octCand.push(s);
+    }
+    if (octCand.length > 0) {
+      const stepPick = octCand.length >= octTarget * 2 ? Math.floor(octCand.length / octTarget) : 1;
+      for (let i = 0, picked = 0; i < octCand.length && picked < octTarget; i += stepPick, picked++) {
+        octUpMask |= 1 << octCand[i];
+      }
+    }
+  }
+
+  let ratchet2Mask = 0;
+  if (rawSeed >= 12 && n > 3) {
+    const rtTarget = (rawSeed >= 14 && n >= 8) ? 2 : 1;
+    const rtCand: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const s = active[(i + rot * 2 + n - 1) % n];
+      const bit = 1 << s;
+      if (!(tieMask & bit) && !(octUpMask & bit)) rtCand.push(s);
+    }
+    if (rtCand.length > 0) {
+      const stepPick = rtCand.length >= rtTarget * 2 ? Math.floor(rtCand.length / rtTarget) : 1;
+      for (let i = 0, picked = 0; i < rtCand.length && picked < rtTarget; i += stepPick, picked++) {
+        ratchet2Mask |= 1 << rtCand[i];
+      }
+    }
+  }
+
+  return { stepMask, accentMask, tieMask, octUpMask, ratchet2Mask, length };
+}
+```
+
+#### Séquenceur (CC 106-110)
+
 | Paramètre | CC | Plage brute | Description |
 |:---|:---:|:---:|:---|
-| **Arp Clock** | **100** | 0-1 | Synchronisation interne ou MIDI Clock |
-| **Arp Direction** | **101** | 0-3 | 0: Up, 1: Down, 2: UpDown, 3: Random |
-| **Arp Octave** | **102** | 0-3 | 1, 2, 3 ou 4 octaves |
-| **Arp Pattern** | **103** | 0-15 | Numéro de motif d'arpège |
-| **Arp Division** | **104** | 0-n | Division temporelle (1/4, 1/8, 1/16...) |
-| **Arp Duration** | **105** | 0-n | Longueur de note |
 | **Seq Start All** | **106** | 0-1 | Démarre/arrête les séquenceurs de tous les timbres |
 | **Seq Start Inst** | **107** | 0-1 | Démarre/arrête le séquenceur du timbre |
 | **Seq Record Inst**| **108** | 0-1 | Arme l'enregistrement de séquence |
@@ -625,9 +788,9 @@ Les **74 destinations** (`DESTINATION_MAX = 74`, `Common.h`) conservent leur **I
 
 ---
 
-### Timbre & Master FX (NRPN 512-515)
+### Timbre, Master FX & Arp (NRPN 512-520)
 
-Les réglages de mixage FX et dynamique par timbre/global (non contenus dans `OneSynthParams`) disposent d'une plage NRPN dédiée sous **`paramMSB = 4`** (`index = 512..515`), transmise automatiquement à la fin de chaque dump de patch (`sendCurrentPatchAsNrpns`), décodée dans `decodeNrpn`, et émise en temps réel par `newMixerValue` en mode `MIDI Sends = NRPN` :
+Les réglages de mixage FX, de dynamique, le seed euclidien et les longueurs des patterns utilisateur de l'arpégiateur disposent d'une plage NRPN dédiée sous **`paramMSB = 4`** (`index = 512..520`), transmise automatiquement à la fin de chaque dump de patch (`sendCurrentPatchAsNrpns`), décodée dans `decodeNrpn`, et émise en temps réel en mode `MIDI Sends = NRPN` :
 
 | Paramètre | Index NRPN | `paramMSB` (CC 99) | `paramLSB` (CC 98) | Plage valeur NRPN | Description / Équivalent CC |
 |:---|:---:|:---:|:---:|:---:|:---|
@@ -635,10 +798,15 @@ Les réglages de mixage FX et dynamique par timbre/global (non contenus dans `On
 | **`TIMBRE_DYNAMICS`** | **513** | **4** | **1** | **0 à 6** | Profil dynamique (`0`: Off, `1`: Glue, `2`: Punch, `3`: Tube, `4`: Limit, `5`: Drive, `6`: Fuzz) — CC 41 |
 | **`MFX_RETURN`** | **514** | **4** | **2** | **0 à 100** | Niveau global de retour Master Reverb (`0.00` à `1.00`, en centièmes) — CC 44 |
 | **`MFX_PRESET`** | **515** | **4** | **3** | **0 à 18** | Preset de réverbération Master (`reverbPreset_`) — CC 45 |
+| **`ARP_EUCLIDEAN_SEED`** | **516** | **4** | **4** | **0 à 15** | Seed euclidien des patterns d'usine de l'arpégiateur (`getArpEuclideanSeed` / `setArpEuclideanSeed`) |
+| **`ARP_USER_PATTERN1_LEN`** | **517** | **4** | **5** | **1 à 16** | Longueur du pattern utilisateur `Usr1` (`getArpUserPatternLength` / `setArpUserPatternLength`) |
+| **`ARP_USER_PATTERN2_LEN`** | **518** | **4** | **6** | **1 à 16** | Longueur du pattern utilisateur `Usr2` |
+| **`ARP_USER_PATTERN3_LEN`** | **519** | **4** | **7** | **1 à 16** | Longueur du pattern utilisateur `Usr3` |
+| **`ARP_USER_PATTERN4_LEN`** | **520** | **4** | **8** | **1 à 16** | Longueur du pattern utilisateur `Usr4` |
 
 > [!NOTE]
 > **Pourquoi `paramMSB = 4` ?**  
-> L'espace `paramMSB = 4` (`512..515`) est totalement isolé des paramètres de synthèse (`0..275`), du nom de preset (`228..239`), des courbes d'enveloppes (`300..323`) et du Step Sequencer (`paramMSB = 2..3, LSB = 0..15` et `paramMSB = 5..6, LSB = 0..16`), garantissant zéro collision lors des dumps et éditions bidirectionnelles. Les CC 40, 41, 44 et 45 restent également actifs en réception dans `controlChange`.
+> L'espace `paramMSB = 4` (`512..520`) est totalement isolé des paramètres de synthèse (`0..275`), du nom de preset (`228..239`), des courbes d'enveloppes (`300..323`) et du Step Sequencer (`paramMSB = 2..3, LSB = 0..15` et `paramMSB = 5..6, LSB = 0..16`), garantissant zéro collision lors des dumps et éditions bidirectionnelles. Les CC 40, 41, 44 et 45 restent également actifs en réception dans `controlChange`.
 
 ---
 

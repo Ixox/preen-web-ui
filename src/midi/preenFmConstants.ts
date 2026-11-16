@@ -249,11 +249,16 @@ export const NRPN_COMMANDS = {
   PRESET_NAME_END:    { paramMSB: 1,   paramLSB: 111 },
   STEPSEQ1: { paramMSB: 2 },
   STEPSEQ2: { paramMSB: 3 },
-  // Timbre & Master FX (indices 512..515 -> MSB 4, LSB 0..3)
-  TIMBRE_DRYWET:   { paramMSB: 4, paramLSB: 0 },
-  TIMBRE_DYNAMICS: { paramMSB: 4, paramLSB: 1 },
-  MFX_RETURN:      { paramMSB: 4, paramLSB: 2 },
-  MFX_PRESET:      { paramMSB: 4, paramLSB: 3 },
+  // Timbre, Master FX & Arp (indices 512..520 -> MSB 4, LSB 0..8)
+  TIMBRE_DRYWET:         { paramMSB: 4, paramLSB: 0 },
+  TIMBRE_DYNAMICS:       { paramMSB: 4, paramLSB: 1 },
+  MFX_RETURN:            { paramMSB: 4, paramLSB: 2 },
+  MFX_PRESET:            { paramMSB: 4, paramLSB: 3 },
+  ARP_EUCLIDEAN_SEED:    { paramMSB: 4, paramLSB: 4 },
+  ARP_USER_PATTERN1_LEN: { paramMSB: 4, paramLSB: 5 },
+  ARP_USER_PATTERN2_LEN: { paramMSB: 4, paramLSB: 6 },
+  ARP_USER_PATTERN3_LEN: { paramMSB: 4, paramLSB: 7 },
+  ARP_USER_PATTERN4_LEN: { paramMSB: 4, paramLSB: 8 },
   // Engine Voice Priority (index 276 -> MSB 2, LSB 20)
   ENGINE_VOICE_PRIORITY: { paramMSB: 2, paramLSB: 20 },
   // Free Envelope Attack & Release Curves (indices 280..283 -> MSB 2, LSB 24..27)
@@ -282,6 +287,13 @@ export function formatTimbreMfxNrpnDetail(paramLSB: number, rawValue: number): s
       const label = MFX_REVERB_PRESETS[rawValue] ?? 'Unknown';
       return `MFX_PRESET [4,3] (idx=${index}) = ${rawValue} (${label})`;
     }
+    case 4:
+      return `ARP_EUCLIDEAN_SEED [4,4] (idx=${index}) = ${rawValue}`;
+    case 5:
+    case 6:
+    case 7:
+    case 8:
+      return `ARP_USER_PATTERN${paramLSB - 4}_LEN [4,${paramLSB}] (idx=${index}) = ${rawValue}`;
     default:
       return `TIMBRE_MFX_UNKNOWN [4,${paramLSB}] (idx=${index}) = ${rawValue}`;
   }
@@ -562,7 +574,19 @@ export type Filter2Type = typeof FILTER2_TYPE_LIST[number];
 // ============================================================================
 
 export type ArpClock     = 'Off' | 'Int' | 'Ext';
-export type ArpDirection = 'Up' | 'Down' | 'UpDown' | 'Played' | 'Random' | 'Chord' | 'Rotate U' | 'Rotate D' | 'Shift U' | 'Shift D';
+export type ArpDirection =
+  | 'Up'
+  | 'Down'
+  | 'UpDown'
+  | 'Played'
+  | 'Random'
+  | 'Chord'
+  | 'Rotate U'
+  | 'Rotate D'
+  | 'Rotate UD'
+  | 'Shift U'
+  | 'Shift D'
+  | 'Shift UD';
 export type ArpPattern   = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | '11' | '12' | '13' | '14' | '15' | '16' | '17' | '18' | '19' | '20' | '21' | '22' | 'Usr1' | 'Usr2' | 'Usr3' | 'Usr4';
 export type ArpDivision  = '2/1' | '3/2' | '1/1' | '3/4' | '2/3' | '1/2' | '3/8' | '1/3' | '1/4' | '1/6' | '1/8' | '1/12' | '1/16' | '1/24' | '1/32' | '1/48' | '1/96';
 export type ArpDuration  = '2/1' | '3/2' | '1/1' | '3/4' | '2/3' | '1/2' | '3/8' | '1/3' | '1/4' | '1/6' | '1/8' | '1/12' | '1/16' | '1/24' | '1/32' | '1/48' | '1/96';
@@ -570,7 +594,8 @@ export type ArpLatch     = 'Off' | 'On';
 
 export const ARP_CLOCKS: ArpClock[] = ['Off', 'Int', 'Ext'];
 export const ARP_DIRECTIONS: ArpDirection[] = [
-  'Up', 'Down', 'UpDown', 'Played', 'Random', 'Chord', 'Rotate U', 'Rotate D', 'Shift U', 'Shift D',
+  'Up', 'Down', 'UpDown', 'Played', 'Random', 'Chord',
+  'Rotate U', 'Rotate D', 'Rotate UD', 'Shift U', 'Shift D', 'Shift UD',
 ];
 export const ARP_PATTERNS: ArpPattern[] = [
   '1', '2', '3', '4', '5', '6', '7', '8', '9', '10',
@@ -586,6 +611,229 @@ export const ARP_DURATIONS: ArpDuration[] = [
   '1/6', '1/8', '1/12', '1/16', '1/24', '1/32', '1/48', '1/96',
 ];
 export const ARP_LATCH: ArpLatch[] = ['Off', 'On'];
+
+export type ArpStepMode = 'Norm' | 'Off' | 'Tie' | 'Oct+' | 'Rt*2' | 'Chrd' | 'Slap';
+export const ARP_STEP_MODES: ArpStepMode[] = ['Norm', 'Off', 'Tie', 'Oct+', 'Rt*2', 'Chrd', 'Slap'];
+export const ARP_USER_STEP_ACTIONS: readonly Exclude<ArpStepMode, 'Off'>[] = ['Norm', 'Tie', 'Oct+', 'Rt*2', 'Chrd', 'Slap'];
+
+export function arpStepValueToState(value: number, mode: ArpStepMode): 0 | 1 | 2 {
+  if (mode === 'Off') return 0;
+  if (value >= 85) return 2; // Accent
+  return 1; // On
+}
+
+export function arpStepStateToValue(state: number): number {
+  if (state <= 0) return 0;
+  if (state >= 2) return 100;
+  return 75;
+}
+
+export function nrpnToArpStepAction(val: number | undefined): Exclude<ArpStepMode, 'Off'> {
+  if (typeof val !== 'number') return 'Norm';
+  return ARP_USER_STEP_ACTIONS[val] ?? 'Norm';
+}
+
+export function arpStepActionToNrpn(mode: ArpStepMode): number {
+  const idx = ARP_USER_STEP_ACTIONS.indexOf(mode as Exclude<ArpStepMode, 'Off'>);
+  return idx >= 0 ? idx : 0;
+}
+
+export type ArpUserPatternKey = 'Usr1' | 'Usr2' | 'Usr3' | 'Usr4';
+export const ARP_USER_PATTERN_KEYS: readonly ArpUserPatternKey[] = ['Usr1', 'Usr2', 'Usr3', 'Usr4'];
+
+export interface ArpPatternData {
+  steps: number[];
+  modes: ArpStepMode[];
+  length?: number;
+}
+
+export function createDefaultArpUserPattern(): ArpPatternData {
+  return {
+    steps: Array.from({ length: 16 }, (_, i) => (i % 4 === 0 ? 100 : 75)),
+    modes: Array<ArpStepMode>(16).fill('Norm'),
+    length: 16,
+  };
+}
+
+export interface ArpFactoryPatternMask {
+  stepMask: number;
+  baseAccent: number;
+  baseTie: number;
+}
+
+export interface ArpPresetMasks {
+  stepMask: number;
+  accentMask: number;
+  tieMask: number;
+  octUpMask: number;
+  ratchet2Mask: number;
+  length: number;
+}
+
+const ARP_PRESET_LENGTHS = [16, 16, 16, 16, 16, 12, 14, 15, 16, 13, 11, 15, 16, 12, 10, 7] as const;
+
+/**
+ * 22 factory arpeggiator pattern masks (stepMask, baseAccent, baseTie) from Timbre.cpp.
+ */
+export const ARP_FACTORY_PATTERN_MASKS: readonly ArpFactoryPatternMask[] = [
+  { stepMask: 21845, baseAccent: 0x1041, baseTie: 0x0041 }, // 0  (1)
+  { stepMask: 62965, baseAccent: 0x50A1, baseTie: 0x0001 }, // 1  (2)
+  { stepMask: 46517, baseAccent: 0x1081, baseTie: 0x0001 }, // 2  (3)
+  { stepMask: 54741, baseAccent: 0x4141, baseTie: 0x0101 }, // 3  (4)
+  { stepMask: 43861, baseAccent: 0x0841, baseTie: 0x0041 }, // 4  (5)
+  { stepMask: 22869, baseAccent: 0x1041, baseTie: 0x0041 }, // 5  (6)
+  { stepMask: 38293, baseAccent: 0x1081, baseTie: 0x1001 }, // 6  (7)
+  { stepMask: 2313,  baseAccent: 0x0101, baseTie: 0x0001 }, // 7  (8)
+  { stepMask: 37449, baseAccent: 0x0201, baseTie: 0x0001 }, // 8  (9)
+  { stepMask: 21065, baseAccent: 0x0201, baseTie: 0x0001 }, // 9  (10)
+  { stepMask: 18761, baseAccent: 0x0101, baseTie: 0x0001 }, // 10 (11)
+  { stepMask: 54553, baseAccent: 0x4101, baseTie: 0x0101 }, // 11 (12)
+  { stepMask: 27499, baseAccent: 0x0841, baseTie: 0x0840 }, // 12 (13)
+  { stepMask: 23387, baseAccent: 0x1111, baseTie: 0x1010 }, // 13 (14)
+  { stepMask: 30583, baseAccent: 0x1111, baseTie: 0x0444 }, // 14 (15)
+  { stepMask: 28087, baseAccent: 0x2111, baseTie: 0x0100 }, // 15 (16)
+  { stepMask: 22359, baseAccent: 0x0441, baseTie: 0x0440 }, // 16 (17)
+  { stepMask: 28527, baseAccent: 0x2449, baseTie: 0x0048 }, // 17 (18)
+  { stepMask: 30431, baseAccent: 0x2449, baseTie: 0x0400 }, // 18 (19)
+  { stepMask: 43281, baseAccent: 0x0801, baseTie: 0x0001 }, // 19 (20)
+  { stepMask: 28609, baseAccent: 0x0901, baseTie: 0x0801 }, // 20 (21)
+  { stepMask: 53505, baseAccent: 0x4001, baseTie: 0x0001 }, // 21 (22)
+];
+
+export function computeArpPresetMasks(
+  stepMask: number,
+  baseAccent: number,
+  baseTie: number,
+  seed: number
+): ArpPresetMasks {
+  const clampedSeed = Math.max(0, Math.min(15, Math.round(seed)));
+  const length = ARP_PRESET_LENGTHS[clampedSeed];
+  if (clampedSeed <= 0) {
+    return { stepMask, accentMask: 0, tieMask: 0, octUpMask: 0, ratchet2Mask: 0, length };
+  }
+  if (clampedSeed === 1) {
+    return { stepMask, accentMask: baseAccent, tieMask: baseTie, octUpMask: 0, ratchet2Mask: 0, length };
+  }
+
+  const rawSeed = clampedSeed;
+  const sIdx = clampedSeed - 1;
+  const active: number[] = [];
+  let baseK = 0;
+  let baseTies = 0;
+
+  for (let s = 0; s < 16; s++) {
+    const bit = 1 << s;
+    if (stepMask & bit) {
+      active.push(s);
+      if (baseAccent & bit) baseK++;
+      if (baseTie & bit) baseTies++;
+    }
+  }
+  const n = active.length;
+  if (n === 0) {
+    return { stepMask, accentMask: 0, tieMask: 0, octUpMask: 0, ratchet2Mask: 0, length };
+  }
+
+  // 1) Euclidean accents on active steps
+  let k = Math.max(1, baseK) + (Math.floor(sIdx / 4) % 3) - 1;
+  if (k < 1) k = 1;
+  if (n > 1 && k >= n) k = n - 1;
+
+  const rot = sIdx % n;
+  let accentMask = 0;
+  for (let i = 0; i < n; i++) {
+    const pos = (i + n - rot) % n;
+    if (((pos * k) % n) < k) {
+      accentMask |= 1 << active[i];
+    }
+  }
+
+  // 2) Ties on steps followed by a rest (accented steps first)
+  let tieMask = 0;
+  if (baseTies > 0) {
+    const cand: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const s = active[(i + rot) % n];
+      if ((accentMask & (1 << s)) && !(stepMask & (1 << ((s + 1) & 15)))) cand.push(s);
+    }
+    if (cand.length === 0) {
+      for (let i = 0; i < n; i++) {
+        const s = active[(i + rot) % n];
+        if (!(stepMask & (1 << ((s + 1) & 15)))) cand.push(s);
+      }
+    }
+    if (cand.length > 0) {
+      const stepPick = Math.max(1, Math.floor(cand.length / baseTies));
+      for (let i = 0, picked = 0; i < cand.length && picked < baseTies; i += stepPick, picked++) {
+        tieMask |= 1 << cand[i];
+      }
+    }
+  }
+
+  // 3) Oct+ (rawSeed >= 8) and Ratchet x2 (rawSeed >= 12)
+  let octUpMask = 0;
+  if (rawSeed >= 8 && n > 2) {
+    const octTarget = (rawSeed >= 10 && n >= 6) ? 2 : 1;
+    const octCand: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const s = active[(i + rot + 1) % n];
+      if (!(tieMask & (1 << s))) octCand.push(s);
+    }
+    if (octCand.length > 0) {
+      const stepPick = octCand.length >= octTarget * 2 ? Math.floor(octCand.length / octTarget) : 1;
+      for (let i = 0, picked = 0; i < octCand.length && picked < octTarget; i += stepPick, picked++) {
+        octUpMask |= 1 << octCand[i];
+      }
+    }
+  }
+
+  let ratchet2Mask = 0;
+  if (rawSeed >= 12 && n > 3) {
+    const rtTarget = (rawSeed >= 14 && n >= 8) ? 2 : 1;
+    const rtCand: number[] = [];
+    for (let i = 0; i < n; i++) {
+      const s = active[(i + rot * 2 + n - 1) % n];
+      const bit = 1 << s;
+      if (!(tieMask & bit) && !(octUpMask & bit)) rtCand.push(s);
+    }
+    if (rtCand.length > 0) {
+      const stepPick = rtCand.length >= rtTarget * 2 ? Math.floor(rtCand.length / rtTarget) : 1;
+      for (let i = 0, picked = 0; i < rtCand.length && picked < rtTarget; i += stepPick, picked++) {
+        ratchet2Mask |= 1 << rtCand[i];
+      }
+    }
+  }
+
+  return { stepMask, accentMask, tieMask, octUpMask, ratchet2Mask, length };
+}
+
+export function getArpFactoryPatternData(patternIndex: number, euclideanSeed: number): ArpPatternData {
+  const maskDef = ARP_FACTORY_PATTERN_MASKS[patternIndex] ?? ARP_FACTORY_PATTERN_MASKS[0];
+  const masks = computeArpPresetMasks(maskDef.stepMask, maskDef.baseAccent, maskDef.baseTie, euclideanSeed);
+  const steps: number[] = [];
+  const modes: ArpStepMode[] = [];
+
+  for (let s = 0; s < 16; s++) {
+    const bit = 1 << s;
+    if (!(masks.stepMask & bit)) {
+      modes.push('Norm');
+      steps.push(0);
+    } else {
+      if (masks.tieMask & bit) {
+        modes.push('Tie');
+      } else if (masks.octUpMask & bit) {
+        modes.push('Oct+');
+      } else if (masks.ratchet2Mask & bit) {
+        modes.push('Rt*2');
+      } else {
+        modes.push('Norm');
+      }
+      steps.push((masks.accentMask & bit) ? 100 : 75);
+    }
+  }
+
+  return { steps, modes, length: masks.length };
+}
 
 // ============================================================================
 // Note Curves — PreenFM2Controller official mapping (indices 0-6)

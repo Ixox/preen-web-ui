@@ -13,8 +13,20 @@ import {
 } from '../types/patch';
 // import type { Filter1Type, Filter2Type } from '../types/patch';
 import type { NRPNMessage } from './preenFM3MidiMap';
-import { formatTimbreMfxNrpnDetail, nrpnToCurveType, nrpnToStepSeqSync, STEP_SEQ_STEP_MODES, type StepSeqStepMode } from './preenFmConstants';
-import { DEFAULT_ALGORITHMS, DEFAULT_LFO_ENVELOPE, ARP_CLOCKS, ARP_DIRECTIONS, ARP_PATTERNS, ARP_DIVISIONS, ARP_DURATIONS, ARP_LATCH } from '../types/patch';
+import {
+  formatTimbreMfxNrpnDetail,
+  nrpnToCurveType,
+  nrpnToStepSeqSync,
+  STEP_SEQ_STEP_MODES,
+  arpStepStateToValue,
+  nrpnToArpStepAction,
+  type StepSeqStepMode,
+} from './preenFmConstants';
+import {
+  DEFAULT_ALGORITHMS, DEFAULT_LFO_ENVELOPE, ARP_CLOCKS, ARP_DIRECTIONS, ARP_PATTERNS,
+  ARP_DIVISIONS, ARP_DURATIONS, ARP_LATCH, createDefaultArpUserPattern,
+  type ArpUserPatternKey, type ArpPatternData,
+} from '../types/patch';
 import type { 
   ArpClock,
   ArpDirection, 
@@ -890,6 +902,49 @@ export class PreenFM3Parser {
         division: parseArpDivision(this.getValue(0, 33) ?? 12), // NRPN LSB=33, Default to 1/16 (index 12)
         duration: parseArpDuration(this.getValue(0, 34) ?? 12), // NRPN LSB=34, Default to 1/16 (index 12)
         latch: parseArpLatch(this.getValue(0, 35) ?? 0), // NRPN LSB=35
+        euclideanSeed: (() => {
+          const raw = this.getValue(4, 4);
+          return typeof raw === 'number' ? Math.max(0, Math.min(15, Math.round(raw))) : 0;
+        })(), // NRPN 516 [4,4]
+        userPatterns: (() => {
+          const keys: ArpUserPatternKey[] = ['Usr1', 'Usr2', 'Usr3', 'Usr4'];
+          const result: Partial<Record<ArpUserPatternKey, ArpPatternData>> = {};
+          let hasAny = false;
+          keys.forEach((key, idx) => {
+            const rawLen = this.getValue(4, 5 + idx);
+            const msb = 7 + idx;
+            const defaults = createDefaultArpUserPattern();
+            let hasSteps = false;
+            const steps: number[] = [];
+            const modes = [...defaults.modes];
+
+            for (let s = 0; s < 16; s++) {
+              const rawState = this.getValue(msb, s);
+              const rawAction = this.getValue(msb, 16 + s);
+              if (typeof rawState === 'number' || typeof rawAction === 'number') {
+                hasSteps = true;
+              }
+              const state = typeof rawState === 'number' ? rawState : 1;
+              if (state <= 0) {
+                modes[s] = 'Off';
+                steps.push(0);
+              } else {
+                modes[s] = nrpnToArpStepAction(rawAction);
+                steps.push(arpStepStateToValue(state));
+              }
+            }
+
+            if (typeof rawLen === 'number' || hasSteps) {
+              hasAny = true;
+              result[key] = {
+                steps: hasSteps ? steps : defaults.steps,
+                modes: hasSteps ? modes : defaults.modes,
+                length: typeof rawLen === 'number' ? Math.max(1, Math.min(16, Math.round(rawLen))) : 16,
+              };
+            }
+          });
+          return hasAny ? result : undefined;
+        })(), // NRPN 517..520 [4,5..8] & MSB=7..10 LSB=0..31
       },
       midi: {
         channel: 1,

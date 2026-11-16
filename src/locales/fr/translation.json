@@ -151,6 +151,18 @@
       "Alt2": "Alt 1/2",
       "Alt3": "Alt 1/3"
     },
+    "arpStepModes": {
+      "Norm": "Normal",
+      "Off": "Silence (Off)",
+      "Tie": "Liaison (Tie)",
+      "Oct+": "Octave +1",
+      "Rt*2": "Ratchet ×2",
+      "Chrd": "Accord (Chrd)",
+      "Slap": "Strum (Slap)"
+    },
+    "arpPatternReadOnly": "Motif preset (lecture seule)",
+    "arpPatternEditable": "Motif utilisateur (éditable)",
+    "euclideanSeed": "Seed",
     "break": "Coupure",
     "gate": "Porte",
     "clockSource": "Horloge",
