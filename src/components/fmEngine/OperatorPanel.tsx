@@ -12,6 +12,7 @@ import { useFMSynthContext } from './FMSynthContext';
 import { useTranslation } from 'react-i18next';
 
 const PanelContainer = styled.div<{ $isHighlighted?: boolean }>`
+  position: relative;
   background-color: ${props => props.theme.colors.panelHover};
   padding: 10px;
   border-radius: 8px;

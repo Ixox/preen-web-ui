@@ -21,36 +21,7 @@ const StyledSvg = styled.svg`
   user-select: none;
 `;
 
-const ValueLabels = styled.div`
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-`;
-
-const ValueLabel = styled.div<{ $highlighted?: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: ${props => props.$highlighted ? props.theme.colors.highlight : props.theme.colors.text};
-  font-size: 0.75rem;
-  font-family: monospace;
-  transition: color 0.2s;
-`;
-
-const LabelName = styled.span`
-  width: 15px;
-  font-weight: bold;
-`;
-
-const LabelValue = styled.span`
-  width: 45px;
-  text-align: right;
-`;
-
-const MARGIN = { left: 30, right: 110, top: 20, bottom: 30 };
+const MARGIN = { left: 10, right: 10, top: 10, bottom: 10 };
 const POINT_RADIUS = 5;
 const ACTIVE_POINT_RADIUS = 7;
 
@@ -120,6 +91,13 @@ export const EnvelopeVisualizer: React.FC<Props> = ({
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
+
+  useEffect(() => {
+    if (!draggingPoint) return;
+    const stopDragging = () => setDraggingPoint(null);
+    window.addEventListener('mouseup', stopDragging);
+    return () => window.removeEventListener('mouseup', stopDragging);
+  }, [draggingPoint]);
 
   const width = dimensions.width;
   const height = dimensions.height;
@@ -582,52 +560,6 @@ export const EnvelopeVisualizer: React.FC<Props> = ({
           );
         })}
       </StyledSvg>
-
-      {/* Value labels on the right */}
-      <ValueLabels>
-        {isEnv1 ? (
-          <>
-            <ValueLabel $highlighted={hoveredPoint === 'attack' || draggingPoint === 'attack'}>
-              <LabelName>A</LabelName>
-              <LabelValue>{(envelope as EnvelopeDataADSR).attack.time.toFixed(2)}</LabelValue>
-              <LabelValue>100</LabelValue>
-            </ValueLabel>
-            <ValueLabel $highlighted={hoveredPoint === 'decay' || draggingPoint === 'decay'}>
-              <LabelName>D</LabelName>
-              <LabelValue>{(envelope as EnvelopeDataADSR).decay.time.toFixed(2)}</LabelValue>
-              <LabelValue>{((envelope as EnvelopeDataADSR).decay.level * 100).toFixed(0)}</LabelValue>
-            </ValueLabel>
-            <ValueLabel $highlighted={hoveredPoint === 'sustain' || draggingPoint === 'sustain'}>
-              <LabelName>S</LabelName>
-              <LabelValue>{(envelope as EnvelopeDataADSR).sustain.time.toFixed(2)}</LabelValue>
-              <LabelValue>{((envelope as EnvelopeDataADSR).decay.level * 100).toFixed(0)}</LabelValue>
-            </ValueLabel>
-            <ValueLabel $highlighted={hoveredPoint === 'release' || draggingPoint === 'release'}>
-              <LabelName>R</LabelName>
-              <LabelValue>{(envelope as EnvelopeDataADSR).release.time.toFixed(2)}</LabelValue>
-              <LabelValue>{((envelope as EnvelopeDataADSR).release.level * 100).toFixed(0)}</LabelValue>
-            </ValueLabel>
-          </>
-        ) : (
-          <>
-            <ValueLabel $highlighted={hoveredPoint === 'silence' || draggingPoint === 'silence'}>
-              <LabelName>S</LabelName>
-              <LabelValue>{(envelope as EnvelopeDataSAR).silence.time.toFixed(2)}</LabelValue>
-              <LabelValue>-</LabelValue>
-            </ValueLabel>
-            <ValueLabel $highlighted={hoveredPoint === 'attack' || draggingPoint === 'attack'}>
-              <LabelName>A</LabelName>
-              <LabelValue>{(envelope as EnvelopeDataSAR).attack.time.toFixed(2)}</LabelValue>
-              <LabelValue>-</LabelValue>
-            </ValueLabel>
-            <ValueLabel $highlighted={hoveredPoint === 'release' || draggingPoint === 'release'}>
-              <LabelName>R</LabelName>
-              <LabelValue>{(envelope as EnvelopeDataSAR).release.time.toFixed(2)}</LabelValue>
-              <LabelValue>-</LabelValue>
-            </ValueLabel>
-          </>
-        )}
-      </ValueLabels>
     </Container>
   );
 };
