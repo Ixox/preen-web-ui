@@ -188,6 +188,10 @@
   "midi": {
     "title": "MIDI",
     "menu": "MIDI Menu",
+    "midiInputSection": "MIDI input",
+    "preenfm3Section": "PreenFM3",
+    "forwardInputLabel": "Forward to PreenFM3:",
+    "forwardInputHint": "Notes, CC and clock received on this input are forwarded to the PreenFM3 input.",
     "input": "MIDI Input",
     "output": "MIDI Output",
     "channel": "MIDI Channel",
