@@ -625,3 +625,37 @@ describe('Free Envelope Attack & Release Curves NRPN (280..283 / MSB=2, LSB=24..
 });
 
 
+
+describe('Firmware capability NRPNs (MSB=127)', () => {
+  it('assumes full pvig support when no capability block arrives', () => {
+    const parser = new PreenFM3Parser();
+    expect(parser.getCapabilities()).toEqual({
+      featureBits: 0x3ff,
+      lfoShapeMax: 26,
+      protocolVersion: 1,
+    });
+  });
+
+  it('parses the capability block without storing it as patch data', () => {
+    const parser = new PreenFM3Parser();
+    parser.addNRPN({ paramMSB: 127, paramLSB: 126, valueMSB: 0, valueLSB: 0 });
+    parser.addNRPN({ paramMSB: 127, paramLSB: 125, valueMSB: 0, valueLSB: 7 });
+    parser.addNRPN({ paramMSB: 127, paramLSB: 124, valueMSB: 0, valueLSB: 1 });
+
+    expect(parser.getCapabilities()).toEqual({
+      featureBits: 0,
+      lfoShapeMax: 7,
+      protocolVersion: 1,
+    });
+    expect(parser.getValue(127, 126)).toBeUndefined();
+    expect(parser.getValue(127, 125)).toBeUndefined();
+    expect(parser.getValue(127, 124)).toBeUndefined();
+  });
+
+  it('restores the full-support fallback on reset', () => {
+    const parser = new PreenFM3Parser();
+    parser.addNRPN({ paramMSB: 127, paramLSB: 126, valueMSB: 0, valueLSB: 0 });
+    parser.reset();
+    expect(parser.getCapabilities().featureBits).toBe(0x3ff);
+  });
+});

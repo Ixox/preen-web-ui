@@ -29,7 +29,8 @@ import {
   sendArpeggiatorUserStepState,
   sendArpeggiatorUserStepAction,
 } from '../../midi/midiService';
-import { arpStepValueToState } from '../../midi/preenFmConstants';
+import { arpStepValueToState, CAPABILITY_BITS } from '../../midi/preenFmConstants';
+import { useSupportsFeature } from '../../midi/useSynthCapabilities';
 
 const ArpContainer = styled.div`
   background: ${props => props.theme.colors.panel};
@@ -145,15 +146,21 @@ export const ArpeggiatorEditor: React.FC = () => {
   const { t } = useTranslation();
   const arp = useArpeggiator();
   const { theme } = useThemeStore();
+  const supportsExtendedArp = useSupportsFeature(CAPABILITY_BITS.EXTENDED_ARP);
 
   const clockSources = ARP_CLOCKS;
   const directions = ARP_DIRECTIONS;
-  const patterns = ARP_PATTERNS;
+  const patterns = supportsExtendedArp
+    ? ARP_PATTERNS
+    : ARP_PATTERNS.filter((pattern) => !pattern.startsWith('Usr'));
   const divisions = ARP_DIVISIONS;
   const durations = ARP_DURATIONS;
   const latchModes = ARP_LATCH;
 
-  const isUserPattern = arp.pattern.startsWith('Usr');
+  const isUserPattern = supportsExtendedArp && arp.pattern.startsWith('Usr');
+  const selectedPattern = isUserPattern || patterns.includes(arp.pattern as ArpPattern)
+    ? arp.pattern
+    : patterns[0];
   const euclideanSeed = arp.euclideanSeed ?? 0;
   const factoryIndex = ARP_PATTERNS.indexOf(arp.pattern);
   const patternData = isUserPattern
@@ -276,6 +283,7 @@ export const ArpeggiatorEditor: React.FC = () => {
             max={3}
             step={1}
             value={arp.octave}
+            defaultValue={1}
             onChange={(octave) => {
               updateArpeggiator({ octave });
               sendArpeggiatorOctave(octave);
@@ -293,7 +301,7 @@ export const ArpeggiatorEditor: React.FC = () => {
           <ControlLabel>{t('modulation.pattern')}</ControlLabel>
           <StyledSelect 
             $width="120px"
-            value={arp.pattern}
+            value={selectedPattern}
             onChange={(e) => {
               const pattern = e.target.value as ArpPattern;
               updateArpeggiator({ pattern });
@@ -369,7 +377,7 @@ export const ArpeggiatorEditor: React.FC = () => {
         </ControlGroup>
 
         {/* Euclidean Seed (0..15) for factory patterns 1..22, or Loop Length (1..16) for Usr1..Usr4 */}
-        {!isUserPattern ? (
+        {supportsExtendedArp && (!isUserPattern ? (
           <ControlGroup>
             <KnobBase
               size={60}
@@ -378,6 +386,7 @@ export const ArpeggiatorEditor: React.FC = () => {
               max={15}
               step={1}
               value={euclideanSeed}
+              defaultValue={0}
               onChange={(seed) => {
                 const rounded = Math.round(seed);
                 updateArpeggiator({ euclideanSeed: rounded });
@@ -399,6 +408,7 @@ export const ArpeggiatorEditor: React.FC = () => {
               max={16}
               step={1}
               value={patternData.length ?? 16}
+              defaultValue={16}
               onChange={handleUserLengthChange}
               color={theme.colors.accent}
               backgroundColor={theme.colors.knobBackground}
@@ -407,9 +417,10 @@ export const ArpeggiatorEditor: React.FC = () => {
               label={t('modulation.loopLength')}
             />
           </ControlGroup>
-        )}
+        ))}
       </ArpControls>
 
+      {supportsExtendedArp && (
       <PatternSection>
         <PatternHeader>
           <ControlLabel>
@@ -436,6 +447,7 @@ export const ArpeggiatorEditor: React.FC = () => {
           onModeChange={handleUserModeChange}
         />
       </PatternSection>
+      )}
     </ArpContainer>
   );
 };

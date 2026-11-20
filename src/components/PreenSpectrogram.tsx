@@ -410,7 +410,7 @@ const Badge = styled.span`
   border-radius: 4px;
   padding: 2px 8px;
   font-size: 0.75rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   white-space: nowrap;
 `;
 
@@ -472,7 +472,7 @@ const FreqLabel = styled.span<{ $left: number }>`
   transform: translateX(-50%);
   font-size: 0.65rem;
   color: rgba(255, 255, 255, 0.55);
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   line-height: 18px;
   white-space: nowrap;
 `;
@@ -546,7 +546,7 @@ const StatusDot = styled.span<{ $active: boolean }>`
 const StatusText = styled.span`
   font-size: 0.8rem;
   color: ${({ theme }) => theme.colors.textMuted};
-  font-family: monospace;
+  font-family: var(--app-font-digit);
 `;
 
 const ErrorMessage = styled.p`
@@ -670,7 +670,7 @@ const HelpPanel = styled.div`
     background: rgba(0, 0, 0, 0.5);
     border-radius: 4px;
     padding: 6px 10px;
-    font-family: monospace;
+    font-family: var(--app-font-digit);
     font-size: 0.73rem;
     color: #86efac;
     white-space: pre-wrap;

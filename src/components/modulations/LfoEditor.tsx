@@ -9,15 +9,15 @@ import { sendLfoParamNRPN } from '../../midi/midiService';
 import { LFO_TYPES } from '../../types/lfo';
 import { useThemeStore } from '../../theme/themeStore';
 import { StyledSelect } from '../StyledSelect';
+import { CAPABILITY_BITS } from '../../midi/preenFmConstants';
+import { useSupportsFeature } from '../../midi/useSynthCapabilities';
 
 const LfoContainer = styled.div`
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 12px;
-  margin-bottom: 10px;
   border: 1px solid ${props => props.theme.colors.border};
   width: 100%;
-  max-width: 520px;
 `;
 
 const LfoTitle = styled.h3`
@@ -103,6 +103,8 @@ export const LfoEditor: React.FC = () => {
   const lfo = useLfo(activeLfo);
   const { theme } = useThemeStore();
   const { t } = useTranslation();
+  const supportsLfoMidiClock = useSupportsFeature(CAPABILITY_BITS.LFO_MIDI_CLOCK);
+  const effectiveSyncMode = supportsLfoMidiClock ? lfo.syncMode : 'Int';
 
   // Helper: send correct NRPN for frequency or MIDI clock
   const sendLfoFrequencyOrClock = (freqOrMode: number | MidiClockMode) => {
@@ -130,7 +132,7 @@ export const LfoEditor: React.FC = () => {
 
         <LfoWaveformSelector
           value={lfo.shape}
-          frequency={lfo.syncMode === 'Int' ? lfo.frequency : 10}
+          frequency={effectiveSyncMode === 'Int' ? lfo.frequency : 10}
           keysync={lfo.keysync !== 'Off' ? (lfo.keysync as number) : undefined}
           phase={typeof lfo.phase === 'number' ? lfo.phase : 0}
           onChange={(shape) => {
@@ -142,6 +144,7 @@ export const LfoEditor: React.FC = () => {
       </HeaderRow>
 
       <LfoControls>
+      {supportsLfoMidiClock && (
       <div style={{ width: "100%" }}>
           <ControlLabel>{t('lfo.syncMode')}</ControlLabel>
           <label>
@@ -164,9 +167,10 @@ export const LfoEditor: React.FC = () => {
             {lfo.syncMode === 'Ext' ? t('lfo.external') : t('lfo.internal')}
           </label>
         </div>
+      )}
 
         <ControlGroup>
-          {lfo.syncMode === 'Int' ? (
+          {effectiveSyncMode === 'Int' ? (
             <KnobBase
               size={60}
               knobRadius={16}
@@ -174,9 +178,10 @@ export const LfoEditor: React.FC = () => {
               max={99.9}
               step={0.1}
               value={lfo.frequency}
+              defaultValue={5}
               onChange={(frequency) => {
                 // If user sets freq > 99.9, switch to Ext and send default MIDI clock
-                if (frequency > 99.9) {
+                if (frequency > 99.9 && supportsLfoMidiClock) {
                   const defaultClock = lfo.midiClockMode || MIDI_CLOCK_MODES[0];
                   updateLfo(activeLfo, { syncMode: 'Ext', midiClockMode: defaultClock });
                   sendLfoFrequencyOrClock(defaultClock);
@@ -222,6 +227,7 @@ export const LfoEditor: React.FC = () => {
             max={1.00}
             step={0.001}
             value={lfo.phase}
+            defaultValue={0}
             onChange={(phase) => {
               updateLfo(activeLfo, { phase });
               sendLfoParamNRPN(activeLfo, 'phase', phase);
@@ -243,6 +249,7 @@ export const LfoEditor: React.FC = () => {
             max={1}
             step={0.01}
             value={lfo.bias}
+            defaultValue={0}
             onChange={(bias) => {
               updateLfo(activeLfo, { bias });
               sendLfoParamNRPN(activeLfo, 'bias', bias);
@@ -264,6 +271,7 @@ export const LfoEditor: React.FC = () => {
             max={16}
             step={0.1}
             value={lfo.keysync === 'Off' ? -1 : lfo.keysync}
+            defaultValue={-1}
             onChange={(value) => {
               const keysync = value < 0 ? 'Off' : Math.max(0, value);
               updateLfo(activeLfo, { keysync });

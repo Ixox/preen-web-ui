@@ -1,5 +1,7 @@
 import React, { useRef, useState } from "react";
 import { useThemeStore } from '../../theme/themeStore';
+import { useUIStore } from '../../stores/uiStore';
+import { clampAndStep, valueFromVerticalDrag } from './knobDrag';
 
 type ValuePosition = 'top' | 'bottom' | 'left' | 'none';
 type LabelPosition = 'top' | 'left' | 'bottom' | 'none';
@@ -10,11 +12,13 @@ interface KnobBaseProps {
   min?: number;
   max?: number;
   value: number;
+  defaultValue?: number;
   onChange?: (value: number) => void;
   step?: number; // pas optionnel : si défini -> mode discret, sinon continu
   color?: string;
   backgroundColor?: string;
   strokeColor?: string;
+  strokeColorHover?: string;
   renderLabel?: (value: number) => React.ReactNode;
   label?: string | null;
   title?: string; // Tooltip HTML natif
@@ -28,6 +32,7 @@ function KnobBase({
   min = 0,
   max = 100,
   value = 0,
+  defaultValue,
   onChange = (arg) => { console.log("arg", arg) },
   step,
   color = "#000",
@@ -40,11 +45,13 @@ function KnobBase({
   labelPosition = 'top'
 }: KnobBaseProps) {
   const { theme } = useThemeStore();
+  const knobDragMode = useUIStore(state => state.knobDragMode);
   const center = size / 2;
   const radius = knobRadius ?? (center - 10);
-  const tickLength = 6;
   const isDragging = useRef(false);
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const verticalDragRef = useRef<{ startY: number; startValue: number } | null>(null);
+  const lastPointerDownRef = useRef<{ time: number; x: number; y: number } | null>(null);
 
   const START_ANGLE = -135;
   const END_ANGLE = 135;
@@ -103,20 +110,33 @@ function KnobBase({
     const rawValue = valueForAngle(clampedAngle);
 
     // Mode discret si un pas est défini, sinon continu
-    const newValue =
-      step && step > 0
-        ? Math.round(rawValue / step) * step
-        : rawValue;
-
-    onChange(newValue);
+    onChange(clampAndStep(rawValue, min, max, step));
   };
 
   const handlePointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!svgRef.current) return 0;
 
+    const now = Date.now();
+    const last = lastPointerDownRef.current;
+    if (last && now - last.time < 350 && Math.hypot(e.clientX - last.x, e.clientY - last.y) < 8) {
+      lastPointerDownRef.current = null;
+      isDragging.current = false;
+      e.preventDefault();
+      const resetValue = defaultValue ?? (min <= 0 && max >= 0 ? 0 : min);
+      onChange(resetValue);
+      return;
+    }
+    lastPointerDownRef.current = { time: now, x: e.clientX, y: e.clientY };
+
     e.preventDefault();
     isDragging.current = true;
-    updateFromEvent(e);
+
+    if (knobDragMode === 'vertical') {
+      verticalDragRef.current = { startY: e.clientY, startValue: value };
+    } else {
+      verticalDragRef.current = null;
+      updateFromEvent(e);
+    }
 
     // Capture: garantit la réception des pointermove/up pendant le drag
     try {
@@ -129,11 +149,28 @@ function KnobBase({
   const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     if (!svgRef.current || !isDragging.current) return;
     e.preventDefault();
+
+    if (knobDragMode === 'vertical' && verticalDragRef.current) {
+      const { startY, startValue } = verticalDragRef.current;
+      onChange(valueFromVerticalDrag({
+        startValue,
+        startY,
+        currentY: e.clientY,
+        min,
+        max,
+        dragRangePx: size,
+        step,
+        fine: e.shiftKey,
+      }));
+      return;
+    }
+
     updateFromEvent(e);
   };
 
   const handlePointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
     isDragging.current = false;
+    verticalDragRef.current = null;
     try {
       (svgRef.current as unknown as SVGSVGElement).releasePointerCapture(e.pointerId);
     } catch {
@@ -143,25 +180,30 @@ function KnobBase({
 
   const angle = angleForValue(value);
   const angleRad = (angle - 90) * (Math.PI / 180);
-  const pointerX = center + radius * Math.cos(angleRad);
-  const pointerY = center + radius * Math.sin(angleRad);
+  const pointerRadius = radius -  2;
+  const pointerX = center + pointerRadius * Math.cos(angleRad);
+  const pointerY = center + pointerRadius * Math.sin(angleRad);
 
-  const getTick = (deg: number) => {
-    const rad = (deg - 90) * (Math.PI / 180);
-    const outerX = center + radius * Math.cos(rad);
-    const outerY = center + radius * Math.sin(rad);
-    const innerX = center + (radius - tickLength) * Math.cos(rad);
-    const innerY = center + (radius - tickLength) * Math.sin(rad);
-    return { x1: innerX, y1: innerY, x2: outerX, y2: outerY };
+  const describeArc = (fromDeg: number, toDeg: number) => {
+    const fromRad = (fromDeg - 90) * (Math.PI / 180);
+    const toRad = (toDeg - 90) * (Math.PI / 180);
+    const x1 = center + radius * Math.cos(fromRad);
+    const y1 = center + radius * Math.sin(fromRad);
+    const x2 = center + radius * Math.cos(toRad);
+    const y2 = center + radius * Math.sin(toRad);
+    const largeArc = Math.abs(toDeg - fromDeg) > 180 ? 1 : 0;
+    const sweep = toDeg >= fromDeg ? 1 : 0;
+    return `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} ${sweep} ${x2} ${y2}`;
   };
 
-  const tickMin = getTick(START_ANGLE);
-  const tickMax = getTick(END_ANGLE);
-  const tickZero = crossesZero ? getTick(0) : null;
+  const valueArcPath = describeArc(crossesZero ? 0 : START_ANGLE, angle);
+  const trackArcPath = describeArc(START_ANGLE, END_ANGLE);
+  const showValueArc = crossesZero ? Math.abs(angle) > 0.01 : angle > START_ANGLE + 0.01;
 
   // ── Editable value ──────────────────────────────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState('');
+  const [isHovered, setIsHovered] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const startEditing = () => {
@@ -199,7 +241,7 @@ function KnobBase({
     borderRadius: 3,
     color: color,
     fontSize: 12,
-    fontFamily: 'monospace',
+    fontFamily: 'var(--app-font-digit)',
     textAlign: 'center',
     outline: 'none',
     padding: '0 2px',
@@ -241,7 +283,7 @@ function KnobBase({
           style={{
             fontSize: 12,
             color: color,
-            fontFamily: 'monospace',
+            fontFamily: 'var(--app-font-digit)',
             minWidth: '45px',
             textAlign: 'right',
           }}
@@ -304,6 +346,7 @@ function KnobBase({
               textAlign: "center",
               fontSize: 12,
               color: color,
+              fontFamily: 'var(--app-font-digit)',
             }}
           >
             {isEditing ? (
@@ -340,7 +383,9 @@ function KnobBase({
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
-            style={{ userSelect: "none", cursor: "pointer", touchAction: "none" }}
+            onPointerEnter={() => setIsHovered(true)}
+            onPointerLeave={() => setIsHovered(false)}
+            style={{ userSelect: "none", cursor: knobDragMode === 'vertical' ? 'ns-resize' : 'pointer', touchAction: "none" }}
           >
             <circle
               cx={center}
@@ -353,13 +398,24 @@ function KnobBase({
               cy={center}
               r={radius}
               fill={backgroundColor}
-              stroke={strokeColor}
-              strokeWidth="2"
+              style={{ filter: isHovered ? 'brightness(1.2)' : undefined }}
             />
-            <line {...tickMin} stroke={theme.colors.knobTick} strokeWidth="2" />
-            <line {...tickMax} stroke={theme.colors.knobTick} strokeWidth="2" />
-            {tickZero && (
-              <line {...tickZero} stroke={theme.colors.knobTick} strokeWidth="2" opacity="0.6" />
+            <path
+              d={trackArcPath}
+              fill="none"
+              stroke={strokeColor}
+              strokeOpacity="0.4"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+            {showValueArc && (
+              <path
+                d={valueArcPath}
+                fill="none"
+                stroke={isHovered ? '#eee' : strokeColor}
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             )}
             <line
               x1={center}
@@ -382,6 +438,7 @@ function KnobBase({
               textAlign: "center",
               fontSize: 12,
               color: color,
+              fontFamily: 'var(--app-font-digit)',
             }}
           >
             {isEditing ? (

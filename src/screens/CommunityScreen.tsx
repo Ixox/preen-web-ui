@@ -14,7 +14,6 @@ import { SlowRequestBanner } from '../components/SlowRequestBanner';
 // ─── Styled components ────────────────────────────────────────────────────────
 
 const Screen = styled.div`
-  max-width: 900px;
   margin: 0 auto;
   padding: 0 1rem 2rem;
 `;

@@ -163,12 +163,12 @@ const SlotName = styled.div`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: 'Courier New', monospace;
+  font-family: var(--app-font-digit);
 `;
 
 const NameInput = styled.input`
   font-size: 11px;
-  font-family: 'Courier New', monospace;
+  font-family: var(--app-font-digit);
   width: 100%;
   background: ${({ theme }) => theme.colors.background};
   color: ${({ theme }) => theme.colors.text};

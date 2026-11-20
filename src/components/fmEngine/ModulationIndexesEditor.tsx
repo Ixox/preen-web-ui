@@ -15,22 +15,24 @@ const EditorContainer = styled.div`
   padding: 10px;
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
-  min-width: 250px;
-  max-width: 450px;
+  min-width: 400px;
   width: 100%;
   flex: 1;
   box-sizing: border-box;
 
   @media (max-width: 768px) {
+    min-width: 0;
     max-width: 100%;
     width: 100%;
   }
 `;
 
 const ModulationList = styled.div`
-  background: ${props => props.theme.colors.background};
+  background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
   min-height: 220px;
   overflow-y: auto;
   overflow-x: hidden;
@@ -48,13 +50,17 @@ const ModulationItem = styled.div`
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  margin-bottom: 1px;
-  padding: 0;
+  margin-bottom: 6px;
+  padding: 4px 8px;
   background: ${props => props.theme.colors.background};
   border-radius: 4px;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 const Label = styled.label`
@@ -189,25 +195,13 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
         {modulationLinks.map((link) => {
         const isFeedback = link.sourceId === link.targetId;
 
-        let label: string;
-        let imMin = 0, imMax = 16, imStep = 0.01, imValue = 0;
-        if (isFeedback) {
-          label = `IM6: Op${link.sourceId} feedback `; // feedback always uses IM6 slot
-          imMax = 1;
-          imStep = 0.001;
-          imValue = typeof link.im === 'number' ? Math.max(0, Math.min(1, link.im)) : 0;
-        } else {
-          label = `IM${link.imIndex + 1}: Op${link.sourceId} → Op${link.targetId}`;
-          imValue = typeof link.im === 'number' ? Math.max(0, Math.min(16, link.im)) : 0;
-        }
-        let veloMin = 0, veloMax = 16, veloStep = 0.01, veloValue = 0;
-        if (isFeedback) {
-          veloMax = 1;
-          veloStep = 0.001;
-          veloValue = typeof link.modulationIndexVelo === 'number' ? Math.max(0, Math.min(1, link.modulationIndexVelo)) : 0;
-        } else {
-          veloValue = typeof link.modulationIndexVelo === 'number' ? Math.max(0, Math.min(16, link.modulationIndexVelo)) : 0;
-        }
+        const label = isFeedback
+          ? `Op${link.sourceId} Feedback` // feedback always uses IM6 slot
+          : `IM${link.imIndex + 1}: Op${link.sourceId} → Op${link.targetId}`;
+        const imMin = 0, imMax = 16, imStep = 0.01;
+        const imValue = typeof link.im === 'number' ? Math.max(0, Math.min(16, link.im)) : 0;
+        const veloMin = 0, veloMax = 16, veloStep = 0.01;
+        const veloValue = typeof link.modulationIndexVelo === 'number' ? Math.max(0, Math.min(16, link.modulationIndexVelo)) : 0;
 
         return (
           <ModulationItem 
@@ -224,11 +218,12 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
                 max={imMax}
                 step={imStep}
                 value={imValue}
+                defaultValue={1}
                 onChange={val => handleIMChange(link.sourceId, link.targetId, val)}
                 color={theme.colors.knobModulation}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
-                renderLabel={val => val.toFixed(isFeedback ? 3 : 2)}
+                renderLabel={val => val.toFixed(2)}
                 label="IM"
                 labelPosition="left"
               />
@@ -243,7 +238,7 @@ export const ModulationIndexesEditor: React.FC<ModulationIndexesEditorProps> = (
                 color={theme.colors.knobVelocity}
                 backgroundColor={theme.colors.knobBackground}
                 strokeColor={theme.colors.knobStroke}
-                renderLabel={val => val.toFixed(isFeedback ? 3 : 2)}
+                renderLabel={val => val.toFixed(2)}
                 label="Velo"
                 labelPosition="left"
               />

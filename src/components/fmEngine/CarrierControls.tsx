@@ -11,7 +11,9 @@ import {
   PLAY_MODES,
   VOICE_PRIORITIES,
   MFX_REVERB_PRESETS,
+  CAPABILITY_BITS,
 } from '../../midi/preenFmConstants';
+import { useSupportsFeature } from '../../midi/useSynthCapabilities';
 
 const CarrierContainer = styled.div`
   margin: auto;
@@ -19,12 +21,8 @@ const CarrierContainer = styled.div`
   border-radius: 8px;
   border: 1px solid ${props => props.theme.colors.border};
   overflow: hidden;
-  width: 900px;
-  max-width: 900px;
-  @media (max-width: 900px) {
-    max-width: 100%;
-    width: 100%;
-  }
+  width: 100%;
+  box-sizing: border-box;
 `;
 
 const CarrierHeader = styled.div`
@@ -93,6 +91,7 @@ const CompactRange = styled.input`
 const ValueBadge = styled.span`
   font-size: 0.72rem;
   color: ${props => props.theme.colors.text};
+  font-family: var(--app-font-digit);
   font-variant-numeric: tabular-nums;
   min-width: 32px;
   text-align: right;
@@ -117,7 +116,7 @@ const OperatorControl = styled.div<{ $isHighlighted?: boolean }>`
   background: ${props => props.theme.colors.panelHover};
   border-radius: 6px;
   border: 2px solid ${props => props.theme.colors.border};
-  transition: border-color 3s ease, box-shadow 3s ease;
+  transition: border-color 0.5s ease, box-shadow 0.5s ease;
   
   ${props => props.$isHighlighted && `
     border-color: ${props.theme.colors.highlight};
@@ -146,14 +145,6 @@ const ControlLabel = styled.span`
   color: #a0aec0;
   text-align: center;
   text-transform: uppercase;
-`;
-
-const ControlInput = styled.input`
-  font-size: 0.8rem;
-  color: #a0aec0;
-  text-align: center;
-  width: 80px;
-  margin-top: 5px;
 `;
 
 const CarrierFooter = styled.div`
@@ -196,6 +187,8 @@ export const CarrierControls: React.FC = () => {
   const voicePriorityValue = global.voicePriority ?? 0;
   const mfxReturnValue = global.mfxReturn ?? 0.5;
   const mfxPresetValue = global.mfxPreset ?? 0;
+  const supportsDecimation = useSupportsFeature(CAPABILITY_BITS.ENGINE_DECIMATION);
+  const supportsVoicePriority = useSupportsFeature(CAPABILITY_BITS.VOICE_PRIORITY);
 
   return (
     <CarrierContainer>
@@ -234,6 +227,7 @@ export const CarrierControls: React.FC = () => {
           </HeaderControlItem>
 
           {/* CC 42: Engine Decimation (1-bit .. 19-bit, FULL, HQx2) */}
+          {supportsDecimation && (
           <HeaderControlItem title="Engine Decimation lo-fi bit reduction (CC 42)">
             <CompactLabel>Decim:</CompactLabel>
             <CompactSelect
@@ -247,6 +241,7 @@ export const CarrierControls: React.FC = () => {
               ))}
             </CompactSelect>
           </HeaderControlItem>
+          )}
 
           {/* CC 43: Play Mode (Mono, Poly, Unison) */}
           <HeaderControlItem title="Play Mode (CC 43)">
@@ -264,6 +259,7 @@ export const CarrierControls: React.FC = () => {
           </HeaderControlItem>
 
           {/* NRPN 276 [2,20]: Voice Priority (Last, High, Low, BassP, Cycl) */}
+          {supportsVoicePriority && (
           <HeaderControlItem title="Voice Priority (NRPN 276 [2,20])">
             <CompactLabel>Prio:</CompactLabel>
             <CompactSelect
@@ -277,6 +273,7 @@ export const CarrierControls: React.FC = () => {
               ))}
             </CompactSelect>
           </HeaderControlItem>
+          )}
         </HeaderControls>
       </CarrierHeader>
       
@@ -306,6 +303,7 @@ export const CarrierControls: React.FC = () => {
                     max={1}
                     step={0.01}
                     value={operator?.amplitude ?? 0}
+                    defaultValue={1}
                     onChange={val => updateOperator(id, { amplitude: Math.max(0, Math.min(1, val)) })}
                     color={theme.colors.knobVolume}
                     backgroundColor={theme.colors.knobBackground}
@@ -316,13 +314,14 @@ export const CarrierControls: React.FC = () => {
                 </ControlGroup>
 
                 <ControlGroup>
-                  <ControlInput
+                  <CompactRange
                     type="range"
                     min="-1"
                     max="1"
                     step="0.01"
                     value={operator?.pan ?? 0}
                     onChange={e => updateOperator(id, { pan: Number(e.target.value) })}
+                    onDoubleClick={() => updateOperator(id, { pan: 0 })}
                   />
                   <ControlLabel>Pan</ControlLabel>
                 </ControlGroup>

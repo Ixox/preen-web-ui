@@ -34,7 +34,9 @@ import { WAVEFORMS } from '../types/waveform';
 import { parseLfoShape, nrpnToLfoFrequency, parseLfoBias, parseLfoKeysync } from '../types/lfo';
 import { ALGO_DIAGRAMS } from '../algo/algorithms.static';
 import { onNRPNScoped, onControlChangeScoped, runWithoutMidiOutput } from './midiService';
+import { parseCapabilityNRPN } from './capabilities';
 import { usePatchStore } from '../stores/patchStore';
+import { useSynthStore } from '../stores/synthStore';
 
 function ensureLfos(patch: Patch) {
   if (!patch.lfos) {
@@ -604,6 +606,13 @@ export function useLiveMidiListener(selectedInput: Input | null, activeChannel: 
 
     const unsubNRPN = onNRPNScoped((nrpn, channel) => {
       if (channel !== activeChannel) return;
+
+      const capability = parseCapabilityNRPN(nrpn);
+      if (capability) {
+        useSynthStore.getState().mergeCapabilities(capability);
+        return;
+      }
+
       const { isPulling, isPushing } = usePatchStore.getState();
       if (isPulling || isPushing) return;
 

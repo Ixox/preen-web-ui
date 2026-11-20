@@ -22,6 +22,13 @@ import { useWorkspaceStore } from '../stores/workspaceStore';
 import { useMidiStore } from '../midi/usePreenFM3Midi';
 import { patchToNRPNMessages, downloadPatchFile } from '../midi/patchSerializer';
 import { sendNRPN, clearNRPNQueue, drainNRPNQueue } from '../midi/midiService';
+import { useSynthStore } from '../stores/synthStore';
+import { CAPABILITY_BITS } from '../midi/preenFmConstants';
+import {
+  capabilityNrpnExclude,
+  sanitizeUnsupportedDestinations,
+  supportsFeature,
+} from '../midi/capabilities';
 import { generateChildren, type BreedResult, type DNABlock, type MatrixRoleDominants } from '../utils/geneticAlgorithm';
 import type { Patch } from '../types/patch';
 
@@ -100,7 +107,7 @@ const SlotLabel = styled.div`
 
 const SlotName = styled.div`
   font-size: 0.82rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text};
   white-space: nowrap;
@@ -110,7 +117,7 @@ const SlotName = styled.div`
 
 const SlotMeta = styled.div`
   font-size: 0.67rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   color: ${({ theme }) => theme.colors.textMuted};
 `;
 
@@ -188,7 +195,7 @@ const MutationSlider = styled.input`
 
 const MutationValue = styled.span`
   font-size: 0.76rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   font-weight: 700;
   color: ${({ theme }) => theme.colors.primary};
   min-width: 32px;
@@ -251,7 +258,7 @@ const ChildCard = styled.div<{ $sending: boolean; $active: boolean }>`
 
 const ChildName = styled.div`
   font-size: 0.82rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text};
   overflow: hidden;
@@ -261,7 +268,7 @@ const ChildName = styled.div`
 
 const ChildMeta = styled.div`
   font-size: 0.67rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   color: ${({ theme }) => theme.colors.textMuted};
   line-height: 1.6;
 `;
@@ -274,7 +281,7 @@ const BlockBadges = styled.div`
 
 const BlockBadge = styled.span<{ $src: 'A' | 'B' }>`
   font-size: 0.58rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   font-weight: 700;
   padding: 1px 5px;
   border-radius: 3px;
@@ -365,10 +372,15 @@ export function BreederEditor() {
 
   const sendPatch = useCallback(async (patch: Patch, idx: number) => {
     if (!midiOutput) return;
+    const capabilities = useSynthStore.getState().capabilities;
+    const messages = patchToNRPNMessages(sanitizeUnsupportedDestinations(patch, capabilities), {
+      exclude: capabilityNrpnExclude(capabilities),
+      lfoMidiClockSupported: supportsFeature(capabilities, CAPABILITY_BITS.LFO_MIDI_CLOCK),
+    });
     setSendingIdx(idx);
     setActiveIdx(idx);
     clearNRPNQueue();
-    for (const msg of patchToNRPNMessages(patch)) sendNRPN(msg, midiChannel);
+    for (const msg of messages) sendNRPN(msg, midiChannel);
     await drainNRPNQueue();
     setSendingIdx(null);
   }, [midiOutput, midiChannel]);

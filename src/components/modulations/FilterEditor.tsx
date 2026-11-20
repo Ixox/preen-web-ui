@@ -112,6 +112,7 @@ export const FilterEditor: React.FC<FilterEditorProps> = ({ filterIndex }) => {
             max={1}
             step={0.01}
             value={filter.param1}
+            defaultValue={0.5}
             onChange={(v) => updateFilter(filterIndex, { param1: Math.max(0, Math.min(1, v)) })}
             color={theme.colors.knobFilter}
             backgroundColor={theme.colors.knobBackground}
@@ -130,6 +131,7 @@ export const FilterEditor: React.FC<FilterEditorProps> = ({ filterIndex }) => {
             max={1}
             step={0.01}
             value={filter.param2}
+            defaultValue={0}
             onChange={(v) => updateFilter(filterIndex, { param2: Math.max(0, Math.min(1, v)) })}
             color={theme.colors.knobPhase}
             backgroundColor={theme.colors.knobBackground}
@@ -148,6 +150,7 @@ export const FilterEditor: React.FC<FilterEditorProps> = ({ filterIndex }) => {
             max={gainMax}
             step={0.01}
             value={filter.gain}
+            defaultValue={1}
             onChange={(v) => updateFilter(filterIndex, { gain: Math.max(gainMin, Math.min(gainMax, v)) })}
             color={theme.colors.knobFrequency}
             backgroundColor={theme.colors.knobBackground}

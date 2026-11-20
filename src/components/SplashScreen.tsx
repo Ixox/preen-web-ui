@@ -95,7 +95,7 @@ const Panel = styled.div<{ $leaving: boolean }>`
   left: 50%;
   width: min(900px, 100%);
   z-index: 9999;
-  font-family: 'Courier New', 'Lucida Console', monospace;
+  font-family: var(--app-font-digit);
   background: #04040e;
   border: 1px solid #1e1e3e;
   border-top: none;
@@ -159,7 +159,7 @@ const CloseBtn = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 
   &:hover {

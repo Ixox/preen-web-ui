@@ -2,6 +2,7 @@ import styled from 'styled-components';
 import { useMidiActions } from '../midi/useMidiActions';
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isPreenFM3Device } from '../midi/midiDevices';
 
 const MidiMenuContainer = styled.div`
   align-items: center;
@@ -87,6 +88,27 @@ const MidiPorts = styled.div`
   h3 {
     color: ${props => props.theme.colors.text};
   }
+`;
+
+const MidiSection = styled.section`
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: 0.5rem;
+`;
+
+const SectionTitle = styled.h4`
+  margin: 0 0 0.75rem 0;
+  color: ${props => props.theme.colors.text};
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+`;
+
+const SectionHint = styled.p`
+  margin: 0.5rem 0 0;
+  color: ${props => props.theme.colors.textMuted};
+  font-size: 0.8rem;
 `;
 
 const MidiPortSelect = styled.div`
@@ -201,7 +223,7 @@ const HelpNote = styled.p`
     background: ${props => props.theme.colors.button};
     padding: 0.125rem 0.375rem;
     border-radius: 0.25rem;
-    font-family: 'Courier New', monospace;
+    font-family: var(--app-font-digit);
     color: ${props => props.theme.colors.primary};
     font-size: 0.8125rem;
   }
@@ -272,6 +294,11 @@ export const MidiMenu = () => {
     midi.selectOutput(output || null);
   }, [midi.devices?.outputs, midi.selectOutput]);
 
+  const handleForwardInputChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const input = midi.devices?.inputs.find(i => i.id === e.target.value);
+    midi.selectForwardInput(input || null);
+  }, [midi.devices?.inputs, midi.selectForwardInput]);
+
   const handleChannelChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     midi.changeChannel(parseInt(e.target.value));
   }, [midi.changeChannel]);
@@ -313,82 +340,115 @@ export const MidiMenu = () => {
           </InfoBox>
         )}
         
-        <MidiPorts>
-          <MidiPortSelect>
-            <label>
-              {t('midi.inputLabel')}
-              <select 
-                value={midi.selectedInput?.id || ''}
-                onChange={handleInputChange}
-              >
-                <option value="">{t('midi.selectOption')}</option>
-                {midi.devices?.inputs.map(input => (
-                  <option key={input.id} value={input.id}>
-                    {input.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </MidiPortSelect>
+        <MidiSection>
+          <SectionTitle>{t('midi.preenfm3Section')}</SectionTitle>
+          <MidiPorts>
+            <MidiPortSelect>
+              <label>
+                {t('midi.inputLabel')}
+                <select 
+                  value={midi.selectedInput?.id || ''}
+                  onChange={handleInputChange}
+                >
+                  <option value="">{t('midi.selectOption')}</option>
+                  {midi.devices?.inputs.map(input => (
+                    <option key={input.id} value={input.id}>
+                      {input.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </MidiPortSelect>
 
-          <MidiPortSelect>
-            <label>
-              {t('midi.outputLabel')}
-              <select 
-                value={midi.selectedOutput?.id || ''}
-                onChange={handleOutputChange}
-              >
-                <option value="">{t('midi.selectOption')}</option>
-                {midi.devices?.outputs.map(output => (
-                  <option key={output.id} value={output.id}>
-                    {output.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </MidiPortSelect>
+            <MidiPortSelect>
+              <label>
+                {t('midi.outputLabel')}
+                <select 
+                  value={midi.selectedOutput?.id || ''}
+                  onChange={handleOutputChange}
+                >
+                  <option value="">{t('midi.selectOption')}</option>
+                  {midi.devices?.outputs.map(output => (
+                    <option key={output.id} value={output.id}>
+                      {output.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </MidiPortSelect>
 
-          <MidiPortSelect>
-            <label>
-              {t('midi.channelLabel')}
-              <select 
-                value={midi.channel}
-                onChange={handleChannelChange}
-              >
-                {Array.from({ length: 16 }, (_, i) => i + 1).map(ch => (
-                  <option key={ch} value={ch}>
-                    {t('midi.channelNumber', { number: ch })}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </MidiPortSelect>
-        </MidiPorts>
+            <MidiPortSelect>
+              <label>
+                {t('midi.channelLabel')}
+                <select 
+                  value={midi.channel}
+                  onChange={handleChannelChange}
+                >
+                  {Array.from({ length: 16 }, (_, i) => i + 1).map(ch => (
+                    <option key={ch} value={ch}>
+                      {t('midi.channelNumber', { number: ch })}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </MidiPortSelect>
+          </MidiPorts>
 
-        <MidiActions>
-          <MidiButton 
-            onClick={() => sendPatch()}
-            disabled={!midi.selectedOutput || isSending}
-            title={t('midi.pushTooltip')}
-          >
-            {isSending ? t('midi.sending', 'Envoi…') : t('midi.pushButton')}
-          </MidiButton>
-          
-          <MidiButton 
-            onClick={receivePatch}
-            disabled={!midi.selectedInput}
-            title={t('midi.pullTooltip')}
-          >
-            {t('midi.pullButton')}
-          </MidiButton>
-        </MidiActions>
+          <MidiActions>
+            <MidiButton 
+              onClick={() => sendPatch()}
+              disabled={!midi.selectedOutput || isSending}
+              title={t('midi.pushTooltip')}
+            >
+              {isSending ? t('midi.sending') : t('midi.pushButton')}
+            </MidiButton>
+            
+            <MidiButton 
+              onClick={receivePatch}
+              disabled={!midi.selectedInput}
+              title={t('midi.pullTooltip')}
+            >
+              {t('midi.pullButton')}
+            </MidiButton>
+          </MidiActions>
 
-        {receivedCount > 0 && (
-          <ReceptionStatus>
-            <p>📥 {t('midi.receptionStatus', { count: receivedCount })}</p>
-            {receivedName && <PatchName>{t('midi.patchName', { name: receivedName })}</PatchName>}
-          </ReceptionStatus>
-        )}
+          {receivedCount > 0 && (
+            <ReceptionStatus>
+              <p>📥 {t('midi.receptionStatus', { count: receivedCount })}</p>
+              {receivedName && <PatchName>{t('midi.patchName', { name: receivedName })}</PatchName>}
+            </ReceptionStatus>
+          )}
+        </MidiSection>
+
+        <MidiSection>
+          <SectionTitle>{t('midi.midiInputSection')}</SectionTitle>
+          <MidiPorts>
+            <MidiPortSelect>
+              <label>
+                {t('midi.forwardInputLabel')}
+                <select
+                  value={midi.forwardInput?.id || ''}
+                  onChange={handleForwardInputChange}
+                >
+                  <option value="">{t('midi.selectOption')}</option>
+                  {midi.devices?.inputs
+                    .filter(input => !isPreenFM3Device(input.name) && input.id !== midi.selectedInput?.id)
+                    .map(input => (
+                      <option key={input.id} value={input.id}>
+                        {input.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            </MidiPortSelect>
+          </MidiPorts>
+          <SectionHint>{t('midi.forwardInputHint')}</SectionHint>
+          {midi.forwardInput && !midi.selectedOutput && (
+            <InfoBox>
+              <p>⚠️ {t('midi.forwardNoOutput')}</p>
+            </InfoBox>
+          )}
+        </MidiSection>
       </>
     );
   };

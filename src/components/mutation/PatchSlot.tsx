@@ -61,7 +61,7 @@ const SlotLabel = styled.div`
 const PatchName = styled.div`
   font-size: 1rem;
   font-weight: 600;
-  font-family: 'Courier New', monospace;
+  font-family: var(--app-font-digit);
   color: ${({ theme }) => theme.colors.text};
   padding: 8px;
   background: ${({ theme }) => theme.colors.background};

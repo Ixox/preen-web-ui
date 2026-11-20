@@ -10,31 +10,49 @@ type RenderOptions = {
   theme?: Theme;
 };
 
-export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): string {
-  const cell = opts.cell ?? 48;  // Espacement entre nœuds
-  const padding = 32; // Padding uniforme autour du contenu réel
+export function getAlgoCanvasColors(theme?: Theme): { background: string; grid: string } {
+  const base = theme?.colors.background ?? "#0b1020";
+  const isDark = base.length === 7
+    ? parseInt(base.slice(1), 16) < 0x888888
+    : true;
+  return isDark
+    ? { background: "#0f141c", grid: "rgba(203, 213, 225, 0.15)" }
+    : { background: "#e8edf3", grid: "rgba(100, 116, 139, 0.25)" };
+}
 
-  // Vérifier s'il y a des boucles de feedback (self-loops)
-  const hasFeedbackLoop = diagram.edges.some(e => e.from === e.to);
-  const feedbackExtraSpace = hasFeedbackLoop ? 30 : 0; // Espace supplémentaire en haut pour les feedback loops
+export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): string {
+  const baseCell = opts.cell ?? 48;
+  const padding = 16;
+
+  // Fixed grid: all algorithms share the same canvas, whatever their size.
+  const GRID_COLS = 6;
+  const GRID_ROWS = 4;
+  const MAX_NODE_RADIUS = 16;
+  const FEEDBACK_MARGIN = MAX_NODE_RADIUS / 2;
+
+  const availW = (GRID_COLS - 1) * baseCell;
+  const availH = (GRID_ROWS - 1) * baseCell;
+  const width = availW + 2 * MAX_NODE_RADIUS + 2 * padding + FEEDBACK_MARGIN;
+  const height = availH + 2 * MAX_NODE_RADIUS + 2 * padding + FEEDBACK_MARGIN;
 
   // Calculer les positions réelles min/max des nœuds
   const minX = Math.min(...diagram.nodes.map((n) => n.x));
   const maxX = Math.max(...diagram.nodes.map((n) => n.x));
   const minY = Math.min(...diagram.nodes.map((n) => n.y));
   const maxY = Math.max(...diagram.nodes.map((n) => n.y));
-  
-  // Dimensions du contenu réel
-  const contentWidth = (maxX - minX + 1) * cell;
-  const contentHeight = (maxY - minY + 1) * cell;
-  
-  // Dimensions totales avec padding - crop de 50px à droite, 30px en bas, ajout d'espace en haut pour feedback
-  const width = contentWidth + padding * 2 - 50;
-  const height = contentHeight + padding * 2 - 30 + feedbackExtraSpace;
-  
-  // Offset pour centrer le contenu (compenser minX/minY non-zéro + espace feedback)
-  const offsetX = padding - minX * cell;
-  const offsetY = padding - minY * cell + feedbackExtraSpace;
+
+  const cols = maxX - minX + 1;
+  const rows = maxY - minY + 1;
+
+  // Uniform cell adapted to the algorithm, so the diagram fills the fixed canvas.
+  const cell = Math.min(
+    cols > 1 ? availW / (cols - 1) : availW,
+    rows > 1 ? availH / (rows - 1) : availH,
+  );
+
+  // Center the node grid in the fixed canvas.
+  const offsetX = (width - (minX + maxX) * cell) / 2;
+  const offsetY = (height - (minY + maxY) * cell) / 2;
 
   const byId = new Map(diagram.nodes.map((n) => [n.id, n]));
 
@@ -87,26 +105,57 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
     
     const imLabel = `IM${calculateEdgeIMIndex(e.from, e.to) + 1}`;
     
-    // Cas spécial : feedback (self-loop) - dessiner un arc au-dessus du nœud
+    // Cas spécial : feedback (self-loop) - 3/4 de cercle centré sur le coin haut-droit du nœud.
+    // L'arc part du point droit du nœud et revient sur son point haut.
     if (e.from === e.to) {
-      const nodeRadius = a.type === "CARRIER" ? 16 : 12;
-      const loopRadius = 12;
-      const loopCenterX = x1;
-      const loopCenterY = y1 - nodeRadius - loopRadius;
-      
-      // Arc SVG pour le feedback
-      const arcPath = `M ${x1} ${y1 - nodeRadius} 
-                       A ${loopRadius} ${loopRadius} 0 1 1 ${x1 + 0.1} ${y1 - nodeRadius}`;
-      
+      const nodeRadius = a.type === "CARRIER" ? 16 : 14;
+      const loopRadius = nodeRadius;
+      const loopCenterX = x1 + nodeRadius;
+      const loopCenterY = y1 - nodeRadius;
+      const startX = x1 + nodeRadius;
+      const startY = y1;
+      const endX = x1;
+      const endY = y1 - nodeRadius;
+
+      const arcPath = `M ${startX} ${startY} A ${loopRadius} ${loopRadius} 0 1 0 ${endX} ${endY}`;
+
+      // Flèche à l'extrémité de l'arc, sur le haut du nœud (tangente verticale, vers le bas)
+      const arrowPoints = `${endX},${endY} ${endX - 3},${endY - 6} ${endX + 3},${endY - 6}`;
+
       return `
         <g class="edge-group feedback" data-source="${sourceId}" data-target="${targetId}" data-base-color="${baseColor}">
           <path class="edge" d="${arcPath}" stroke="${baseColor}" stroke-width="2" fill="none" />
-          <text class="edge-label" x="${loopCenterX}" y="${loopCenterY - 8}" text-anchor="middle" font-size="10" font-weight="bold" style="pointer-events: none;">${imLabel}</text>
+          <polygon class="edge-arrow" points="${arrowPoints}" fill="${baseColor}" />
+          <text class="edge-label" x="${loopCenterX + 2}" y="${loopCenterY + 2}" text-anchor="middle" font-size="10" font-weight="bold" style="pointer-events: none;">Fbk</text>
         </g>
       `;
     }
     
-    // Cas normal : ligne droite entre deux nœuds
+    // Cas normal : ligne droite entre deux nœuds, avec une flèche au bout
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lineLength = Math.hypot(dx, dy) || 1;
+    const ux = dx / lineLength;
+    const uy = dy / lineLength;
+    const sourceRadius = a.type === "CARRIER" ? 16 : 14;
+    const targetRadius = b.type === "CARRIER" ? 16 : 14;
+    const startX = x1 + ux * (sourceRadius + 1);
+    const startY = y1 + uy * (sourceRadius + 1);
+    const endX = x2 - ux * (targetRadius + 1);
+    const endY = y2 - uy * (targetRadius + 1);
+
+    const arrowLength = 6;
+    const arrowHalfWidth = 3;
+    const arrowBaseX = endX - ux * arrowLength;
+    const arrowBaseY = endY - uy * arrowLength;
+    const perpX = -uy;
+    const perpY = ux;
+    const arrowPoints = [
+      `${endX},${endY}`,
+      `${arrowBaseX + perpX * arrowHalfWidth},${arrowBaseY + perpY * arrowHalfWidth}`,
+      `${arrowBaseX - perpX * arrowHalfWidth},${arrowBaseY - perpY * arrowHalfWidth}`,
+    ].join(" ");
+
     let midX = (x1 + x2) / 2;
     let midY = (y1 + y2) / 2;
     
@@ -115,7 +164,7 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
     for (const node of diagram.nodes) {
       const nodeX = offsetX + node.x * cell;
       const nodeY = offsetY + node.y * cell;
-      const nodeRadius = node.type === "CARRIER" ? 16 : 12;
+      const nodeRadius = node.type === "CARRIER" ? 16 : 14;
       const distanceToNode = Math.sqrt((midX - nodeX) ** 2 + (midY - nodeY) ** 2);
       
       if (distanceToNode < minDistanceFromNode + nodeRadius) {
@@ -131,11 +180,14 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
     
     return `
       <g class="edge-group" data-source="${sourceId}" data-target="${targetId}" data-base-color="${baseColor}">
-        <line class="edge" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${baseColor}" stroke-width="2" />
+        <line class="edge" x1="${startX}" y1="${startY}" x2="${endX}" y2="${endY}" stroke="${baseColor}" stroke-width="2" />
+        <polygon class="edge-arrow" points="${arrowPoints}" fill="${baseColor}" />
         <text class="edge-label" x="${midX}" y="${midY - 4}" text-anchor="middle" font-size="10" font-weight="bold" style="pointer-events: none;">${imLabel}</text>
       </g>
     `;
   });
+
+  const highlightColor = opts.theme?.colors.highlight || "#fbbf24";
 
   const nodes = diagram.nodes.map((n, i) => {
     const cx = offsetX + n.x * cell;
@@ -143,26 +195,20 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
     const isCarrier = n.type === "CARRIER";
     const nodeId = parseInt(n.id.replace(/\D/g, '')); // "op1" -> 1
     
-    const radius = isCarrier ? 16 : 12;
-    const gradientId = isCarrier ? "carrierGradient" : "modulatorGradient";
+    const radius = isCarrier ? 16 : 14;
+    const fillColor = isCarrier ? "#75B798" : "#63B3ED";
     const strokeColor = opts.theme?.colors.border || "#2D3748";
     const textColor = "#1A202C"; // Texte sombre pour lisibilité sur les billes colorées
-    
-    // Calcul du reflet brillant (petit ellipse blanc en haut à gauche)
-    const shineRadius = radius * 0.4;
-    const shineCx = cx - radius * 0.3;
-    const shineCy = cy - radius * 0.3;
-    
+
     return `
       <g id="node-${i}" class="node" data-node-id="${nodeId}">
-        <circle cx="${cx}" cy="${cy}" r="${radius}" fill="url(#${gradientId})" stroke="${strokeColor}" stroke-width="1.5" />
-        <ellipse class="highlight-shine" cx="${shineCx}" cy="${shineCy}" rx="${shineRadius}" ry="${shineRadius * 0.7}" fill="white" opacity="0.6" />
+        <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${fillColor}" stroke="${strokeColor}" stroke-width="1" />
+        <circle class="node-ring" cx="${cx}" cy="${cy}" r="${radius + 3}" fill="none" stroke="${highlightColor}" stroke-width="2" />
         <text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="11" font-weight="bold" fill="${textColor}">${n.label}</text>
       </g>
     `;
   });
 
-  const highlightColor = opts.theme?.colors.highlight || "#fbbf24";
   const backgroundColor = opts.theme?.colors.background || "#0b1020";
   
   // Déterminer si on est en mode sombre ou clair
@@ -173,24 +219,27 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
   const labelTextColor = isDarkMode ? "#e2e8f0" : "#2d3748";
   const labelShadowColor = isDarkMode ? "rgba(0, 0, 0, 0.8)" : "rgba(255, 255, 255, 0.8)";
   const labelStrokeColor = isDarkMode ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.6)";
-  
+
+  const canvasColors = getAlgoCanvasColors(opts.theme);
+
+  // Grid aligned on the node lattice: lines pass through node centers.
+  const gridLines: string[] = [];
+  const kMinX = Math.floor(-offsetX / cell);
+  const kMaxX = Math.ceil((width - offsetX) / cell);
+  for (let k = kMinX; k <= kMaxX; k++) {
+    const x = offsetX + k * cell;
+    gridLines.push(`<line x1="${x}" y1="0" x2="${x}" y2="${height}" stroke="${canvasColors.grid}" stroke-width="1" shape-rendering="crispEdges" />`);
+  }
+  const kMinY = Math.floor(-offsetY / cell);
+  const kMaxY = Math.ceil((height - offsetY) / cell);
+  for (let k = kMinY; k <= kMaxY; k++) {
+    const y = offsetY + k * cell;
+    gridLines.push(`<line x1="0" y1="${y}" x2="${width}" y2="${y}" stroke="${canvasColors.grid}" stroke-width="1" shape-rendering="crispEdges" />`);
+  }
+
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
-    <!-- Gradients pour effet bille - Carrier (vert) -->
-    <radialGradient id="carrierGradient" cx="25%" cy="25%" r="75%">
-      <stop offset="0%" style="stop-color:#D1E7DD;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#75B798;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#52796F;stop-opacity:1" />
-    </radialGradient>
-    
-    <!-- Gradients pour effet bille - Modulator (bleu) -->
-    <radialGradient id="modulatorGradient" cx="25%" cy="25%" r="75%">
-      <stop offset="0%" style="stop-color:#BFDBFE;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#63B3ED;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#3182CE;stop-opacity:1" />
-    </radialGradient>
-    
     <!-- Filtres pour ombres -->
     <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
       <feDropShadow dx="2" dy="3" stdDeviation="2" flood-opacity="0.3"/>
@@ -201,26 +250,28 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
         transition: stroke 0.5s ease, stroke-width 0.5s ease, filter 0.3s ease;
         filter: url(#dropShadow);
       }
-      .node-highlighted circle {
-        stroke: ${highlightColor};
-        stroke-width: 4;
-        transition: stroke 0.03s ease, stroke-width 0.3s ease;
-        filter: url(#dropShadow) brightness(1.2);
+      .node .node-ring {
+        opacity: 0;
+        filter: none;
+        transition: opacity 0.15s ease;
       }
-      .node .highlight-shine {
-        opacity: 0.6;
-        transition: opacity 0.3s ease;
-      }
-      .node-highlighted .highlight-shine {
-        opacity: 0.9;
+      .node-highlighted .node-ring {
+        opacity: 1;
       }
       .edge {
         transition: stroke 0.5s ease, stroke-width 0.5s ease;
+      }
+      .edge-arrow {
+        transition: fill 0.5s ease;
       }
       .edge-highlighted .edge {
         stroke: ${highlightColor} !important;
         stroke-width: 4;
         transition: stroke 0.03s ease, stroke-width 0.03s ease;
+      }
+      .edge-highlighted .edge-arrow {
+        fill: ${highlightColor};
+        transition: fill 0.03s ease;
       }
       .edge-label {
         transition: fill 1s ease;
@@ -239,7 +290,8 @@ export function renderAlgoSvg(diagram: AlgoDiagram, opts: RenderOptions = {}): s
       }
     </style>
   </defs>
-  <rect width="100%" height="100%" fill="${backgroundColor}" />
+  <rect width="100%" height="100%" fill="${canvasColors.background}" />
+  <g class="algo-grid">${gridLines.join("\n")}</g>
   ${edges.join("\n")}
   ${nodes.join("\n")}
 </svg>`.trim();

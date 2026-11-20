@@ -103,6 +103,8 @@ function sentNRPNCount(): number {
 
 /** Extract all sent standard CC messages (each 3 bytes: status, controller, value). */
 function allSentCCs(): Array<{ channel: number; controller: number; value: number }> {
+  // CCs go through the coalescing queue; advance fake timers so they flush.
+  vi.advanceTimersByTime(600);
   return mockSend.mock.calls
     .filter((call: unknown[]) => (call[0] as number[]).length === 3)
     .map((call: unknown[]) => {
@@ -397,25 +399,25 @@ describe('Control Changes — Timbre, Mixer & MFX', () => {
     expect(ccs[0].value).toBe(64);
   });
 
-  it('sendTimbreDynamics sends CC 41 in 0..6 range (Off..Drive..Fuzz)', () => {
+  it('sendTimbreDynamics coalesces CC 41 to the latest value in 0..6 range', () => {
     sendTimbreDynamics(2, 1); // Punch
     sendTimbreDynamics(5, 1); // Drive
     sendTimbreDynamics(6, 1); // Fuzz
     sendTimbreDynamics(9, 1); // Clamped to 6
     const ccs = allSentCCs();
-    expect(ccs.length).toBe(4);
-    expect(ccs.map(c => c.controller)).toEqual([41, 41, 41, 41]);
-    expect(ccs.map(c => c.value)).toEqual([2, 5, 6, 6]);
+    expect(ccs.length).toBe(1);
+    expect(ccs[0].controller).toBe(41);
+    expect(ccs[0].value).toBe(6);
   });
 
-  it('sendEngineDecimation sends CC 42 in 0..20 range (1-bit..Full..HQ)', () => {
+  it('sendEngineDecimation coalesces CC 42 to the latest value in 0..20 range', () => {
     sendEngineDecimation(19, 1); // Full (FM_DECIMATION_CURRENT)
     sendEngineDecimation(20, 1); // HQ
     sendEngineDecimation(99, 1); // Clamped to 20 (HQ)
     const ccs = allSentCCs();
-    expect(ccs.length).toBe(3);
-    expect(ccs.map(c => c.controller)).toEqual([42, 42, 42]);
-    expect(ccs.map(c => c.value)).toEqual([19, 20, 20]);
+    expect(ccs.length).toBe(1);
+    expect(ccs[0].controller).toBe(42);
+    expect(ccs[0].value).toBe(20);
   });
 
   it('sendPlayModeCC sends CC 43 (0: Mono, 1: Poly, 2: Unison)', () => {

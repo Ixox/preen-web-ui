@@ -10,16 +10,18 @@ import { useThemeStore } from '../../theme/themeStore';
 import { useOperator, updateOperator } from '../../stores/patchStore';
 import { useFMSynthContext } from './FMSynthContext';
 import { useTranslation } from 'react-i18next';
+import { CAPABILITY_BITS } from '../../midi/preenFmConstants';
+import { useSupportsFeature } from '../../midi/useSynthCapabilities';
 
 const PanelContainer = styled.div<{ $isHighlighted?: boolean }>`
   background-color: ${props => props.theme.colors.panelHover};
-  padding: 10px;
+  padding: 6px;
   border-radius: 8px;
   border: 2px solid ${props => props.$isHighlighted ? props.theme.colors.highlight : props.theme.colors.border};
   box-shadow: ${props => props.$isHighlighted ? `0 0 10px ${props.theme.colors.highlightGlow}` : 'none'};
   transition: ${props => props.$isHighlighted ? 'border-color 0.03s ease, box-shadow 0.03s ease' : 'border-color 0.5s ease, box-shadow 0.5s ease'};
-  margin: 14px;
-  width:270px;
+  width: 100%;
+  box-sizing: border-box;
   h3 {
     color: ${props => props.theme.colors.text};
     font-size: 1rem;
@@ -45,6 +47,7 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
   const opId = opNumber;
   const isHighlighted = highlightedNode === opNumber;
   const { t } = useTranslation();
+  const supportsOperatorPhase = useSupportsFeature(CAPABILITY_BITS.OPERATOR_PHASE);
 
   return (
     <PanelContainer
@@ -58,6 +61,7 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
         <KnobBase
             label={t('operator.frequency')}
             value={selectedOperator?.frequency ?? 0}
+            defaultValue={1}
             min={0}
             max={16}
             step={0.01}
@@ -73,6 +77,7 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
           <KnobBase
             label={t('operator.fineTune')}
             value={selectedOperator?.detune ?? 0}
+            defaultValue={0}
             min={-16}
             max={16}
             step={0.01}
@@ -100,6 +105,7 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
         />
       </ControlsRow>
 
+      {supportsOperatorPhase && (
       <ControlsRow>
         <SliderBase
           label={t('Phase')}
@@ -118,7 +124,9 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
           backgroundColor={theme.colors.knobBackground}
         />
       </ControlsRow>
+      )}
 
+      {supportsOperatorPhase && (
       <ControlsRow>
         <SliderBase
           label={t('Warp')}
@@ -137,6 +145,7 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
           backgroundColor={theme.colors.knobBackground}
         />
       </ControlsRow>
+      )}
 
     </PanelContainer>
   );

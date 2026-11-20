@@ -7,7 +7,6 @@ import type { PreenSpectrogramHandle } from '../components/PreenSpectrogram';
 import styled from 'styled-components';
 
 const ToolsContainer = styled.div`
-  max-width: 900px;
   margin: auto;
   display: flex;
   flex-direction: column;

@@ -103,6 +103,7 @@ export const NoteCurveEditor: React.FC<NoteCurveEditorProps> = ({ curveIndex }) 
             max={127}
             step={1}
             value={curve.breakNote}
+            defaultValue={60}
             onChange={(breakNote) => updateNoteCurve(curveIndex, { breakNote })}
             color={theme.colors.knobLfo}
             backgroundColor={theme.colors.knobBackground}

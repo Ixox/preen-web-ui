@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { LfoType, LFO_TYPES } from '../../types/lfo';
 import { useThemeStore } from '../../theme/themeStore';
 import { StyledSelect } from '../StyledSelect';
+import { useLfoShapeMax } from '../../midi/useSynthCapabilities';
 
 const SelectorContainer = styled.div`
   display: flex;
@@ -270,6 +271,9 @@ const generateWaveformPath = (type: LfoType, frequency: number = 1, width: numbe
 const LfoWaveformSelector: React.FC<LfoWaveformSelectorProps> = ({ value, onChange, frequency, keysync, phase }) => {
   const { theme } = useThemeStore();
   const { t } = useTranslation();
+  const lfoShapeMax = useLfoShapeMax();
+  const availableTypes = LFO_TYPES.slice(0, Math.max(0, lfoShapeMax) + 1);
+  const selectedValue = availableTypes.includes(value) ? value : (availableTypes[availableTypes.length - 1] ?? value);
   const path = generateWaveformPath(value, frequency ?? 1, 200, 50, keysync, phase ?? 0);
   return (
     <SelectorContainer>
@@ -285,8 +289,8 @@ const LfoWaveformSelector: React.FC<LfoWaveformSelectorProps> = ({ value, onChan
           />
         </WaveformCanvas>
       </WaveformVisualization>
-      <StyledSelect $minWidth="140px" value={value} onChange={(e) => onChange(e.target.value as LfoType)}>
-        {LFO_TYPES.map((type) => (
+      <StyledSelect $minWidth="140px" value={selectedValue} onChange={(e) => onChange(e.target.value as LfoType)}>
+        {availableTypes.map((type) => (
           <option key={type} value={type}>
             {t(`lfo.types.${type}`)}
           </option>

@@ -97,6 +97,7 @@ export const SyncBpmControls: React.FC<SyncBpmControlsProps> = ({
             max={240}
             step={1}
             value={bpm}
+            defaultValue={120}
             onChange={onBpmChange}
             color={bpmColor}
             backgroundColor={theme.colors.knobBackground}

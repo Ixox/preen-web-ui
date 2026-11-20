@@ -32,9 +32,10 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op2", type: "CARRIER", label: "2", x: 3, y: 3 },
       { id: "op3", type: "MODULATOR", label: "3", x: 2, y: 1 },
     ],
-    edges: [
+        edges: [
       { from: "op3", to: "op1" },
       { from: "op3", to: "op2" },
+      { from: "op3", to: "op3" },
     ],
   },
 
@@ -45,14 +46,15 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
     nodes: [
       { id: "op1", type: "CARRIER", label: "1", x: 2, y: 3 },
       { id: "op2", type: "MODULATOR", label: "2", x: 0, y: 2 },
-      { id: "op3", type: "MODULATOR", label: "3", x: 2, y: 2 },
-      { id: "op4", type: "MODULATOR", label: "4", x: 4, y: 1 },
+      { id: "op3", type: "MODULATOR", label: "3", x: 2, y: 1 },
+      { id: "op4", type: "MODULATOR", label: "4", x: 4, y: 2 },
     ],
-    edges: [
+        edges: [
       { from: "op2", to: "op1" },
       { from: "op3", to: "op1" },
-      { from: "op4", to: "op3" },
-      { from: "op4", to: "op4" },
+      { from: "op4", to: "op1" },
+      { from: "op3", to: "op4" },
+      { from: "op3", to: "op3" },
     ],
   },
 
@@ -66,28 +68,30 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op3", type: "MODULATOR", label: "3", x: 1, y: 2 },
       { id: "op4", type: "MODULATOR", label: "4", x: 4, y: 1 },
     ],
-    edges: [
+        edges: [
       { from: "op3", to: "op1" },
+      { from: "op4", to: "op2" },
       { from: "op3", to: "op2" },
       { from: "op4", to: "op3" },
       { from: "op4", to: "op4" },
     ],
   },
 
-  // ALGO5: 4*->3->2->1
+  // ALGO5: 4*->3->2->1, 4->2
   {
     id: "alg5",
     name: "Algo DX 5",
     nodes: [
       { id: "op1", type: "CARRIER", label: "1", x: 2, y: 3 },
       { id: "op2", type: "MODULATOR", label: "2", x: 2, y: 2 },
-      { id: "op3", type: "MODULATOR", label: "3", x: 2, y: 1 },
-      { id: "op4", type: "MODULATOR", label: "4", x: 2, y: 0 },
+      { id: "op3", type: "MODULATOR", label: "3", x: 1, y: 1 },
+      { id: "op4", type: "MODULATOR", label: "4", x: 3, y: 0 },
     ],
     edges: [
-      { from: "op4", to: "op3" },
-      { from: "op3", to: "op2" },
       { from: "op2", to: "op1" },
+      { from: "op3", to: "op2" },
+      { from: "op4", to: "op3" },
+      { from: "op4", to: "op2" },
       { from: "op4", to: "op4" },
     ],
   },
@@ -116,18 +120,18 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
     name: "Algo DX 7",
     nodes: [
       { id: "op1", type: "CARRIER", label: "1", x: 0, y: 3 },
-      { id: "op2", type: "MODULATOR", label: "2", x: 0, y: 2 },
+      { id: "op2", type: "MODULATOR", label: "2", x: 0, y: 1 },
       { id: "op3", type: "CARRIER", label: "3", x: 2, y: 3 },
-      { id: "op4", type: "MODULATOR", label: "4", x: 2, y: 2 },
+      { id: "op4", type: "MODULATOR", label: "4", x: 2, y: 1 },
       { id: "op5", type: "CARRIER", label: "5", x: 4, y: 3 },
-      { id: "op6", type: "MODULATOR", label: "6", x: 4, y: 2 },
+      { id: "op6", type: "MODULATOR", label: "6", x: 4, y: 1 },
     ],
-    edges: [
+        edges: [
       { from: "op2", to: "op1" },
       { from: "op4", to: "op3" },
       { from: "op6", to: "op5" },
+      { from: "op4", to: "op6" },
       { from: "op4", to: "op4" },
-      { from: "op6", to: "op4" },
     ],
   },
 
@@ -184,12 +188,12 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op5", type: "MODULATOR", label: "5", x: 4, y: 1 },
       { id: "op6", type: "MODULATOR", label: "6", x: 4, y: 0 },
     ],
-    edges: [
+        edges: [
       { from: "op2", to: "op1" },
-      { from: "op2", to: "op2" },
-      { from: "op6", to: "op5" },
-      { from: "op5", to: "op4" },
       { from: "op4", to: "op3" },
+      { from: "op5", to: "op4" },
+      { from: "op6", to: "op5" },
+      { from: "op2", to: "op2" },
     ],
   },
 
@@ -205,11 +209,11 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op5", type: "MODULATOR", label: "5", x: 4, y: 2 },
       { id: "op6", type: "MODULATOR", label: "6", x: 4, y: 1 },
     ],
-    edges: [
-      { from: "op3", to: "op2" },
+        edges: [
       { from: "op2", to: "op1" },
-      { from: "op6", to: "op5" },
+      { from: "op3", to: "op2" },
       { from: "op5", to: "op4" },
+      { from: "op6", to: "op5" },
       { from: "op6", to: "op6" },
     ],
   },
@@ -267,9 +271,9 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op5", type: "MODULATOR", label: "5", x: 3, y: 1 },
       { id: "op6", type: "MODULATOR", label: "6", x: 5, y: 1 },
     ],
-    edges: [
-      { from: "op3", to: "op2" },
+        edges: [
       { from: "op2", to: "op1" },
+      { from: "op3", to: "op2" },
       { from: "op5", to: "op4" },
       { from: "op6", to: "op4" },
       { from: "op6", to: "op6" },
@@ -309,12 +313,12 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op5", type: "MODULATOR", label: "5", x: 3, y: 1 },
       { id: "op6", type: "MODULATOR", label: "6", x: 5, y: 1 },
     ],
-    edges: [
+        edges: [
       { from: "op2", to: "op1" },
-      { from: "op2", to: "op2" },
+      { from: "op4", to: "op3" },
       { from: "op5", to: "op4" },
       { from: "op6", to: "op4" },
-      { from: "op4", to: "op3" },
+      { from: "op2", to: "op2" },
     ],
   },
 
@@ -326,17 +330,17 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op1", type: "CARRIER", label: "1", x: 2, y: 3 },
       { id: "op2", type: "MODULATOR", label: "2", x: 1, y: 2 },
       { id: "op3", type: "MODULATOR", label: "3", x: 2, y: 2 },
-      { id: "op4", type: "MODULATOR", label: "4", x: 1, y: 1 },
+      { id: "op4", type: "MODULATOR", label: "4", x: 2, y: 1 },
       { id: "op5", type: "MODULATOR", label: "5", x: 3, y: 2 },
       { id: "op6", type: "MODULATOR", label: "6", x: 3, y: 1 },
     ],
-    edges: [
-      { from: "op4", to: "op2" },
+        edges: [
       { from: "op2", to: "op1" },
-      { from: "op2", to: "op2" },
       { from: "op3", to: "op1" },
+      { from: "op4", to: "op3" },
       { from: "op5", to: "op1" },
       { from: "op6", to: "op5" },
+      { from: "op2", to: "op2" },
     ],
   },
 
@@ -349,16 +353,16 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op2", type: "MODULATOR", label: "2", x: 1, y: 2 },
       { id: "op3", type: "MODULATOR", label: "3", x: 2, y: 2 },
       { id: "op4", type: "MODULATOR", label: "4", x: 3, y: 2 },
-      { id: "op5", type: "MODULATOR", label: "5", x: 2, y: 1 },
-      { id: "op6", type: "MODULATOR", label: "6", x: 2, y: 0 },
+      { id: "op5", type: "MODULATOR", label: "5", x: 3, y: 1 },
+      { id: "op6", type: "MODULATOR", label: "6", x: 3, y: 0 },
     ],
-    edges: [
+        edges: [
       { from: "op2", to: "op1" },
       { from: "op3", to: "op1" },
-      { from: "op3", to: "op3" },
       { from: "op4", to: "op1" },
-      { from: "op6", to: "op5" },
       { from: "op5", to: "op4" },
+      { from: "op6", to: "op5" },
+      { from: "op3", to: "op3" },
     ],
   },
 
@@ -372,11 +376,11 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op3", type: "MODULATOR", label: "3", x: 0, y: 1 },
       { id: "op4", type: "CARRIER", label: "4", x: 2, y: 3 },
       { id: "op5", type: "CARRIER", label: "5", x: 4, y: 3 },
-      { id: "op6", type: "MODULATOR", label: "6", x: 3, y: 1 },
+      { id: "op6", type: "MODULATOR", label: "6", x: 3, y: 2 },
     ],
-    edges: [
-      { from: "op3", to: "op2" },
+        edges: [
       { from: "op2", to: "op1" },
+      { from: "op3", to: "op2" },
       { from: "op6", to: "op4" },
       { from: "op6", to: "op5" },
       { from: "op6", to: "op6" },
@@ -388,12 +392,12 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
     id: "alg20",
     name: "Algo DX 20",
     nodes: [
-      { id: "op1", type: "CARRIER", label: "1", x: 0, y: 3 },
-      { id: "op2", type: "CARRIER", label: "2", x: 2, y: 3 },
-      { id: "op3", type: "MODULATOR", label: "3", x: 1, y: 1 },
-      { id: "op4", type: "CARRIER", label: "4", x: 4, y: 3 },
-      { id: "op5", type: "MODULATOR", label: "5", x: 3, y: 1 },
-      { id: "op6", type: "MODULATOR", label: "6", x: 5, y: 1 },
+      { id: "op1", type: "CARRIER", label: "1", x: 1, y: 3 },
+      { id: "op2", type: "CARRIER", label: "2", x: 3, y: 3 },
+      { id: "op3", type: "MODULATOR", label: "3", x: 2, y: 1 },
+      { id: "op4", type: "CARRIER", label: "4", x: 5, y: 3 },
+      { id: "op5", type: "MODULATOR", label: "5", x: 4, y: 1 },
+      { id: "op6", type: "MODULATOR", label: "6", x: 6, y: 1 },
     ],
     edges: [
       { from: "op3", to: "op1" },
@@ -409,12 +413,12 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
     id: "alg21",
     name: "Algo DX 21",
     nodes: [
-      { id: "op1", type: "CARRIER", label: "1", x: 0, y: 3 },
-      { id: "op2", type: "CARRIER", label: "2", x: 1, y: 3 },
-      { id: "op3", type: "MODULATOR", label: "3", x: 0, y: 1 },
-      { id: "op4", type: "CARRIER", label: "4", x: 3, y: 3 },
-      { id: "op5", type: "CARRIER", label: "5", x: 4, y: 3 },
-      { id: "op6", type: "MODULATOR", label: "6", x: 3, y: 1 },
+      { id: "op1", type: "CARRIER", label: "1", x: 1, y: 3 },
+      { id: "op2", type: "CARRIER", label: "2", x: 3, y: 3 },
+      { id: "op3", type: "MODULATOR", label: "3", x: 2, y: 1 },
+      { id: "op4", type: "CARRIER", label: "4", x: 4, y: 3 },
+      { id: "op5", type: "CARRIER", label: "5", x: 6, y: 3 },
+      { id: "op6", type: "MODULATOR", label: "6", x: 5, y: 1 },
     ],
     edges: [
       { from: "op3", to: "op1" },
@@ -430,11 +434,11 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
     id: "alg22",
     name: "Algo DX 22",
     nodes: [
-      { id: "op1", type: "CARRIER", label: "1", x: 0, y: 3 },
-      { id: "op2", type: "MODULATOR", label: "2", x: 0, y: 2 },
-      { id: "op3", type: "CARRIER", label: "3", x: 2, y: 3 },
-      { id: "op4", type: "CARRIER", label: "4", x: 3, y: 3 },
-      { id: "op5", type: "CARRIER", label: "5", x: 4, y: 3 },
+      { id: "op1", type: "CARRIER", label: "1", x: 1, y: 2 },
+      { id: "op2", type: "MODULATOR", label: "2", x: 1, y: 1 },
+      { id: "op3", type: "CARRIER", label: "3", x: 2, y: 2 },
+      { id: "op4", type: "CARRIER", label: "4", x: 3, y: 2 },
+      { id: "op5", type: "CARRIER", label: "5", x: 4, y: 2 },
       { id: "op6", type: "MODULATOR", label: "6", x: 3, y: 1 },
     ],
     edges: [
@@ -456,11 +460,9 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op3", type: "CARRIER", label: "3", x: 2, y: 3 },
       { id: "op4", type: "CARRIER", label: "4", x: 3, y: 3 },
       { id: "op5", type: "CARRIER", label: "5", x: 4, y: 3 },
-      { id: "op6", type: "MODULATOR", label: "6", x: 2, y: 1 },
+      { id: "op6", type: "MODULATOR", label: "6", x: 3, y: 1 },
     ],
-    edges: [
-      { from: "op6", to: "op1" },
-      { from: "op6", to: "op2" },
+        edges: [
       { from: "op6", to: "op3" },
       { from: "op6", to: "op4" },
       { from: "op6", to: "op5" },
@@ -496,12 +498,12 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op1", type: "CARRIER", label: "1", x: 0, y: 3 },
       { id: "op2", type: "CARRIER", label: "2", x: 1, y: 3 },
       { id: "op3", type: "CARRIER", label: "3", x: 2, y: 3 },
-      { id: "op4", type: "MODULATOR", label: "4", x: 0, y: 1 },
-      { id: "op5", type: "CARRIER", label: "5", x: 4, y: 3 },
-      { id: "op6", type: "MODULATOR", label: "6", x: 4, y: 1 },
+      { id: "op4", type: "MODULATOR", label: "4", x: 2, y: 1 },
+      { id: "op5", type: "CARRIER", label: "5", x: 3, y: 3 },
+      { id: "op6", type: "MODULATOR", label: "6", x: 3, y: 1 },
     ],
-    edges: [
-      { from: "op4", to: "op1" },
+        edges: [
+      { from: "op4", to: "op3" },
       { from: "op6", to: "op5" },
       { from: "op6", to: "op6" },
     ],
@@ -515,13 +517,13 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op1", type: "CARRIER", label: "1", x: 0, y: 3 },
       { id: "op2", type: "CARRIER", label: "2", x: 1, y: 3 },
       { id: "op3", type: "CARRIER", label: "3", x: 2, y: 3 },
-      { id: "op4", type: "MODULATOR", label: "4", x: 0, y: 2 },
-      { id: "op5", type: "MODULATOR", label: "5", x: 0, y: 1 },
-      { id: "op6", type: "CARRIER", label: "6", x: 4, y: 3 },
+      { id: "op4", type: "MODULATOR", label: "4", x: 2, y: 2 },
+      { id: "op5", type: "MODULATOR", label: "5", x: 2, y: 1 },
+      { id: "op6", type: "CARRIER", label: "6", x: 3, y: 3 },
     ],
-    edges: [
+        edges: [
+      { from: "op4", to: "op3" },
       { from: "op5", to: "op4" },
-      { from: "op4", to: "op1" },
       { from: "op5", to: "op5" },
     ],
   },
@@ -553,13 +555,9 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op3", type: "CARRIER", label: "3", x: 2, y: 3 },
       { id: "op4", type: "CARRIER", label: "4", x: 3, y: 3 },
       { id: "op5", type: "CARRIER", label: "5", x: 4, y: 3 },
-      { id: "op6", type: "MODULATOR", label: "6", x: 2, y: 1 },
+      { id: "op6", type: "MODULATOR", label: "6", x: 4, y: 1 },
     ],
-    edges: [
-      { from: "op6", to: "op1" },
-      { from: "op6", to: "op2" },
-      { from: "op6", to: "op3" },
-      { from: "op6", to: "op4" },
+        edges: [
       { from: "op6", to: "op5" },
       { from: "op6", to: "op6" },
     ],
@@ -577,10 +575,10 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
       { id: "op3", type: "MODULATOR", label: "3", x: 0, y: 1 },
       { id: "op4", type: "MODULATOR", label: "4", x: 3, y: 1 },
     ],
-    edges: [
+        edges: [
       { from: "op3", to: "op1", kind: "sync" },
-      { from: "op4", to: "op3" },
       { from: "op4", to: "op2", kind: "modulation" },
+      { from: "op4", to: "op3" },
       { from: "op4", to: "op4" },
     ],
   },
@@ -590,7 +588,7 @@ export const ALL_PREENFM_ALGORITHMS: ReadonlyArray<AlgoDiagram> = Object.freeze(
     id: "alg30",
     name: "Sync AM 2",
     nodes: [
-      { id: "op1", type: "CARRIER", label: "1", x: 0, y: 3 },
+      { id: "op1", type: "CARRIER", label: "1", x: 1, y: 3 },
       { id: "op2", type: "CARRIER", label: "2", x: 3, y: 3 },
       { id: "op3", type: "MODULATOR", label: "3", x: 1, y: 1 },
       { id: "op4", type: "MODULATOR", label: "4", x: 3, y: 1 },

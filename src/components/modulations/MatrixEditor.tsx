@@ -5,13 +5,15 @@ import { useCurrentPatch, usePatchStore } from '../../stores/patchStore';
 import { useThemeStore } from '../../theme/themeStore';
 import KnobBase from '../knobs/KnobBase';
 import { sendModulationMatrixParam } from '../../midi/midiService';
-import { MATRIX_SOURCE_NAMES, MATRIX_DEST_ORDERED_NAMES } from '../../midi/preenFmConstants';
+import { MATRIX_SOURCE_NAMES } from '../../midi/preenFmConstants';
+import { useVisibleMatrixDestinations } from '../../midi/useSynthCapabilities';
 
 const MatrixContainer = styled.div`
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 10px;
-  margin-bottom: 10px;
+  width: 100%;
+  flex: 1;
 `;
 
 const MatrixTitle = styled.h3`
@@ -66,6 +68,7 @@ const MatrixSelect = styled.select`
   color: ${props => props.theme.colors.text};
   padding: 4px;
   font-size: 0.75rem;
+  font-family: inherit;
   width: 60px;
 
   &:focus {
@@ -85,7 +88,9 @@ export const MatrixEditor: React.FC = () => {
   const updateModulationMatrixRow = usePatchStore((state) => state.updateModulationMatrixRow);
 
   const modulationSources = MATRIX_SOURCE_NAMES;
-  const destinations = MATRIX_DEST_ORDERED_NAMES;
+  const destinations = useVisibleMatrixDestinations();
+  const destinationOptions = (current: string) =>
+    destinations.includes(current) ? destinations : [current, ...destinations];
 
   const handleSourceChange = (rowIndex: number, source: string) => {
     updateModulationMatrixRow(rowIndex, { source });
@@ -136,6 +141,7 @@ export const MatrixEditor: React.FC = () => {
                   min={-10}
                   max={24}
                   value={row.amount}
+                  defaultValue={0}
                   onChange={(value) => handleAmountChange(index, value)}
                   step={0.01}
                   color={theme.colors.knobModulation}
@@ -154,7 +160,7 @@ export const MatrixEditor: React.FC = () => {
                 value={row.destination1}
                 onChange={(e) => handleDestination1Change(index, e.target.value)}
               >
-                {destinations.map((dest) => (
+                {destinationOptions(row.destination1).map((dest) => (
                   <option key={dest} value={dest}>
                     {dest}
                   </option>
@@ -168,7 +174,7 @@ export const MatrixEditor: React.FC = () => {
                 value={row.destination2}
                 onChange={(e) => handleDestination2Change(index, e.target.value)}
               >
-                {destinations.map((dest) => (
+                {destinationOptions(row.destination2).map((dest) => (
                   <option key={dest} value={dest}>
                     {dest}
                   </option>

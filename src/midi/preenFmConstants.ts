@@ -1134,3 +1134,44 @@ export function nrpnToStepSeqMode(val: number | undefined, defaultMode: StepSeqS
 export function stepSeqModeToNrpn(mode: StepSeqStepMode): number {
   return STEP_SEQ_MODE_TO_NRPN[mode] ?? 0;
 }
+
+// ============================================================================
+// Firmware capability protocol
+// ============================================================================
+
+export const CAPABILITY_NRPNS = {
+  FEATURES: 126,
+  LFO_SHAPE_MAX: 125,
+  PROTOCOL_VERSION: 124,
+} as const;
+
+export const CAPABILITY_BITS = {
+  OPERATOR_PHASE: 0,
+  OPERATOR_WARP: 1,
+  ENGINE_DECIMATION: 2,
+  VOICE_PRIORITY: 3,
+  STEP_SEQ_MODES: 4,
+  EXTENDED_ARP: 5,
+  LFO_RETRIGGER: 6,
+  EXTENDED_MATRIX_DESTS: 7,
+  LFO_ENV_CURVES: 8,
+  LFO_MIDI_CLOCK: 9,
+} as const;
+
+export type CapabilityBit = typeof CAPABILITY_BITS[keyof typeof CAPABILITY_BITS];
+
+export const CAPABILITY_FEATURE_BIT_COUNT = 10;
+
+export interface FirmwareCapabilities {
+  featureBits: number;
+  lfoShapeMax: number;
+  protocolVersion: number;
+}
+
+export const FULL_FEATURE_BITS = (1 << CAPABILITY_FEATURE_BIT_COUNT) - 1;
+
+export const FULL_CAPABILITIES: FirmwareCapabilities = {
+  featureBits: FULL_FEATURE_BITS,
+  lfoShapeMax: LFO_SHAPE_MAX,
+  protocolVersion: 1,
+};

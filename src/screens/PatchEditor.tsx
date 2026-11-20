@@ -7,7 +7,6 @@ import { useCurrentPatch, updateGlobal } from '../stores/patchStore';
 import ModulationIndexesEditor from '../components/fmEngine/ModulationIndexesEditor';
 import KnobBase from '../components/knobs/KnobBase';
 import { useThemeStore } from '../theme/themeStore';
-import { useSynthStore } from '../stores/synthStore';
 import { FilterEditor } from '../components/modulations/FilterEditor';
 
 interface RowProps {
@@ -30,9 +29,8 @@ const Row = styled.div<RowProps>`
 
 const BaseFMGrid = styled.div`
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 2fr) minmax(400px, 1fr);
   width: 100%;
-  max-width: 900px;
 
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
@@ -45,14 +43,20 @@ const BaseFMGrid = styled.div`
 
 
 const OperatorGrid = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 8px;
   margin: 10px auto;
-  max-width: 900px;
+  width: 100%;
+  box-sizing: border-box;
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   border: 1px solid ${({ theme }) => theme.colors.border};
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
   
   h3{
     margin:0;
@@ -68,7 +72,6 @@ const GlobalKnobWrapper = styled.div`
 export function PatchEditor() {
   const { theme } = useThemeStore();
   const currentPatch = useCurrentPatch();
-  const pfm3Version = useSynthStore(state => state.pfm3Version);
 
   if(!currentPatch) {
     return null;
@@ -84,6 +87,7 @@ export function PatchEditor() {
           max={16}
           step={1}
           value={currentPatch.global.velocitySensitivity}
+          defaultValue={8}
           valuePosition="left"
           onChange={(val) =>
             updateGlobal({ velocitySensitivity: Math.round(val) })
@@ -107,6 +111,7 @@ export function PatchEditor() {
           max={16}
           step={1}
           value={currentPatch.global.polyphony}
+          defaultValue={8}
           valuePosition='left'
           onChange={(val) =>
             updateGlobal({ polyphony: Math.round(val) })
@@ -127,6 +132,7 @@ export function PatchEditor() {
           max={12}
           step={1}
           value={currentPatch.global.glideTime}
+          defaultValue={0}
           valuePosition='left'
           onChange={(val) =>
             updateGlobal({ glideTime: Math.round(val) })
@@ -166,9 +172,7 @@ export function PatchEditor() {
 
         <Row>
           <FilterEditor filterIndex={0} />
-          {pfm3Version !== null && pfm3Version > 100 && (
-            <FilterEditor filterIndex={1} />
-          )}
+          <FilterEditor filterIndex={1} />
         </Row>
 
       </FMSynthProvider>

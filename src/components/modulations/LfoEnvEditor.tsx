@@ -9,14 +9,14 @@ import { ADSR_CURVE_TYPES, type CurveType } from '../../types/patch';
 import { EnvelopeVisualizer, type EnvelopeDataADSR, type EnvelopeDataSAR } from './EnvelopeVisualizer';
 import { useThemeStore } from '../../theme/themeStore';
 import { StyledSelect } from '../StyledSelect';
+import { CAPABILITY_BITS } from '../../midi/preenFmConstants';
+import { useSupportsFeature } from '../../midi/useSynthCapabilities';
 
 const EnvContainer = styled.div`
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 12px;
-  margin-bottom: 10px;
   width: 100%;
-  max-width: 520px;
   border: 1px solid ${props => props.theme.colors.border};
 `;
 
@@ -70,6 +70,7 @@ const EnvControls = styled.div`
   display: flex;
   gap: 10px;
   align-items: start;
+  justify-content: center;
   padding-top: 10px;
 `;
 
@@ -96,6 +97,7 @@ export const LfoEnvEditor: React.FC = () => {
   const [activeEnv, setActiveEnv] = useState<0 | 1>(0);
   const env = useLfoEnvelope(activeEnv);
   const { theme } = useThemeStore();
+  const supportsLfoEnvCurves = useSupportsFeature(CAPABILITY_BITS.LFO_ENV_CURVES);
 
   const loopModes: LfoEnvLoopMode[] = [
     'Off',
@@ -247,6 +249,7 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.adsr.attack.time}
+                defaultValue={0}
                 onChange={(time) => {
                   updateLfoEnvelope(activeEnv, {
                     adsr: { ...env.adsr, attack: { ...env.adsr.attack, time } }
@@ -276,6 +279,7 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.adsr.decay.time}
+                defaultValue={1}
                 onChange={(time) => {
                   updateLfoEnvelope(activeEnv, {
                     adsr: { ...env.adsr, decay: { ...env.adsr.decay, time } }
@@ -305,6 +309,7 @@ export const LfoEnvEditor: React.FC = () => {
                 max={100}
                 step={1}
                 value={env.adsr.decay.level}
+                defaultValue={100}
                 onChange={(level) => {
                   updateLfoEnvelope(activeEnv, {
                     adsr: {
@@ -338,6 +343,7 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.adsr.release.time}
+                defaultValue={10}
                 onChange={(time) => {
                   updateLfoEnvelope(activeEnv, {
                     adsr: { ...env.adsr, release: { ...env.adsr.release, time } }
@@ -371,6 +377,7 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.silence}
+                defaultValue={0}
                 onChange={(silence) => {
                   updateLfoEnvelope(activeEnv, { silence });
                   if (activeEnv === 1) {
@@ -399,6 +406,7 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.adsr.attack.time}
+                defaultValue={0}
                 onChange={(time) => {
                   updateLfoEnvelope(activeEnv, {
                     adsr: { ...env.adsr, attack: { time, level: 100 } }
@@ -429,6 +437,7 @@ export const LfoEnvEditor: React.FC = () => {
                 max={16}
                 step={0.01}
                 value={env.adsr.decay.time}
+                defaultValue={1}
                 onChange={(time) => {
                   updateLfoEnvelope(activeEnv, {
                     adsr: { ...env.adsr, decay: { time, level: 0 } }
@@ -454,6 +463,7 @@ export const LfoEnvEditor: React.FC = () => {
         )}
 
         {/* Attack & Release Curves (NRPN 280-283) */}
+        {supportsLfoEnvCurves && (
         <ControlGroup>
           <ControlLabel>{t('modulation.attackCurve', 'Atk Curve')}</ControlLabel>
           <StyledSelect
@@ -472,7 +482,9 @@ export const LfoEnvEditor: React.FC = () => {
             ))}
           </StyledSelect>
         </ControlGroup>
+        )}
 
+        {supportsLfoEnvCurves && (
         <ControlGroup>
           <ControlLabel>{t('modulation.releaseCurve', 'Rel Curve')}</ControlLabel>
           <StyledSelect
@@ -491,6 +503,7 @@ export const LfoEnvEditor: React.FC = () => {
             ))}
           </StyledSelect>
         </ControlGroup>
+        )}
 
         {/* Loop Mode only for Env2 */}
         {activeEnv === 1 && (

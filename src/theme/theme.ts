@@ -38,6 +38,7 @@ export interface Theme {
     // Knobs et contrôles
     knobBackground: string;
     knobStroke: string;
+    knobStrokeHover: string;
     knobLabel: string;
     knobTick: string;
     
@@ -107,7 +108,8 @@ export const darkTheme: Theme = {
     navActive: '#4a5568',
     
     knobBackground: '#2d3748',
-    knobStroke: '#4a5568',
+    knobStroke: '#6684b7',
+    knobStrokeHover: '#97b2e2',
     knobLabel: '#a0aec0',
     knobTick: '#718096',
     
@@ -175,6 +177,7 @@ export const lightTheme: Theme = {
     
     knobBackground: '#ffffff',
     knobStroke: '#e2e8f0',
+    knobStrokeHover: '#4a5568',
     knobLabel: '#718096',
     knobTick: '#a0aec0',
     
