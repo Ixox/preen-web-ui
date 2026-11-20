@@ -412,7 +412,7 @@ function diagramToAlgorithm(diagram: AlgoDiagram): Algorithm {
     // Les self-loops (feedback) sont traités comme des targets normaux avec un IM dédié
     const targetLinks: ModulationLink[] = targets.map(targetId => ({
       id: parseInt(targetId.replace(/\D/g, '')),
-      im: 0, // Valeur initiale de modulation (IM)
+      im: 1, // Valeur initiale de modulation (IM)
       modulationIndexVelo: 0 // Sensibilité à la vélocité
     }));
     

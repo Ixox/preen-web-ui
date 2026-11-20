@@ -276,6 +276,7 @@ export const ArpeggiatorEditor: React.FC = () => {
             max={3}
             step={1}
             value={arp.octave}
+            defaultValue={1}
             onChange={(octave) => {
               updateArpeggiator({ octave });
               sendArpeggiatorOctave(octave);
@@ -378,6 +379,7 @@ export const ArpeggiatorEditor: React.FC = () => {
               max={15}
               step={1}
               value={euclideanSeed}
+              defaultValue={0}
               onChange={(seed) => {
                 const rounded = Math.round(seed);
                 updateArpeggiator({ euclideanSeed: rounded });
@@ -399,6 +401,7 @@ export const ArpeggiatorEditor: React.FC = () => {
               max={16}
               step={1}
               value={patternData.length ?? 16}
+              defaultValue={16}
               onChange={handleUserLengthChange}
               color={theme.colors.accent}
               backgroundColor={theme.colors.knobBackground}

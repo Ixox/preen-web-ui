@@ -100,7 +100,7 @@ const SlotLabel = styled.div`
 
 const SlotName = styled.div`
   font-size: 0.82rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text};
   white-space: nowrap;
@@ -110,7 +110,7 @@ const SlotName = styled.div`
 
 const SlotMeta = styled.div`
   font-size: 0.67rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   color: ${({ theme }) => theme.colors.textMuted};
 `;
 
@@ -188,7 +188,7 @@ const MutationSlider = styled.input`
 
 const MutationValue = styled.span`
   font-size: 0.76rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   font-weight: 700;
   color: ${({ theme }) => theme.colors.primary};
   min-width: 32px;
@@ -251,7 +251,7 @@ const ChildCard = styled.div<{ $sending: boolean; $active: boolean }>`
 
 const ChildName = styled.div`
   font-size: 0.82rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   font-weight: 700;
   color: ${({ theme }) => theme.colors.text};
   overflow: hidden;
@@ -261,7 +261,7 @@ const ChildName = styled.div`
 
 const ChildMeta = styled.div`
   font-size: 0.67rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   color: ${({ theme }) => theme.colors.textMuted};
   line-height: 1.6;
 `;
@@ -274,7 +274,7 @@ const BlockBadges = styled.div`
 
 const BlockBadge = styled.span<{ $src: 'A' | 'B' }>`
   font-size: 0.58rem;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   font-weight: 700;
   padding: 1px 5px;
   border-radius: 3px;

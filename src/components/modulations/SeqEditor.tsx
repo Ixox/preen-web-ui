@@ -13,10 +13,8 @@ const SeqContainer = styled.div`
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 12px;
-  margin-bottom: 10px;
   border: 1px solid ${props => props.theme.colors.border};
   width: 100%;
-  max-width: 520px;
 `;
 
 const HeaderRow = styled.div`
@@ -231,6 +229,7 @@ export const SeqEditor: React.FC = () => {
             max={16}
             step={1}
             value={loopLength}
+            defaultValue={16}
             onChange={handleLoopLengthChange}
             color={theme.colors.accent}
             backgroundColor={theme.colors.knobBackground}
@@ -247,6 +246,7 @@ export const SeqEditor: React.FC = () => {
             max={1}
             step={0.01}
             value={seq.gate}
+            defaultValue={0.5}
             onChange={(gate) => updateStepSequencer(activeSeq, { gate })}
             color={theme.colors.knobSeq}
             backgroundColor={theme.colors.knobBackground}

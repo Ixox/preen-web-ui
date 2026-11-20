@@ -112,6 +112,8 @@ const NavWrapper = styled.div`
   z-index: 100;
   background-color: ${props => props.theme.colors.background};
   border-bottom: 1px solid ${props => props.theme.colors.border};
+  box-shadow: 0 6px 16px -6px ${props =>
+    props.theme.name === 'dark' ? 'rgba(0, 0, 0, 0.55)' : 'rgba(0, 0, 0, 0.18)'};
 `;
 
 const AudioToggleButton = styled.button<{ $active: boolean }>`
@@ -127,7 +129,7 @@ const AudioToggleButton = styled.button<{ $active: boolean }>`
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 700;
-  font-family: monospace;
+  font-family: var(--app-font-digit);
   letter-spacing: 0.04em;
   cursor: pointer;
   transition: all 0.2s;
@@ -151,7 +153,7 @@ const AudioStatusDot = styled.span<{ $active: boolean }>`
   transition: background 0.3s, box-shadow 0.3s;
 `;
 
-const Nav = styled.nav`
+const Nav = styled.nav<{ $maxWidth: number }>`
   background-color: transparent;
   display: flex;
   flex-wrap: wrap;
@@ -160,7 +162,7 @@ const Nav = styled.nav`
   gap: 0.5rem;
   margin: 0 auto;
   padding: 0.5rem 0.1rem 0 0.1rem;
-  max-width: 900px;
+  max-width: ${props => props.$maxWidth}px;
   
   .nav-tabs {
     display: flex;
@@ -216,9 +218,11 @@ const Nav = styled.nav`
   }
 `;
 
-const Main = styled.main`
+const Main = styled.main<{ $maxWidth: number }>`
   padding: 8px 0 0 0;
   margin: 0 auto;
+  width: 100%;
+  max-width: ${props => props.$maxWidth}px;
 `;
 
 export default function App() {
@@ -249,7 +253,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
 
-  const { starfieldEnabled } = useUIStore();
+  const { starfieldEnabled, contentWidth } = useUIStore();
   const TAB_ORDER: AppScreen[] = ['patch', 'modulations', 'arp', 'tools'];
   const PLUNGE_SCREENS: AppScreen[] = ['patch', 'modulations', 'arp'];
   const movementMode = PLUNGE_SCREENS.includes(currentScreen) ? 'plunge' : 'rotation';
@@ -267,7 +271,7 @@ export default function App() {
       <AppContainer $starfield={theme.name === 'dark' && starfieldEnabled}>
         
         <NavWrapper>
-        <Nav>
+        <Nav $maxWidth={contentWidth}>
           <div className="nav-tabs">
             <button onClick={() => setCurrentScreen('patch')} className={currentScreen === 'patch' ? 'active' : ''}>
               {t('nav.patch')}
@@ -304,7 +308,7 @@ export default function App() {
                 onClick={() => sendPatch()}
                 disabled={!midi.selectedOutput || isSending}
                 $isSending={isSending}
-                title={isSending ? "Envoi en cours…" : "Push vers PreenFM3"}
+                title={isSending ? t('midi.sending') : t('midi.pushTooltip')}
               >
                 ▲
               </QuickMidiButton>
@@ -312,7 +316,7 @@ export default function App() {
                 onClick={receivePatch}
                 disabled={!midi.selectedInput || isReceiving}
                 $isReceiving={isReceiving}
-                title={isReceiving ? "Réception en cours..." : "Pull depuis PreenFM3"}
+                title={isReceiving ? t('midi.receiving') : t('midi.pullTooltip')}
               >
                 ▼
               </QuickMidiButton>
@@ -322,7 +326,7 @@ export default function App() {
         </Nav>
         </NavWrapper>
 
-        <Main>
+        <Main $maxWidth={contentWidth}>
           {currentScreen === 'patch' && <PatchEditor />}
           {currentScreen === 'modulations' && <ModulationsEditor />}
           {currentScreen === 'arp' && <ArpFilterEditor />}

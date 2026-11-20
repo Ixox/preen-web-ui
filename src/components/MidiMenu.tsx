@@ -201,7 +201,7 @@ const HelpNote = styled.p`
     background: ${props => props.theme.colors.button};
     padding: 0.125rem 0.375rem;
     border-radius: 0.25rem;
-    font-family: 'Courier New', monospace;
+    font-family: var(--app-font-digit);
     color: ${props => props.theme.colors.primary};
     font-size: 0.8125rem;
   }

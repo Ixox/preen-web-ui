@@ -11,7 +11,8 @@ const MatrixContainer = styled.div`
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 10px;
-  margin-bottom: 10px;
+  width: 100%;
+  flex: 1;
 `;
 
 const MatrixTitle = styled.h3`
@@ -66,6 +67,7 @@ const MatrixSelect = styled.select`
   color: ${props => props.theme.colors.text};
   padding: 4px;
   font-size: 0.75rem;
+  font-family: inherit;
   width: 60px;
 
   &:focus {
@@ -136,6 +138,7 @@ export const MatrixEditor: React.FC = () => {
                   min={-10}
                   max={24}
                   value={row.amount}
+                  defaultValue={0}
                   onChange={(value) => handleAmountChange(index, value)}
                   step={0.01}
                   color={theme.colors.knobModulation}

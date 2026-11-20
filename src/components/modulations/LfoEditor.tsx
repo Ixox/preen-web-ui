@@ -14,10 +14,8 @@ const LfoContainer = styled.div`
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   padding: 12px;
-  margin-bottom: 10px;
   border: 1px solid ${props => props.theme.colors.border};
   width: 100%;
-  max-width: 520px;
 `;
 
 const LfoTitle = styled.h3`
@@ -174,6 +172,7 @@ export const LfoEditor: React.FC = () => {
               max={99.9}
               step={0.1}
               value={lfo.frequency}
+              defaultValue={5}
               onChange={(frequency) => {
                 // If user sets freq > 99.9, switch to Ext and send default MIDI clock
                 if (frequency > 99.9) {
@@ -222,6 +221,7 @@ export const LfoEditor: React.FC = () => {
             max={1.00}
             step={0.001}
             value={lfo.phase}
+            defaultValue={0}
             onChange={(phase) => {
               updateLfo(activeLfo, { phase });
               sendLfoParamNRPN(activeLfo, 'phase', phase);
@@ -243,6 +243,7 @@ export const LfoEditor: React.FC = () => {
             max={1}
             step={0.01}
             value={lfo.bias}
+            defaultValue={0}
             onChange={(bias) => {
               updateLfo(activeLfo, { bias });
               sendLfoParamNRPN(activeLfo, 'bias', bias);
@@ -264,6 +265,7 @@ export const LfoEditor: React.FC = () => {
             max={16}
             step={0.1}
             value={lfo.keysync === 'Off' ? -1 : lfo.keysync}
+            defaultValue={-1}
             onChange={(value) => {
               const keysync = value < 0 ? 'Off' : Math.max(0, value);
               updateLfo(activeLfo, { keysync });
