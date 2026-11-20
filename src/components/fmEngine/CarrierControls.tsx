@@ -11,7 +11,9 @@ import {
   PLAY_MODES,
   VOICE_PRIORITIES,
   MFX_REVERB_PRESETS,
+  CAPABILITY_BITS,
 } from '../../midi/preenFmConstants';
+import { useSupportsFeature } from '../../midi/useSynthCapabilities';
 
 const CarrierContainer = styled.div`
   margin: auto;
@@ -196,6 +198,8 @@ export const CarrierControls: React.FC = () => {
   const voicePriorityValue = global.voicePriority ?? 0;
   const mfxReturnValue = global.mfxReturn ?? 0.5;
   const mfxPresetValue = global.mfxPreset ?? 0;
+  const supportsDecimation = useSupportsFeature(CAPABILITY_BITS.ENGINE_DECIMATION);
+  const supportsVoicePriority = useSupportsFeature(CAPABILITY_BITS.VOICE_PRIORITY);
 
   return (
     <CarrierContainer>
@@ -234,6 +238,7 @@ export const CarrierControls: React.FC = () => {
           </HeaderControlItem>
 
           {/* CC 42: Engine Decimation (1-bit .. 19-bit, FULL, HQx2) */}
+          {supportsDecimation && (
           <HeaderControlItem title="Engine Decimation lo-fi bit reduction (CC 42)">
             <CompactLabel>Decim:</CompactLabel>
             <CompactSelect
@@ -247,6 +252,7 @@ export const CarrierControls: React.FC = () => {
               ))}
             </CompactSelect>
           </HeaderControlItem>
+          )}
 
           {/* CC 43: Play Mode (Mono, Poly, Unison) */}
           <HeaderControlItem title="Play Mode (CC 43)">
@@ -264,6 +270,7 @@ export const CarrierControls: React.FC = () => {
           </HeaderControlItem>
 
           {/* NRPN 276 [2,20]: Voice Priority (Last, High, Low, BassP, Cycl) */}
+          {supportsVoicePriority && (
           <HeaderControlItem title="Voice Priority (NRPN 276 [2,20])">
             <CompactLabel>Prio:</CompactLabel>
             <CompactSelect
@@ -277,6 +284,7 @@ export const CarrierControls: React.FC = () => {
               ))}
             </CompactSelect>
           </HeaderControlItem>
+          )}
         </HeaderControls>
       </CarrierHeader>
       

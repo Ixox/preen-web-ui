@@ -20,8 +20,14 @@ import {
   STEP_SEQ_STEP_MODES,
   arpStepStateToValue,
   nrpnToArpStepAction,
+  FULL_CAPABILITIES,
   type StepSeqStepMode,
 } from './preenFmConstants';
+import {
+  mergeCapabilities,
+  parseCapabilityNRPN,
+  type Capabilities,
+} from './capabilities';
 import {
   DEFAULT_ALGORITHMS, DEFAULT_LFO_ENVELOPE, ARP_CLOCKS, ARP_DIRECTIONS, ARP_PATTERNS,
   ARP_DIVISIONS, ARP_DURATIONS, ARP_LATCH, createDefaultArpUserPattern,
@@ -102,11 +108,18 @@ export class PreenFM3Parser {
   private presetName: string[] = [];
   private presetNameReceived = false;
   private pfm3Version: number | null = null;
+  private capabilities: Capabilities = { ...FULL_CAPABILITIES };
   
   /**
    * Ajouter un message NRPN reçu
    */
   addNRPN(nrpn: NRPNMessage): void {
+    const capability = parseCapabilityNRPN(nrpn);
+    if (capability) {
+      this.capabilities = mergeCapabilities(this.capabilities, capability);
+      return;
+    }
+
     // Calculer l'index NRPN (paramMSB << 7 | paramLSB)
     const paramIndex = (nrpn.paramMSB << 7) | nrpn.paramLSB;
 
@@ -178,6 +191,10 @@ export class PreenFM3Parser {
     return this.pfm3Version;
   }
 
+  getCapabilities(): Capabilities {
+    return { ...this.capabilities };
+  }
+
   /**
    * Obtenir une valeur NRPN brute (méthode publique)
    */
@@ -246,6 +263,7 @@ export class PreenFM3Parser {
     this.nrpnData.clear();
    this.presetName = [];
     this.presetNameReceived = false;
+    this.capabilities = { ...FULL_CAPABILITIES };
   }
   
   /**
@@ -327,36 +345,28 @@ export class PreenFM3Parser {
     }
     console.log('[PreenFM3Parser] NRPN Mix1-6 (LSB 16,18,20,22,24,26) values:', mixDebug);
 
-    // ── LOG ENV CURVES (MSB=1, LSB=92 à 103, 24 valeurs) ──
+    // ── ENV CURVES (MSB=1, LSB=92..115, 24 values) ──
+    // Defaults (attack Lin, decay Exp, sustain Lin, release Exp) are kept for
+    // entries the firmware could not send, e.g. LSB 100..111 colliding with the
+    // preset name, or older patch dumps.
     let envCurveTypes: number[] = [];
     let envCurveNames: string[] = [];
-    if ((this.pfm3Version ?? 0) > 100) {
-      for (let i = 0; i < 24; i++) {
-        const val = this.getValue(1, 92 + i);
-        if (typeof val === 'number') {
-          envCurveTypes.push(val);
-          envCurveNames.push(val >= 0 && val < ENV_CURVE_NAMES.length ? ENV_CURVE_NAMES[val] : '?');
-        } else {
-          console.warn(`[PreenFM3Parser] Valeur de courbe d'enveloppe manquante pour LSB ${92 + i}`, val);
-        }
-      }
-      console.log('🟢 Types de courbe d\'enveloppe (envCurves, NRPN MSB=1, LSB=92-115):', envCurveTypes);
-      console.log('🟢 Noms de courbe d\'enveloppe (envCurves):', envCurveNames);
-    } else {
-      // Firmware <= 100: assign default curves as in AdsrControl.tsx (alternating linear/exponential)
-      // AdsrControl.tsx: attack=linear, decay=exponential, sustain=linear, release=exponential
-      // ENV_CURVE_NAMES: ['Exp', 'Lin', 'Log', ...]
-      // 'Lin' = 1, 'Exp' = 0
-      envCurveTypes = [];
-      envCurveNames = [];
-      for (let op = 0; op < 6; op++) {
-        envCurveTypes.push(1); envCurveNames.push('Lin'); // attack
-        envCurveTypes.push(0); envCurveNames.push('Exp'); // decay
-        envCurveTypes.push(1); envCurveNames.push('Lin'); // sustain
-        envCurveTypes.push(0); envCurveNames.push('Exp'); // release
-      }
-      console.log('[PreenFM3Parser] Firmware <= 100, envelope curves ignored. Using default Lin/Exp alternance.');
+    for (let op = 0; op < 6; op++) {
+      envCurveTypes.push(1, 0, 1, 0);
     }
+    for (let i = 0; i < 24; i++) {
+      const val = this.getValue(1, 92 + i);
+      if (typeof val === 'number') {
+        envCurveTypes[i] = val;
+      } else {
+        console.warn(`[PreenFM3Parser] Valeur de courbe d'enveloppe manquante pour LSB ${92 + i}`, val);
+      }
+    }
+    envCurveNames = envCurveTypes.map(val =>
+      val >= 0 && val < ENV_CURVE_NAMES.length ? ENV_CURVE_NAMES[val] : '?'
+    );
+    console.log('🟢 Types de courbe d\'enveloppe (envCurves, NRPN MSB=1, LSB=92-115):', envCurveTypes);
+    console.log('🟢 Noms de courbe d\'enveloppe (envCurves):', envCurveNames);
 
     // Récupérer l'algorithme (index 0, valeur 0-31)
     const algoIndex = this.getValue(0, 0);

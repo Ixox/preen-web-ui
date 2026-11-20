@@ -8,6 +8,8 @@ import { STEP_SEQ_STEP_MODES, STEP_SEQ_MIDI_CLOCK_MODES, STEP_SEQ_NOTE_SYNC_BPM 
 import { useThemeStore } from '../../theme/themeStore';
 import { ControlGroup, SyncBpmControls } from './SyncBpmControls';
 import { StepGridEditor, type StepModeVisualStyle } from './StepGridEditor';
+import { CAPABILITY_BITS } from '../../midi/preenFmConstants';
+import { useSupportsFeature } from '../../midi/useSynthCapabilities';
 
 const SeqContainer = styled.div`
   background: ${props => props.theme.colors.panel};
@@ -143,6 +145,7 @@ export const SeqEditor: React.FC = () => {
   const [activeSeq, setActiveSeq] = useState<0 | 1>(0);
   const seq = useStepSequencer(activeSeq);
   const { theme } = useThemeStore();
+  const supportsStepModes = useSupportsFeature(CAPABILITY_BITS.STEP_SEQ_MODES);
 
   const currentModes: StepSeqStepMode[] = seq.stepModes && seq.stepModes.length === 16
     ? seq.stepModes
@@ -216,13 +219,15 @@ export const SeqEditor: React.FC = () => {
         getModeLabel={(mode) => t(`modulation.stepModes.${mode}`)}
         getModeStyle={getStepSeqModeStyle}
         isStepEditable={(mode) => mode !== 'Mute' && mode !== 'Pass'}
-        activeLength={loopLength}
         resetKey={activeSeq}
         onStepsChange={(steps) => updateStepSequencer(activeSeq, { steps })}
         onModeChange={handleModeChange}
+        showModes={supportsStepModes}
+        activeLength={supportsStepModes ? loopLength : 16}
       />
 
       <SeqControls>
+        {supportsStepModes && (
         <ControlGroup>
           <KnobBase
             size={50}
@@ -239,6 +244,7 @@ export const SeqEditor: React.FC = () => {
             label={t('modulation.loopLength')}
           />
         </ControlGroup>
+        )}
 
         <ControlGroup>
           <KnobBase

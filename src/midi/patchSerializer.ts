@@ -815,6 +815,11 @@ export interface PatchToNRPNOptions {
    * Use MUTATION_EXCLUDED_NRPNS for mutation mode.
    */
   exclude?: Set<string>;
+  /**
+   * When false, LFOs in Ext sync mode are pushed with their internal frequency
+   * instead of a MIDI-clock NRPN (firmware without LFO clock support).
+   */
+  lfoMidiClockSupported?: boolean;
 }
 
 /**
@@ -995,8 +1000,9 @@ export function patchToNRPNMessages(patch: Patch, options?: PatchToNRPNOptions):
   for (let i = 0; i < 3; i++) {
     const lfo = lfos[i];
     const baseLsb = 40 + i * 4;
+    const midiClockSupported = options?.lfoMidiClockSupported !== false;
     push(nrpnMsg(1, baseLsb, encodeLfoShape(lfo.shape)));
-    push(nrpnMsg(1, baseLsb + 1, lfo.syncMode === 'Ext'
+    push(nrpnMsg(1, baseLsb + 1, lfo.syncMode === 'Ext' && midiClockSupported
       ? lfoFrequencyToNrpn(lfo.midiClockMode)
       : lfoFrequencyToNrpn(lfo.frequency)));
     push(nrpnMsg(1, baseLsb + 2, encodeLfoBias(lfo.bias)));

@@ -167,6 +167,7 @@ export interface StepGridEditorProps<M extends string> {
   getModeStyle?: (mode: M) => StepModeVisualStyle;
   isStepEditable?: (mode: M) => boolean;
   readOnly?: boolean;
+  showModes?: boolean;
   activeLength?: number;
   resetKey?: string | number;
   quantizeValue?: (value: number) => number;
@@ -182,6 +183,7 @@ export function StepGridEditor<M extends string>({
   getModeStyle,
   isStepEditable = () => true,
   readOnly = false,
+  showModes = true,
   activeLength = 16,
   resetKey,
   quantizeValue,
@@ -334,6 +336,7 @@ export function StepGridEditor<M extends string>({
                   {showValue && <StepFill $value={value} $fillBackground={style.fillBackground} />}
                 </StepBar>
                 <StepLabel>{index + 1}</StepLabel>
+                {showModes && (
                 <StepModeBadge
                   type="button"
                   $borderColor={style.badgeBorderColor}
@@ -361,6 +364,7 @@ export function StepGridEditor<M extends string>({
                 >
                   {style.badgeLabel ?? mode}
                 </StepModeBadge>
+                )}
               </StepColumn>
             );
           })}

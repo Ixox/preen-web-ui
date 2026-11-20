@@ -22,6 +22,13 @@ import { useWorkspaceStore } from '../stores/workspaceStore';
 import { useMidiStore } from '../midi/usePreenFM3Midi';
 import { patchToNRPNMessages, downloadPatchFile } from '../midi/patchSerializer';
 import { sendNRPN, clearNRPNQueue, drainNRPNQueue } from '../midi/midiService';
+import { useSynthStore } from '../stores/synthStore';
+import { CAPABILITY_BITS } from '../midi/preenFmConstants';
+import {
+  capabilityNrpnExclude,
+  sanitizeUnsupportedDestinations,
+  supportsFeature,
+} from '../midi/capabilities';
 import { generateChildren, type BreedResult, type DNABlock, type MatrixRoleDominants } from '../utils/geneticAlgorithm';
 import type { Patch } from '../types/patch';
 
@@ -365,10 +372,15 @@ export function BreederEditor() {
 
   const sendPatch = useCallback(async (patch: Patch, idx: number) => {
     if (!midiOutput) return;
+    const capabilities = useSynthStore.getState().capabilities;
+    const messages = patchToNRPNMessages(sanitizeUnsupportedDestinations(patch, capabilities), {
+      exclude: capabilityNrpnExclude(capabilities),
+      lfoMidiClockSupported: supportsFeature(capabilities, CAPABILITY_BITS.LFO_MIDI_CLOCK),
+    });
     setSendingIdx(idx);
     setActiveIdx(idx);
     clearNRPNQueue();
-    for (const msg of patchToNRPNMessages(patch)) sendNRPN(msg, midiChannel);
+    for (const msg of messages) sendNRPN(msg, midiChannel);
     await drainNRPNQueue();
     setSendingIdx(null);
   }, [midiOutput, midiChannel]);

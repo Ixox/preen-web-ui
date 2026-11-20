@@ -5,7 +5,8 @@ import { useCurrentPatch, usePatchStore } from '../../stores/patchStore';
 import { useThemeStore } from '../../theme/themeStore';
 import KnobBase from '../knobs/KnobBase';
 import { sendModulationMatrixParam } from '../../midi/midiService';
-import { MATRIX_SOURCE_NAMES, MATRIX_DEST_ORDERED_NAMES } from '../../midi/preenFmConstants';
+import { MATRIX_SOURCE_NAMES } from '../../midi/preenFmConstants';
+import { useVisibleMatrixDestinations } from '../../midi/useSynthCapabilities';
 
 const MatrixContainer = styled.div`
   background: ${props => props.theme.colors.panel};
@@ -85,7 +86,9 @@ export const MatrixEditor: React.FC = () => {
   const updateModulationMatrixRow = usePatchStore((state) => state.updateModulationMatrixRow);
 
   const modulationSources = MATRIX_SOURCE_NAMES;
-  const destinations = MATRIX_DEST_ORDERED_NAMES;
+  const destinations = useVisibleMatrixDestinations();
+  const destinationOptions = (current: string) =>
+    destinations.includes(current) ? destinations : [current, ...destinations];
 
   const handleSourceChange = (rowIndex: number, source: string) => {
     updateModulationMatrixRow(rowIndex, { source });
@@ -154,7 +157,7 @@ export const MatrixEditor: React.FC = () => {
                 value={row.destination1}
                 onChange={(e) => handleDestination1Change(index, e.target.value)}
               >
-                {destinations.map((dest) => (
+                {destinationOptions(row.destination1).map((dest) => (
                   <option key={dest} value={dest}>
                     {dest}
                   </option>
@@ -168,7 +171,7 @@ export const MatrixEditor: React.FC = () => {
                 value={row.destination2}
                 onChange={(e) => handleDestination2Change(index, e.target.value)}
               >
-                {destinations.map((dest) => (
+                {destinationOptions(row.destination2).map((dest) => (
                   <option key={dest} value={dest}>
                     {dest}
                   </option>

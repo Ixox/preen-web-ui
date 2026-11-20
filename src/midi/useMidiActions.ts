@@ -3,7 +3,12 @@ import { usePreenFM3Midi } from './usePreenFM3Midi';
 import { useCurrentPatch, usePatchStore } from '../stores/patchStore';
 import { requestPatchDump, sendNRPN, clearNRPNQueue, drainNRPNQueue } from './midiService';
 import { PreenFM3Parser } from './preenFM3Parser';
-import { formatTimbreMfxNrpnDetail } from './preenFmConstants';
+import { CAPABILITY_BITS, CAPABILITY_NRPNS, formatTimbreMfxNrpnDetail } from './preenFmConstants';
+import {
+  capabilityNrpnExclude,
+  sanitizeUnsupportedDestinations,
+  supportsFeature,
+} from './capabilities';
 import { patchToNRPNMessages, type PatchToNRPNOptions } from './patchSerializer';
 import { useSynthStore } from '../stores/synthStore';
 
@@ -44,7 +49,15 @@ export const useMidiActions = () => {
     usePatchStore.getState().setPushing(true);
     console.log('⏸️ MIDI suspended: starting patch push');
 
-    const nrpnMessages = patchToNRPNMessages(currentPatch, options);
+    // Suspend MIDI sending while pushing; unsupported features are filtered out
+    const capabilities = useSynthStore.getState().capabilities;
+    const patch = sanitizeUnsupportedDestinations(currentPatch, capabilities);
+    const pushOptions: PatchToNRPNOptions = {
+      ...options,
+      exclude: new Set([...(options?.exclude ?? []), ...capabilityNrpnExclude(capabilities)]),
+      lfoMidiClockSupported: supportsFeature(capabilities, CAPABILITY_BITS.LFO_MIDI_CLOCK),
+    };
+    const nrpnMessages = patchToNRPNMessages(patch, pushOptions);
     console.log(`📤 ${nrpnMessages.length} messages NRPN à envoyer (via queue, ~${nrpnMessages.length * 10}ms)`);
 
     // Queue all messages — the NRPN queue handles pacing (10 ms gap)
@@ -162,6 +175,7 @@ export const useMidiActions = () => {
 
         // Synchroniser la version firmware dans le synthStore
         useSynthStore.getState().setPfm3Version(parserRef.current.getpfm3Version());
+        useSynthStore.getState().setCapabilities(parserRef.current.getCapabilities());
         
         // Suspendre l'envoi MIDI pendant le chargement du patch
         usePatchStore.getState().setPulling(true);
@@ -186,6 +200,11 @@ export const useMidiActions = () => {
       
       setIsReceiving(false);
       isReceivingRef.current = false;
+
+      sendNRPN(
+        { paramMSB: 127, paramLSB: CAPABILITY_NRPNS.FEATURES, valueMSB: 0, valueLSB: 0 },
+        midi.channel,
+      );
     };
     
     // Créer le listener NRPN

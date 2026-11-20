@@ -9,6 +9,8 @@ import { ADSR_CURVE_TYPES, type CurveType } from '../../types/patch';
 import { EnvelopeVisualizer, type EnvelopeDataADSR, type EnvelopeDataSAR } from './EnvelopeVisualizer';
 import { useThemeStore } from '../../theme/themeStore';
 import { StyledSelect } from '../StyledSelect';
+import { CAPABILITY_BITS } from '../../midi/preenFmConstants';
+import { useSupportsFeature } from '../../midi/useSynthCapabilities';
 
 const EnvContainer = styled.div`
   background: ${props => props.theme.colors.panel};
@@ -96,6 +98,7 @@ export const LfoEnvEditor: React.FC = () => {
   const [activeEnv, setActiveEnv] = useState<0 | 1>(0);
   const env = useLfoEnvelope(activeEnv);
   const { theme } = useThemeStore();
+  const supportsLfoEnvCurves = useSupportsFeature(CAPABILITY_BITS.LFO_ENV_CURVES);
 
   const loopModes: LfoEnvLoopMode[] = [
     'Off',
@@ -454,6 +457,7 @@ export const LfoEnvEditor: React.FC = () => {
         )}
 
         {/* Attack & Release Curves (NRPN 280-283) */}
+        {supportsLfoEnvCurves && (
         <ControlGroup>
           <ControlLabel>{t('modulation.attackCurve', 'Atk Curve')}</ControlLabel>
           <StyledSelect
@@ -472,7 +476,9 @@ export const LfoEnvEditor: React.FC = () => {
             ))}
           </StyledSelect>
         </ControlGroup>
+        )}
 
+        {supportsLfoEnvCurves && (
         <ControlGroup>
           <ControlLabel>{t('modulation.releaseCurve', 'Rel Curve')}</ControlLabel>
           <StyledSelect
@@ -491,6 +497,7 @@ export const LfoEnvEditor: React.FC = () => {
             ))}
           </StyledSelect>
         </ControlGroup>
+        )}
 
         {/* Loop Mode only for Env2 */}
         {activeEnv === 1 && (

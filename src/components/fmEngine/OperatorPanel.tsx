@@ -10,6 +10,8 @@ import { useThemeStore } from '../../theme/themeStore';
 import { useOperator, updateOperator } from '../../stores/patchStore';
 import { useFMSynthContext } from './FMSynthContext';
 import { useTranslation } from 'react-i18next';
+import { CAPABILITY_BITS } from '../../midi/preenFmConstants';
+import { useSupportsFeature } from '../../midi/useSynthCapabilities';
 
 const PanelContainer = styled.div<{ $isHighlighted?: boolean }>`
   background-color: ${props => props.theme.colors.panelHover};
@@ -45,6 +47,7 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
   const opId = opNumber;
   const isHighlighted = highlightedNode === opNumber;
   const { t } = useTranslation();
+  const supportsOperatorPhase = useSupportsFeature(CAPABILITY_BITS.OPERATOR_PHASE);
 
   return (
     <PanelContainer
@@ -100,6 +103,7 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
         />
       </ControlsRow>
 
+      {supportsOperatorPhase && (
       <ControlsRow>
         <SliderBase
           label={t('Phase')}
@@ -118,7 +122,9 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
           backgroundColor={theme.colors.knobBackground}
         />
       </ControlsRow>
+      )}
 
+      {supportsOperatorPhase && (
       <ControlsRow>
         <SliderBase
           label={t('Warp')}
@@ -137,6 +143,7 @@ export const OperatorPanel = ({ opNumber }: OperatorPanelProps) => {
           backgroundColor={theme.colors.knobBackground}
         />
       </ControlsRow>
+      )}
 
     </PanelContainer>
   );
