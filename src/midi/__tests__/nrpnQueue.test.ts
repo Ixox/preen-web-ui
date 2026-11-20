@@ -88,7 +88,7 @@ describe('NRPN send queue', () => {
     sendNRPN(nrpn(0, 0, 0, 42), 1);
     expect(sentNRPNCount()).toBe(0); // not yet
 
-    vi.advanceTimersByTime(15);
+    vi.advanceTimersByTime(55);
     expect(sentNRPNCount()).toBe(1);
 
     // Verify the 4 CCs inside the single batched send: CC99=0, CC98=0, CC6=0, CC38=42
@@ -104,8 +104,8 @@ describe('NRPN send queue', () => {
     sendNRPN(nrpn(0, 1, 0, 2), 1);
     sendNRPN(nrpn(0, 2, 0, 3), 1);
 
-    // After 10 ms → first NRPN sent
-    vi.advanceTimersByTime(10);
+    // After 50 ms → first NRPN sent (flush cycle)
+    vi.advanceTimersByTime(50);
     expect(sentNRPNCount()).toBe(1);
 
     // After 10 more ms → second
@@ -124,7 +124,7 @@ describe('NRPN send queue', () => {
     sendNRPN(nrpn(0, 5, 0, 30), 1);
 
     // Only 1 entry should be in the queue
-    vi.advanceTimersByTime(15);
+    vi.advanceTimersByTime(55);
     expect(sentNRPNCount()).toBe(1);
 
     // The sent value should be the last one: 30
@@ -140,7 +140,7 @@ describe('NRPN send queue', () => {
     let resolved = false;
     drained.then(() => { resolved = true; });
 
-    vi.advanceTimersByTime(10);
+    vi.advanceTimersByTime(50);
     // Run any microtasks (promise resolutions)
     await vi.advanceTimersByTimeAsync(0);
     expect(resolved).toBe(false); // still one left
@@ -186,7 +186,7 @@ describe('NRPN send queue', () => {
 
   it('uses correct MIDI channel in status byte', () => {
     sendNRPN(nrpn(1, 50, 0, 99), 5); // channel 5
-    vi.advanceTimersByTime(15);
+    vi.advanceTimersByTime(55);
 
     // Status byte = 0xB0 + (channel - 1) = 0xB4 = 180
     const firstCall = mockSend.mock.calls[0][0];
@@ -221,7 +221,7 @@ describe('NRPN send queue', () => {
     sendNRPN(nrpn(0, 20, 0, 20), 1);
     sendNRPN(nrpn(0, 30, 0, 30), 1);
 
-    vi.advanceTimersByTime(50);
+    vi.advanceTimersByTime(70);
     expect(sentNRPNCount()).toBe(3);
 
     // Each send() call is a 12-byte batch: [s,99,msb, s,98,lsb, ...]
@@ -241,7 +241,7 @@ describe('NRPN send queue', () => {
 
   it('does not send extra bytes after queue drains (no NRPN null)', () => {
     sendNRPN(nrpn(0, 0, 0, 1), 1);
-    vi.advanceTimersByTime(15);
+    vi.advanceTimersByTime(55);
 
     // Only 1 send() call: the 12-byte NRPN batch. No trailing null.
     expect(mockSend.mock.calls.length).toBe(1);

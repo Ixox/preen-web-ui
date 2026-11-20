@@ -33,8 +33,8 @@ export function sendOperatorEnvCurve(opNumber: number, segment: 'attack' | 'deca
     valueMSB: 0,
     valueLSB: curveIdx
   };
-  console.log(`📤 Sending Operator${opNumber} ${segment} curve via NRPN: ${curveType} (idx=${curveIdx}) -> [${paramMSB},${paramLSB}] = [0,${curveIdx}]`);
-  sendNRPN(nrpn, channel);
+  debugLog(`📤 Sending Operator${opNumber} ${segment} curve via NRPN: ${curveType} (idx=${curveIdx}) -> [${paramMSB},${paramLSB}] = [0,${curveIdx}]`);
+  sendNRPN(nrpn, channel, true);
 }
 import {
   FILTER1_TYPE_LIST,
@@ -70,8 +70,8 @@ export function sendFilter2Type(type: string, channel: number = currentChannel) 
     valueMSB: (filterValue >> 7) & 0x7F,
     valueLSB: filterValue & 0x7F
   };
-  console.log(`📤 Sending Filter2 Type via NRPN: ${type} (${filterValue}) -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
-  sendNRPN(nrpn, channel);
+  debugLog(`📤 Sending Filter2 Type via NRPN: ${type} (${filterValue}) -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -89,7 +89,7 @@ export function sendFilter2Param1(value: number, channel: number = currentChanne
     valueMSB: (nrpnValue >> 7) & 0x7F,
     valueLSB: nrpnValue & 0x7F
   };
-  console.log(`📤 Sending Filter2 Param1 via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
+  debugLog(`📤 Sending Filter2 Param1 via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
   sendNRPN(nrpn, channel);
 }
 
@@ -108,7 +108,7 @@ export function sendFilter2Param2(value: number, channel: number = currentChanne
     valueMSB: (nrpnValue >> 7) & 0x7F,
     valueLSB: nrpnValue & 0x7F
   };
-  console.log(`📤 Sending Filter2 Param2 via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
+  debugLog(`📤 Sending Filter2 Param2 via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
   sendNRPN(nrpn, channel);
 }
 
@@ -127,7 +127,7 @@ export function sendFilter2Gain(value: number, channel: number = currentChannel)
     valueMSB: (nrpnValue >> 7) & 0x7F,
     valueLSB: nrpnValue & 0x7F
   };
-  console.log(`📤 Sending Filter2 Gain via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
+  debugLog(`📤 Sending Filter2 Gain via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
   sendNRPN(nrpn, channel);
 }
 import { encodeLfoBias } from '../types/lfo';
@@ -156,8 +156,8 @@ export function sendStepSequencerMidiClockMode(seqIndex: 0 | 1, midiClockMode: s
     valueMSB: (value >> 7) & 0x7F,
     valueLSB: value & 0x7F
   };
-  console.log('📤 Sending Step Sequencer midiClockMode via NRPN:', { seqIndex, midiClockMode, value, nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Step Sequencer midiClockMode via NRPN:', { seqIndex, midiClockMode, value, nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 /**
  * Envoie le BPM du step sequencer via NRPN
@@ -203,7 +203,7 @@ export function sendStepSequencerBpm(seqIndex: 0 | 1, bpm: number, midiClockMode
     valueMSB: (valueToSend >> 7) & 0x7F,
     valueLSB: valueToSend & 0x7F
   };
-  console.log('📤 Sending Step Sequencer BPM via NRPN:', { seqIndex, bpm: valueToSend, midiClockMode, nrpn, channel });
+  debugLog('📤 Sending Step Sequencer BPM via NRPN:', { seqIndex, bpm: valueToSend, midiClockMode, nrpn, channel });
   sendNRPN(nrpn, channel);
 }
 
@@ -228,7 +228,7 @@ export function sendStepSequencerGate(seqIndex: 0 | 1, gate: number, channel: nu
     valueMSB: (firmwareGate >> 7) & 0x7F,
     valueLSB: firmwareGate & 0x7F
   };
-  console.log('📤 Sending Step Sequencer Gate via NRPN:', { seqIndex, gate: firmwareGate, nrpn, channel });
+  debugLog('📤 Sending Step Sequencer Gate via NRPN:', { seqIndex, gate: firmwareGate, nrpn, channel });
   sendNRPN(nrpn, channel);
 }
 /**
@@ -270,7 +270,7 @@ export function sendStepSequencerStep(
     valueMSB: (firmwareValue >> 7) & 0x7F, // always 0 for 0-15
     valueLSB: firmwareValue & 0x7F
   };
-  console.log('📤 Sending Step Sequencer Step via NRPN:', { seqIndex, stepIndex, uiValue, firmwareValue, nrpn, channel });
+  debugLog('📤 Sending Step Sequencer Step via NRPN:', { seqIndex, stepIndex, uiValue, firmwareValue, nrpn, channel });
   sendNRPN(nrpn, channel);
 }
 
@@ -304,8 +304,8 @@ export function sendStepSequencerMode(
     valueMSB: 0,
     valueLSB: modeVal & 0x7F,
   };
-  console.log('📤 Sending Step Sequencer Mode via NRPN:', { seqIndex, stepIndex, mode, modeVal, nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Step Sequencer Mode via NRPN:', { seqIndex, stepIndex, mode, modeVal, nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -332,8 +332,8 @@ export function sendStepSequencerLoopLength(
     valueMSB: 0,
     valueLSB: clamped & 0x7F,
   };
-  console.log('📤 Sending Step Sequencer Loop Length via NRPN:', { seqIndex, length: clamped, nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Step Sequencer Loop Length via NRPN:', { seqIndex, length: clamped, nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -378,7 +378,7 @@ export function sendLfoParamNRPN(lfoIndex: 0 | 1 | 2, param: 'shape' | 'frequenc
     case 'phase':
       // UI: 0-1.27 (float) → NRPN: 0-127 (firmware attend NRPN/100)
       rawValue = Math.max(0, Math.min(127, Math.round(value * 100)));
-      console.log(`[LFO PHASE SEND] lfoIndex=${lfoIndex} UI value=${value} → NRPN=${rawValue}`);
+      debugLog(`[LFO PHASE SEND] lfoIndex=${lfoIndex} UI value=${value} → NRPN=${rawValue}`);
       break;
   }
   const nrpn = {
@@ -387,7 +387,7 @@ export function sendLfoParamNRPN(lfoIndex: 0 | 1 | 2, param: 'shape' | 'frequenc
     valueMSB: (rawValue >> 7) & 0x7F,
     valueLSB: rawValue & 0x7F
   };
-  sendNRPN(nrpn);
+  sendNRPN(nrpn, currentChannel, param === 'shape' || param === 'keysync');
 }
 /**
  * Envoie l'enveloppe libre 2 (Free Env2) au PreenFM3 via NRPN
@@ -413,7 +413,6 @@ export function sendLfoEnvelope2(params: { silence: number, attack: number, rele
       valueMSB: (value >> 7) & 0x7F,
       valueLSB: value & 0x7F
     };
-    console.log('📤 Sending LFO Envelope2 NRPN:', { lsb, value, nrpn });
     sendNRPN(nrpn);
   });
 }
@@ -439,7 +438,6 @@ export function sendLfoEnvelope(envIndex: 0 | 1, envelope: { attack: number, dec
       valueMSB: (value >> 7) & 0x7F,
       valueLSB: value & 0x7F
     };
-    console.log('📤 Sending LFO Envelope NRPN:', { envIndex, lsb, value, nrpn });
     sendNRPN(nrpn);
   });
 }
@@ -473,8 +471,8 @@ export function sendLfoEnvelopeCurve(
     valueMSB: 0,
     valueLSB: curveIdx,
   };
-  console.log(`📤 Sending Free Env${envIndex + 1} ${segment} curve via NRPN: ${curveType} (idx=${curveIdx}) -> [2,${paramLSB}] = [0,${curveIdx}]`);
-  sendNRPN(nrpn, channel);
+  debugLog(`📤 Sending Free Env${envIndex + 1} ${segment} curve via NRPN: ${curveType} (idx=${curveIdx}) -> [2,${paramLSB}] = [0,${curveIdx}]`);
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -495,8 +493,8 @@ export function sendArpeggiatorClock(clockSource: string, channel: number = curr
     valueMSB: 0,
     valueLSB: Math.max(0, value) & 0x7F
   };
-  console.log('📤 Sending Arpeggiator Clock via NRPN:', { clockSource, value, nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Arpeggiator Clock via NRPN:', { clockSource, value, nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -510,7 +508,7 @@ export function sendArpeggiatorBpm(bpm: number, channel: number = currentChannel
     valueMSB: (bpm >> 7) & 0x7F,
     valueLSB: bpm & 0x7F
   };
-  console.log('📤 Sending Arpeggiator BPM via NRPN:', { bpm, nrpn, channel });
+  debugLog('📤 Sending Arpeggiator BPM via NRPN:', { bpm, nrpn, channel });
   sendNRPN(nrpn, channel);
 }
 
@@ -531,8 +529,8 @@ export function sendArpeggiatorDirection(direction: string, channel: number = cu
     valueMSB: (value >> 7) & 0x7F,
     valueLSB: value & 0x7F
   };
-  console.log('📤 Sending Arpeggiator Direction via NRPN:', { direction, value, nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Arpeggiator Direction via NRPN:', { direction, value, nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -546,8 +544,8 @@ export function sendArpeggiatorOctave(octave: number, channel: number = currentC
     valueMSB: (octave >> 7) & 0x7F,
     valueLSB: octave & 0x7F
   };
-  console.log('📤 Sending Arpeggiator Octave via NRPN:', { octave, nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Arpeggiator Octave via NRPN:', { octave, nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -567,8 +565,8 @@ export function sendArpeggiatorPattern(pattern: string, channel: number = curren
     valueMSB: (value >> 7) & 0x7F,
     valueLSB: value & 0x7F
   };
-  console.log('📤 Sending Arpeggiator Pattern via NRPN:', { pattern, value, nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Arpeggiator Pattern via NRPN:', { pattern, value, nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -588,8 +586,8 @@ export function sendArpeggiatorDivision(division: string, channel: number = curr
     valueMSB: (value >> 7) & 0x7F,
     valueLSB: value & 0x7F
   };
-  console.log('📤 Sending Arpeggiator Division via NRPN:', { division, value, nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Arpeggiator Division via NRPN:', { division, value, nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -609,8 +607,8 @@ export function sendArpeggiatorDuration(duration: string, channel: number = curr
     valueMSB: (value >> 7) & 0x7F,
     valueLSB: value & 0x7F
   };
-  console.log('📤 Sending Arpeggiator Duration via NRPN:', { duration, value, nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Arpeggiator Duration via NRPN:', { duration, value, nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -630,8 +628,8 @@ export function sendArpeggiatorLatch(latch: string, channel: number = currentCha
     valueMSB: (value >> 7) & 0x7F,
     valueLSB: value & 0x7F
   };
-  console.log('📤 Sending Arpeggiator Latch via NRPN:', { latch, value, nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Arpeggiator Latch via NRPN:', { latch, value, nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -646,7 +644,7 @@ export function sendArpeggiatorEuclideanSeed(seed: number, channel: number = cur
     valueMSB: 0,
     valueLSB: clamped,
   };
-  console.log('📤 Sending Arpeggiator Euclidean Seed via NRPN:', { seed: clamped, nrpn, channel });
+  debugLog('📤 Sending Arpeggiator Euclidean Seed via NRPN:', { seed: clamped, nrpn, channel });
   sendNRPN(nrpn, channel);
 }
 
@@ -666,13 +664,13 @@ export function sendArpeggiatorUserPatternLength(
     valueMSB: 0,
     valueLSB: clamped,
   };
-  console.log('📤 Sending Arpeggiator User Pattern Length via NRPN:', {
+  debugLog('📤 Sending Arpeggiator User Pattern Length via NRPN:', {
     userPattern: `Usr${userPatternIndex + 1}`,
     length: clamped,
     nrpn,
     channel,
   });
-  sendNRPN(nrpn, channel);
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -724,6 +722,7 @@ export function sendArpeggiatorUserStepAction(
 
 import { WebMidi, Input, Output } from 'webmidi';
 import { MIDI_CC, PREENFM3_CC, NRPNMessage, NRPN_COMMANDS } from './preenFM3MidiMap';
+import { debugLog } from '../utils/debug';
 
 let midiInput: Input | null = null;
 let midiOutput: Output | null = null;
@@ -766,16 +765,16 @@ function notifyDevicesChanged() {
 export async function initializeMidi(): Promise<{ inputs: Input[]; outputs: Output[] }> {
   try {
     await WebMidi.enable();
-    console.log('Web MIDI enabled');
-    console.log('Inputs:', WebMidi.inputs.map(i => i.name));
-    console.log('Outputs:', WebMidi.outputs.map(o => o.name));
+    debugLog('Web MIDI enabled');
+    debugLog('Inputs:', WebMidi.inputs.map(i => i.name));
+    debugLog('Outputs:', WebMidi.outputs.map(o => o.name));
 
     WebMidi.addListener('connected', () => {
-      console.log('🔌 MIDI device connected:', WebMidi.inputs.map(i => i.name), WebMidi.outputs.map(o => o.name));
+      debugLog('🔌 MIDI device connected:', WebMidi.inputs.map(i => i.name), WebMidi.outputs.map(o => o.name));
       notifyDevicesChanged();
     });
     WebMidi.addListener('disconnected', () => {
-      console.log('🔌 MIDI device disconnected');
+      debugLog('🔌 MIDI device disconnected');
       notifyDevicesChanged();
     });
 
@@ -837,13 +836,39 @@ export function sendProgramChange(program: number, channel: number = currentChan
   }
   const statusByte = 0xC0 + ((channel - 1) & 0x0F);
   midiOutput.send([statusByte, program & 0x7F]);
-  console.log(`📤 Program Change: program=${program} ch=${channel}`);
+  debugLog(`📤 Program Change: program=${program} ch=${channel}`);
 }
 
 /**
  * Send a Control Change message
  */
-export function sendCC(controller: number, value: number, channel: number = currentChannel) {
+export function sendCCImmediate(controller: number, value: number, channel: number = currentChannel) {
+  if (suppressMidiOutputDepth > 0) return;
+  if (controller === MIDI_CC.HOLD_PEDAL) return;
+  if (!midiOutput) return;
+
+  const statusByte = 0xB0 + (channel - 1);
+  const midiMessage = [statusByte, controller & 0x7F, value & 0x7F];
+  debugLog('🎵 MIDI bytes:', midiMessage.map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+  debugLog('🔌 Output object:', { id: midiOutput.id, name: midiOutput.name, manufacturer: midiOutput.manufacturer });
+  debugLog('🔌 Output state:', { state: midiOutput.state, connection: midiOutput.connection, type: midiOutput.type });
+
+  try {
+    const result = midiOutput.send(midiMessage);
+    debugLog('📬 send() returned:', result);
+    debugLog(`✅ Sent CC ${controller} = ${value} on channel ${channel} to ${midiOutput.name}`);
+  } catch (sendError) {
+    console.error('💥 send() threw error:', sendError);
+    throw sendError;
+  }
+}
+
+/**
+ * Send a Control Change message.
+ * Continuous controls go through the coalescing queue; pass immediate=true
+ * for discrete/selection changes that must not wait.
+ */
+export function sendCC(controller: number, value: number, channel: number = currentChannel, immediate = false) {
   if (suppressMidiOutputDepth > 0) return;
   // Block sustain pedal (CC 64 = hold pedal).  This app never needs to send
   // it; an accidental CC 64 would lock notes in sustain on the PreenFM3.
@@ -852,72 +877,85 @@ export function sendCC(controller: number, value: number, channel: number = curr
     return;
   }
 
-  console.log('📨 sendCC called:', { controller, value, channel, hasOutput: !!midiOutput, outputName: midiOutput?.name });
-
   if (!midiOutput) {
     console.warn('❌ No MIDI output selected - cannot send CC');
     return;
   }
 
-  try {
-    // Build MIDI CC message manually: [status, controller, value]
-    // Status byte: 0xB0 (CC on channel 1) + (channel - 1)
-    // Controller: 0-127
-    // Value: 0-127
-    const statusByte = 0xB0 + (channel - 1);
-    const midiMessage = [statusByte, controller & 0x7F, value & 0x7F];
+  debugLog('📨 sendCC called:', { controller, value, channel, hasOutput: !!midiOutput, outputName: midiOutput?.name });
 
-    console.log('🎵 MIDI bytes:', midiMessage.map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-    console.log('🔌 Output object:', { id: midiOutput.id, name: midiOutput.name, manufacturer: midiOutput.manufacturer });
-    console.log('🔌 Output state:', { state: midiOutput.state, connection: midiOutput.connection, type: midiOutput.type });
-
-    // Send raw MIDI message WITHOUT timestamp (send immediately)
-    try {
-      const result = midiOutput.send(midiMessage);
-      console.log('📬 send() returned:', result);
-    } catch (sendError) {
-      console.error('💥 send() threw error:', sendError);
-      throw sendError;
-    }
-
-    console.log(`✅ Sent CC ${controller} = ${value} on channel ${channel} to ${midiOutput.name}`);
-  } catch (err) {
-    console.error('❌ Failed to send CC:', err);
+  if (immediate) {
+    sendCCImmediate(controller, value, channel);
+  } else {
+    enqueueCC(controller, value, channel);
   }
 }
 
 /**
- * ── NRPN Send Queue ─────────────────────────────────────────────────────────
+ * ── Shared MIDI Send Queue ──────────────────────────────────────────────────
  *
- * All NRPN messages go through a centralized FIFO queue so the PreenFM3
- * firmware has enough time to process each one before the next arrives.
+ * NRPN and CC messages are coalesced through a latest-value map and sent in
+ * 50 ms flush cycles. Real sends are paced by MIDI_SEND_GAP_MS (10 ms) so the
+ * PreenFM3 firmware can process each NRPN before the next arrives.
  *
- * - Minimum inter-NRPN gap: NRPN_SEND_INTERVAL_MS (default 10 ms).
- * - Deduplication: if a message with the same NRPN address (paramMSB:paramLSB)
- *   is already pending, its value is updated in-place (latest-value-wins).
- *   This is ideal for live knob/slider changes — only the most recent value
- *   actually gets sent.
- * - drainNRPNQueue() returns a Promise that resolves once the queue is empty.
+ * - The map keeps only the latest value per address.
+ * - The queue may contain stale entries; they are skipped without a MIDI send.
+ * - drainNRPNQueue() resolves once everything has been sent.
  */
 
-/** Minimum delay between consecutive NRPN sends (ms). */
-const NRPN_SEND_INTERVAL_MS = 10;
+/** Idle delay before starting a new flush cycle (ms). */
+const MIDI_FLUSH_INTERVAL_MS = 50;
+/** Minimum gap between two real MIDI sends (ms). */
+const MIDI_SEND_GAP_MS = 10;
 
-interface QueuedNRPN {
+interface PendingNRPN {
+  kind: 'nrpn';
+  key: string;
+  valueKey: number;
   nrpn: NRPNMessage;
   channel: number;
-  /** Dedup key: "paramMSB:paramLSB" */
-  key: string;
 }
 
-const nrpnQueue: QueuedNRPN[] = [];
+interface PendingCC {
+  kind: 'cc';
+  key: string;
+  valueKey: number;
+  controller: number;
+  value: number;
+  channel: number;
+}
+
+type PendingMidi = PendingNRPN | PendingCC;
+
+const midiQueue: PendingMidi[] = [];
+const latest = new Map<string, PendingMidi>();
 let queueTimer: ReturnType<typeof setTimeout> | null = null;
-let lastNrpnSendTime = 0;
 /** Pending drain-resolve callbacks. */
 let drainResolvers: (() => void)[] = [];
 
-function nrpnKey(nrpn: NRPNMessage): string {
-  return `${nrpn.paramMSB}:${nrpn.paramLSB}`;
+function nrpnKey(nrpn: NRPNMessage, channel: number): string {
+  return `nrpn:${channel}:${nrpn.paramMSB}:${nrpn.paramLSB}`;
+}
+
+function nrpnValueKey(nrpn: NRPNMessage): number {
+  return ((nrpn.valueMSB & 0x7F) << 7) | (nrpn.valueLSB & 0x7F);
+}
+
+function ccKey(controller: number, channel: number): string {
+  return `cc:${channel}:${controller}`;
+}
+
+function resolveDrainIfIdle() {
+  if (midiQueue.length === 0 && latest.size === 0 && !queueTimer) {
+    const resolvers = drainResolvers;
+    drainResolvers = [];
+    resolvers.forEach((r) => r());
+  }
+}
+
+function scheduleFlush(delay = MIDI_FLUSH_INTERVAL_MS) {
+  if (queueTimer) return;
+  queueTimer = setTimeout(processMidiQueue, delay);
 }
 
 /**
@@ -928,11 +966,11 @@ function nrpnKey(nrpn: NRPNMessage): string {
  * state machine on the synth — which was causing a phantom CC 64
  * (sustain / hold pedal) to be perceived by the firmware.
  */
-function sendNRPNImmediate(nrpn: NRPNMessage, channel: number) {
+export function sendNRPNImmediate(nrpn: NRPNMessage, channel: number) {
   if (!midiOutput) return;
   if (nrpn.paramMSB === 4 && nrpn.paramLSB >= 0 && nrpn.paramLSB <= 3) {
     const value = ((nrpn.valueMSB & 0x7F) << 7) | (nrpn.valueLSB & 0x7F);
-    console.log(`📤 [sendNRPNImmediate] Timbre & Master FX ch=${channel}: ${formatTimbreMfxNrpnDetail(nrpn.paramLSB, value)}`);
+    debugLog(`📤 [sendNRPNImmediate] Timbre & Master FX ch=${channel}: ${formatTimbreMfxNrpnDetail(nrpn.paramLSB, value)}`);
   }
   const s = 0xB0 + (channel - 1);
   midiOutput.send([
@@ -943,33 +981,68 @@ function sendNRPNImmediate(nrpn: NRPNMessage, channel: number) {
   ]);
 }
 
-function processNrpnQueue() {
+function processMidiQueue() {
   queueTimer = null;
 
-  if (nrpnQueue.length === 0) {
-    // Queue drained — resolve all waiters
-    const resolvers = drainResolvers;
-    drainResolvers = [];
-    resolvers.forEach((r) => r());
+  // Skip stale entries without waiting. Stop at the first fresh entry.
+  while (midiQueue.length > 0) {
+    const item = midiQueue.shift()!;
+    const current = latest.get(item.key);
+    if (!current || current.valueKey !== item.valueKey) {
+      continue;
+    }
+
+    try {
+      if (item.kind === 'nrpn') {
+        sendNRPNImmediate(item.nrpn, item.channel);
+      } else {
+        sendCCImmediate(item.controller, item.value, item.channel);
+      }
+    } catch (err) {
+      console.error('Failed to send MIDI:', err);
+    }
+
+    latest.delete(item.key);
+
+    // Schedule the next real send 10 ms later; do not block the UI thread.
+    if (midiQueue.length > 0 || latest.size > 0) {
+      queueTimer = setTimeout(processMidiQueue, MIDI_SEND_GAP_MS);
+    } else {
+      resolveDrainIfIdle();
+    }
     return;
   }
 
-  const item = nrpnQueue.shift()!;
-  try {
-    sendNRPNImmediate(item.nrpn, item.channel);
-  } catch (err) {
-    console.error('Failed to send NRPN:', err);
-  }
-  lastNrpnSendTime = performance.now();
+  resolveDrainIfIdle();
+}
 
-  if (nrpnQueue.length > 0) {
-    queueTimer = setTimeout(processNrpnQueue, NRPN_SEND_INTERVAL_MS);
-  } else {
-    // Queue just became empty — resolve all waiters
-    const resolvers = drainResolvers;
-    drainResolvers = [];
-    resolvers.forEach((r) => r());
-  }
+function enqueueMidi(entry: PendingMidi) {
+  const current = latest.get(entry.key);
+  if (current && current.valueKey === entry.valueKey) return;
+  latest.set(entry.key, entry);
+  midiQueue.push(entry);
+  scheduleFlush();
+}
+
+function enqueueCC(controller: number, value: number, channel: number) {
+  enqueueMidi({
+    kind: 'cc',
+    key: ccKey(controller, channel),
+    valueKey: value,
+    controller,
+    value,
+    channel,
+  });
+}
+
+function enqueueNRPN(nrpn: NRPNMessage, channel: number) {
+  enqueueMidi({
+    kind: 'nrpn',
+    key: nrpnKey(nrpn, channel),
+    valueKey: nrpnValueKey(nrpn),
+    nrpn,
+    channel,
+  });
 }
 
 /**
@@ -978,31 +1051,19 @@ function processNrpnQueue() {
  * If a message with the same NRPN address is already pending, its value is
  * updated in place (latest-value-wins deduplication).
  */
-export function sendNRPN(nrpn: NRPNMessage, channel: number = currentChannel) {
+export function sendNRPN(nrpn: NRPNMessage, channel: number = currentChannel, immediate = false) {
   if (suppressMidiOutputDepth > 0) return;
   if (!midiOutput) {
     console.warn('No MIDI output selected');
     return;
   }
 
-  const key = nrpnKey(nrpn);
-
-  // Dedup: update in place if same address is already queued
-  const existing = nrpnQueue.findIndex((q) => q.key === key);
-  if (existing >= 0) {
-    nrpnQueue[existing].nrpn = nrpn;
-    nrpnQueue[existing].channel = channel;
+  if (immediate) {
+    sendNRPNImmediate(nrpn, channel);
     return;
   }
 
-  nrpnQueue.push({ nrpn, channel, key });
-
-  // Kick the queue processor if not already running
-  if (!queueTimer) {
-    const elapsed = performance.now() - lastNrpnSendTime;
-    const wait = Math.max(0, NRPN_SEND_INTERVAL_MS - elapsed);
-    queueTimer = setTimeout(processNrpnQueue, wait);
-  }
+  enqueueNRPN(nrpn, channel);
 }
 
 /**
@@ -1011,7 +1072,7 @@ export function sendNRPN(nrpn: NRPNMessage, channel: number = currentChannel) {
  * hardware has received everything.
  */
 export function drainNRPNQueue(): Promise<void> {
-  if (nrpnQueue.length === 0 && !queueTimer) {
+  if (midiQueue.length === 0 && latest.size === 0 && !queueTimer) {
     return Promise.resolve();
   }
   return new Promise<void>((resolve) => {
@@ -1024,7 +1085,8 @@ export function drainNRPNQueue(): Promise<void> {
  * is still in progress).
  */
 export function clearNRPNQueue() {
-  nrpnQueue.length = 0;
+  midiQueue.length = 0;
+  latest.clear();
   if (queueTimer) {
     clearTimeout(queueTimer);
     queueTimer = null;
@@ -1038,8 +1100,8 @@ export function clearNRPNQueue() {
  * Request full patch dump via NRPN
  */
 export function requestPatchDump(timbre: number = 0, channel: number = currentChannel) {
-  console.log('📥 requestPatchDump called:', { timbre, channel, hasOutput: !!midiOutput, outputName: midiOutput?.name });
-  console.log('🔌 Output object:', { id: midiOutput?.id, name: midiOutput?.name, manufacturer: midiOutput?.manufacturer });
+  debugLog('📥 requestPatchDump called:', { timbre, channel, hasOutput: !!midiOutput, outputName: midiOutput?.name });
+  debugLog('🔌 Output object:', { id: midiOutput?.id, name: midiOutput?.name, manufacturer: midiOutput?.manufacturer });
 
   const nrpn = {
     ...NRPN_COMMANDS.REQUEST_PATCH_DUMP,
@@ -1061,7 +1123,7 @@ export function sendGlobalVelocitySensitivity(velocity: number, channel: number 
     valueMSB: (clampedVelocity >> 7) & 0x7F,
     valueLSB: clampedVelocity & 0x7F
   };
-  console.log('📤 Sending Global Velocity Sensitivity via NRPN:', { velocity: clampedVelocity, nrpn, channel });
+  debugLog('📤 Sending Global Velocity Sensitivity via NRPN:', { velocity: clampedVelocity, nrpn, channel });
   sendNRPN(nrpn, channel);
 }
 
@@ -1080,7 +1142,7 @@ export function sendPatchName(name: string, channel: number = currentChannel) {
   const maxLength = 12;
   const truncatedName = name.slice(0, maxLength);
 
-  console.log('📤 Sending Patch Name via NRPN:', { name: truncatedName, length: truncatedName.length, channel });
+  debugLog('📤 Sending Patch Name via NRPN:', { name: truncatedName, length: truncatedName.length, channel });
 
   // Send each character as NRPN
   for (let i = 0; i < truncatedName.length; i++) {
@@ -1092,7 +1154,7 @@ export function sendPatchName(name: string, channel: number = currentChannel) {
       valueLSB: charCode & 0x7F
     };
 
-    console.log(`📤 Char ${i}: '${truncatedName[i]}' (${charCode}) -> NRPN [1,${100 + i}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
+    debugLog(`📤 Char ${i}: '${truncatedName[i]}' (${charCode}) -> NRPN [1,${100 + i}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
     sendNRPN(nrpn, channel);
 
     // Small delay between characters to avoid overwhelming the PreenFM3
@@ -1129,20 +1191,20 @@ export function sendFilterType(type: string, channel: number = currentChannel) {
     filterValue = idx2;
   }
 
-  console.log("================================= Filtre type idx:", { type, idx1, idx2, filterValue });
+  debugLog("================================= Filtre type idx:", { type, idx1, idx2, filterValue });
   if (filterValue === -1) {
     console.warn(`Filter type '${type}' not found, using OFF`);
     filterValue = 0;
   }
-  console.log(`[sendFilterType] Recherche type='${type}' | idx1=${idx1} | idx2=${idx2} | filterValue=${filterValue}`);
+  debugLog(`[sendFilterType] Recherche type='${type}' | idx1=${idx1} | idx2=${idx2} | filterValue=${filterValue}`);
   const nrpn = {
     paramMSB: 0,
     paramLSB: 40,  // Filter Type
     valueMSB: (filterValue >> 7) & 0x7F,
     valueLSB: filterValue & 0x7F
   };
-  console.log(`📤 Sending Filter Type via NRPN: ${type} (${filterValue}) -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
-  sendNRPN(nrpn, channel);
+  debugLog(`📤 Sending Filter Type via NRPN: ${type} (${filterValue}) -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -1165,7 +1227,7 @@ export function sendFilterParam1(value: number, channel: number = currentChannel
     valueLSB: nrpnValue & 0x7F
   };
 
-  console.log(`📤 Sending Filter Param1 via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
+  debugLog(`📤 Sending Filter Param1 via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
   sendNRPN(nrpn, channel);
 }
 
@@ -1189,7 +1251,7 @@ export function sendFilterParam2(value: number, channel: number = currentChannel
     valueLSB: nrpnValue & 0x7F
   };
 
-  console.log(`📤 Sending Filter Param2 via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
+  debugLog(`📤 Sending Filter Param2 via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
   sendNRPN(nrpn, channel);
 }
 
@@ -1213,7 +1275,7 @@ export function sendFilterGain(value: number, channel: number = currentChannel) 
     valueLSB: nrpnValue & 0x7F
   };
 
-  console.log(`📤 Sending Filter Gain via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
+  debugLog(`📤 Sending Filter Gain via NRPN: ${value} -> ${nrpnValue} -> [${nrpn.paramMSB},${nrpn.paramLSB}] = [${nrpn.valueMSB},${nrpn.valueLSB}]`);
   sendNRPN(nrpn, channel);
 }
 
@@ -1239,8 +1301,8 @@ export function sendPlayMode(polyphony: number, channel: number = currentChannel
     valueMSB: (playMode >> 7) & 0x7F,
     valueLSB: playMode & 0x7F
   };
-  console.log('📤 Sending Play Mode via NRPN:', { polyphony, playMode: playMode === 0 ? 'Mono' : 'Poly', nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Play Mode via NRPN:', { polyphony, playMode: playMode === 0 ? 'Mono' : 'Poly', nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -1248,7 +1310,7 @@ export function sendPlayMode(polyphony: number, channel: number = currentChannel
  */
 export function sendPlayModeCC(mode: number, channel: number = currentChannel) {
   const clamped = Math.max(0, Math.min(2, Math.round(mode)));
-  sendCC(PREENFM3_CC.PLAY_MODE, clamped, channel);
+  sendCC(PREENFM3_CC.PLAY_MODE, clamped, channel, true);
 }
 
 /**
@@ -1263,7 +1325,7 @@ export function sendGlideTime(glideTime: number, channel: number = currentChanne
     valueMSB: (clampedGlide >> 7) & 0x7F,
     valueLSB: clampedGlide & 0x7F
   };
-  console.log('📤 Sending Glide Time via NRPN:', { glideTime: clampedGlide, nrpn, channel });
+  debugLog('📤 Sending Glide Time via NRPN:', { glideTime: clampedGlide, nrpn, channel });
   sendNRPN(nrpn, channel);
 }
 
@@ -1317,8 +1379,8 @@ export function sendVoicePriority(priority: number, channel: number = currentCha
     valueMSB: 0,
     valueLSB: clamped,
   };
-  console.log('📤 Sending Voice Priority via NRPN:', { priority: clamped, nrpn, channel });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending Voice Priority via NRPN:', { priority: clamped, nrpn, channel });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -1336,7 +1398,7 @@ export function sendMfxReturnLevel(level: number, channel: number = currentChann
  */
 export function sendMfxPreset(preset: number, channel: number = currentChannel) {
   const clamped = Math.max(0, Math.min(18, Math.round(preset)));
-  sendCC(PREENFM3_CC.MFX_PRESET, clamped, channel);
+  sendCC(PREENFM3_CC.MFX_PRESET, clamped, channel, true);
 }
 
 /**
@@ -1371,22 +1433,22 @@ export function sendMixerSend(send: number, channel: number = currentChannel) {
  * Send Note Curve parameters via NRPN
  */
 export function sendNoteCurve(curveIndex: 0 | 1, noteCurve: import('../types/patch').NoteCurve, channel: number = currentChannel) {
-  console.log(`🚀 === DÉBUT ENVOI Note Curve ${curveIndex + 1} ===`);
-  console.log(`📋 Input: before="${noteCurve.before}", breakNote=${noteCurve.breakNote}, after="${noteCurve.after}"`);
+  debugLog(`🚀 === DÉBUT ENVOI Note Curve ${curveIndex + 1} ===`);
+  debugLog(`📋 Input: before="${noteCurve.before}", breakNote=${noteCurve.breakNote}, after="${noteCurve.after}"`);
 
   // Vérifier si MIDI output est disponible
   if (!midiOutput) {
     console.error('❌ Pas de sortie MIDI connectée !');
     return;
   }
-  console.log(`✅ MIDI Output connecté: ${midiOutput.name}`);
+  debugLog(`✅ MIDI Output connecté: ${midiOutput.name}`);
 
   // Note1: abs=200 -> MSB=1, LSB=72 (before), LSB=73 (breakNote), LSB=74 (after)
   // Note2: abs=204 -> MSB=1, LSB=76 (before), LSB=77 (breakNote), LSB=78 (after)
   const baseIndex = 200 + (curveIndex * 4);
   const paramMSB = (baseIndex >> 7) & 0x7F; // = 1
   const baseLSB = baseIndex & 0x7F; // = 72 or 76
-  console.log(`📍 Base LSB calculé: ${baseLSB} (pour Note Curve ${curveIndex + 1})`);
+  debugLog(`📍 Base LSB calculé: ${baseLSB} (pour Note Curve ${curveIndex + 1})`);
 
   // ✅ Utiliser le système centralisé NoteCurveUtils au lieu du mapping manuel
   const beforeIndex = NoteCurveUtils.toNrpnIndex(noteCurve.before);
@@ -1396,7 +1458,7 @@ export function sendNoteCurve(curveIndex: 0 | 1, noteCurve: import('../types/pat
   // Les Step Sequencers utilisent MSB=1 et ça fonctionne
 
   // 🐛 DEBUG: Afficher les indices utilisés pour l'envoi
-  console.log(`🔍 DEBUG sendNoteCurve: before="${noteCurve.before}" → ${beforeIndex}, after="${noteCurve.after}" → ${afterIndex}`);
+  debugLog(`🔍 DEBUG sendNoteCurve: before="${noteCurve.before}" → ${beforeIndex}, after="${noteCurve.after}" → ${afterIndex}`);
 
   // ✅ Validation corrigée (0 est maintenant un index valide)
   if (typeof beforeIndex !== 'number' || typeof afterIndex !== 'number') {
@@ -1404,10 +1466,10 @@ export function sendNoteCurve(curveIndex: 0 | 1, noteCurve: import('../types/pat
     return;
   }
 
-  console.log(`📤 Note Curve ${curveIndex + 1} - Envoi NRPN [MSB=1, LSB=${baseLSB}]:`);
-  console.log(`  Before: ${noteCurve.before} → ${beforeIndex} (MSB=1)`);
-  console.log(`  Break: ${noteCurve.breakNote}`);
-  console.log(`  After: ${noteCurve.after} → ${afterIndex} (MSB=1)`);
+  debugLog(`📤 Note Curve ${curveIndex + 1} - Envoi NRPN [MSB=1, LSB=${baseLSB}]:`);
+  debugLog(`  Before: ${noteCurve.before} → ${beforeIndex} (MSB=1)`);
+  debugLog(`  Break: ${noteCurve.breakNote}`);
+  debugLog(`  After: ${noteCurve.after} → ${afterIndex} (MSB=1)`);
 
   // ✅ SOLUTION CONFIRMÉE: MSB=1 avec indices 0-6 (correction du décalage)
   // Send before curve type
@@ -1438,8 +1500,8 @@ export function sendNoteCurve(curveIndex: 0 | 1, noteCurve: import('../types/pat
   };
   sendNRPN(afterNRPN, channel);
 
-  console.log(`✅ Note Curve ${curveIndex + 1} envoyée avec succès !`);
-  console.log(`🏁 === FIN ENVOI Note Curve ${curveIndex + 1} ===`);
+  debugLog(`✅ Note Curve ${curveIndex + 1} envoyée avec succès !`);
+  debugLog(`🏁 === FIN ENVOI Note Curve ${curveIndex + 1} ===`);
 }
 
 /**
@@ -1448,7 +1510,7 @@ export function sendNoteCurve(curveIndex: 0 | 1, noteCurve: import('../types/pat
 export function sendAlgorithmChange(algoId: number | string, channel: number = currentChannel) {
   // Algorithm IDs are 0-31 for 32 algorithms
   const algoIndex = typeof algoId === 'string' ? parseInt(algoId.replace('alg', '')) - 1 : algoId;
-  sendCC(PREENFM3_CC.ALGO, algoIndex, channel);
+  sendCC(PREENFM3_CC.ALGO, algoIndex, channel, true);
 }
 
 /**
@@ -1479,7 +1541,7 @@ export function sendIMChange(imNumber: number, value: number, channel: number = 
  * Formula: CC = 22 + (op-1)*2 for OP1-4, 31 for OP5, 37 for OP6
  */
 export function sendOperatorMix(opNumber: number, value: number, channel: number = currentChannel) {
-  console.log('🎹 sendOperatorMix called:', { opNumber, value, channel, hasOutput: !!midiOutput });
+  debugLog('🎹 sendOperatorMix called:', { opNumber, value, channel, hasOutput: !!midiOutput });
 
   if (opNumber < 1 || opNumber > 6) {
     console.warn('⚠️ Mix CC only available for operators 1-6, got:', opNumber);
@@ -1499,7 +1561,7 @@ export function sendOperatorMix(opNumber: number, value: number, channel: number
   let scaledValue = value * 127;
   if (Math.abs(scaledValue - 127) < 0.01) scaledValue = 127;
   scaledValue = Math.max(0, Math.min(127, Math.round(scaledValue)));
-  console.log('📤 Sending MIX via CC:', {
+  debugLog('📤 Sending MIX via CC:', {
     opNumber,
     ccNumber,
     expectedParam: `Mix${opNumber}`,
@@ -1517,7 +1579,7 @@ export function sendOperatorMix(opNumber: number, value: number, channel: number
  * Value range: -1.0 to +1.0 (64 = centre)
  */
 export function sendOperatorPan(opNumber: number, value: number, channel: number = currentChannel) {
-  console.log('🎹 sendOperatorPan called:', { opNumber, value, channel, hasOutput: !!midiOutput });
+  debugLog('🎹 sendOperatorPan called:', { opNumber, value, channel, hasOutput: !!midiOutput });
 
   if (opNumber < 1 || opNumber > 6) {
     console.warn('⚠️ Pan CC only available for operators 1-6, got:', opNumber);
@@ -1537,7 +1599,7 @@ export function sendOperatorPan(opNumber: number, value: number, channel: number
   const clamped = Math.max(-1.0, Math.min(1.0, value));
   const scaledValue = Math.max(0, Math.min(127, Math.round((clamped + 1.0) * 63.5)));
 
-  console.log('📤 Sending PAN via CC:', {
+  debugLog('📤 Sending PAN via CC:', {
     opNumber,
     ccNumber,
     expectedParam: `Pan${opNumber}`,
@@ -1553,7 +1615,7 @@ export function sendOperatorPan(opNumber: number, value: number, channel: number
  * Frequency is stored as freq * 100 in PreenFM3
  */
 export function sendOperatorFrequency(opNumber: number, value: number, channel: number = currentChannel) {
-  console.log('🎹 sendOperatorFrequency called:', { opNumber, value, channel, hasOutput: !!midiOutput });
+  debugLog('🎹 sendOperatorFrequency called:', { opNumber, value, channel, hasOutput: !!midiOutput });
 
   if (opNumber < 1 || opNumber > 6) {
     console.warn('⚠️ Operator frequency only available for operators 1-6, got:', opNumber);
@@ -1572,7 +1634,7 @@ export function sendOperatorFrequency(opNumber: number, value: number, channel: 
     valueLSB: scaledValue & 0x7F
   };
 
-  console.log('📤 Sending FREQUENCY via NRPN:', { opNumber, nrpn, scaledValue, originalValue: value });
+  debugLog('📤 Sending FREQUENCY via NRPN:', { opNumber, nrpn, scaledValue, originalValue: value });
   sendNRPN(nrpn, channel);
 }
 
@@ -1582,7 +1644,7 @@ export function sendOperatorFrequency(opNumber: number, value: number, channel: 
  * Detune is centered at 1600 (0 detune = 1600, -16.00 = 0, +16.00 = 3200)
  */
 export function sendOperatorDetune(opNumber: number, value: number, channel: number = currentChannel) {
-  console.log('🎹 sendOperatorDetune called:', { opNumber, value, channel, hasOutput: !!midiOutput });
+  debugLog('🎹 sendOperatorDetune called:', { opNumber, value, channel, hasOutput: !!midiOutput });
 
   if (opNumber < 1 || opNumber > 6) {
     console.warn('⚠️ Operator detune only available for operators 1-6, got:', opNumber);
@@ -1601,7 +1663,7 @@ export function sendOperatorDetune(opNumber: number, value: number, channel: num
     valueLSB: scaledValue & 0x7F
   };
 
-  console.log('📤 Sending DETUNE via NRPN:', { opNumber, nrpn, scaledValue, originalValue: value });
+  debugLog('📤 Sending DETUNE via NRPN:', { opNumber, nrpn, scaledValue, originalValue: value });
   sendNRPN(nrpn, channel);
 }
 
@@ -1612,7 +1674,7 @@ export function sendOperatorDetune(opNumber: number, value: number, channel: num
  * Integer encoding: nrpnValue = degrees (firmware accepts 0-360 int directly).
  */
 export function sendOperatorPhase(opNumber: number, degrees: number, channel: number = currentChannel) {
-  console.log('🎨 sendOperatorPhase called:', { opNumber, degrees, channel, hasOutput: !!midiOutput });
+  debugLog('🎨 sendOperatorPhase called:', { opNumber, degrees, channel, hasOutput: !!midiOutput });
 
   if (opNumber < 1 || opNumber > 6) {
     console.warn('⚠️ Operator phase only available for operators 1-6, got:', opNumber);
@@ -1629,7 +1691,7 @@ export function sendOperatorPhase(opNumber: number, degrees: number, channel: nu
     valueLSB: nrpnValue & 0x7F,
   };
 
-  console.log('📤 Sending PHASE via NRPN:', { opNumber, nrpn, nrpnValue, degrees });
+  debugLog('📤 Sending PHASE via NRPN:', { opNumber, nrpn, nrpnValue, degrees });
   sendNRPN(nrpn, channel);
 }
 
@@ -1640,7 +1702,7 @@ export function sendOperatorPhase(opNumber: number, degrees: number, channel: nu
  * Encoding: ccValue = (warp + 4.0) * 127 / 8.0
  */
 export function sendOperatorWarp(opNumber: number, warp: number, channel: number = currentChannel) {
-  console.log('🌀 sendOperatorWarp called:', { opNumber, warp, channel, hasOutput: !!midiOutput });
+  debugLog('🌀 sendOperatorWarp called:', { opNumber, warp, channel, hasOutput: !!midiOutput });
 
   if (opNumber < 1 || opNumber > 6) {
     console.warn('⚠️ Operator warp only available for operators 1-6, got:', opNumber);
@@ -1658,7 +1720,7 @@ export function sendOperatorWarp(opNumber: number, warp: number, channel: number
   const clampedWarp = Math.max(-4, Math.min(4, warp));
   const ccValue = Math.round((clampedWarp + 4.0) * 127 / 8.0);
 
-  console.log(`📤 Sending WARP via CC: OP${opNumber} → CC${ccNumber} = ${ccValue} (warp=${clampedWarp.toFixed(2)})`);
+  debugLog(`📤 Sending WARP via CC: OP${opNumber} → CC${ccNumber} = ${ccValue} (warp=${clampedWarp.toFixed(2)})`);
   sendCC(ccNumber, ccValue, channel);
 }
 
@@ -1668,7 +1730,7 @@ export function sendOperatorWarp(opNumber: number, warp: number, channel: number
  * UI: 0=Fixed, 1=Keyboard, 2=Finetune | PreenFM3: 0=Keyboard, 1=Fixed, 2=Finetune
  */
 export function sendOperatorKeyboardTracking(opNumber: number, value: number, channel: number = currentChannel) {
-  console.log('🎹 sendOperatorKeyboardTracking called:', { opNumber, value, channel, hasOutput: !!midiOutput });
+  debugLog('🎹 sendOperatorKeyboardTracking called:', { opNumber, value, channel, hasOutput: !!midiOutput });
 
   if (opNumber < 1 || opNumber > 6) {
     console.warn('⚠️ Operator keyboard tracking only available for operators 1-6, got:', opNumber);
@@ -1695,7 +1757,7 @@ export function sendOperatorKeyboardTracking(opNumber: number, value: number, ch
     valueLSB: frequencyType & 0x7F
   };
 
-  console.log('📤 Sending FREQUENCY TYPE via NRPN:', { opNumber, nrpn, frequencyType, originalValue: value });
+  debugLog('📤 Sending FREQUENCY TYPE via NRPN:', { opNumber, nrpn, frequencyType, originalValue: value });
   sendNRPN(nrpn, channel);
 }
 
@@ -1705,7 +1767,7 @@ export function sendOperatorKeyboardTracking(opNumber: number, value: number, ch
  * Waveform ID: 0-13 (OFF, SINE, SAW, SQUARE, SIN_SQUARED, SIN_ZERO, SIN_POS, RAND, USER1-6)
  */
 export function sendOperatorWaveform(opNumber: number, waveformId: number, channel: number = currentChannel) {
-  console.log('🎹 sendOperatorWaveform called:', { opNumber, waveformId, channel, hasOutput: !!midiOutput });
+  debugLog('🎹 sendOperatorWaveform called:', { opNumber, waveformId, channel, hasOutput: !!midiOutput });
 
   if (opNumber < 1 || opNumber > 6) {
     console.warn('⚠️ Operator waveform only available for operators 1-6, got:', opNumber);
@@ -1720,8 +1782,8 @@ export function sendOperatorWaveform(opNumber: number, waveformId: number, chann
     valueLSB: waveformId & 0x7F
   };
 
-  console.log('📤 Sending WAVEFORM via NRPN:', { opNumber, nrpn, waveformId });
-  sendNRPN(nrpn, channel);
+  debugLog('📤 Sending WAVEFORM via NRPN:', { opNumber, nrpn, waveformId });
+  sendNRPN(nrpn, channel, true);
 }
 
 /**
@@ -1733,7 +1795,7 @@ export function sendOperatorWaveform(opNumber: number, waveformId: number, chann
  * Times are in centiseconds (multiply by 100)
  */
 export function sendOperatorADSR(opNumber: number, adsr: import('../types/adsr').AdsrState, channel: number = currentChannel) {
-  console.log('🎹 sendOperatorADSR called:', { opNumber, adsr, channel, hasOutput: !!midiOutput });
+  debugLog('🎹 sendOperatorADSR called:', { opNumber, adsr, channel, hasOutput: !!midiOutput });
 
   if (opNumber < 1 || opNumber > 6) {
     console.warn('⚠️ Operator ADSR only available for operators 1-6, got:', opNumber);
@@ -1760,7 +1822,7 @@ export function sendOperatorADSR(opNumber: number, adsr: import('../types/adsr')
 
   const envRowBase = 68 + (opNumber - 1) * 8;
 
-  console.log('📤 Sending ADSR via NRPN:', {
+  debugLog('📤 Sending ADSR via NRPN:', {
     opNumber,
     envRowBase,
     times: { attackTimeValue, decayTimeValue, sustainTimeValue, releaseTimeValue },
@@ -1798,7 +1860,7 @@ export function sendOperatorADSR(opNumber: number, adsr: import('../types/adsr')
  * NOTE: isFeedback parameter - if true, always sends to IM6 (index 5) regardless of imIndex
  */
 export function sendModulationIM(imIndex: number, value: number, isFeedback: boolean = false, channel: number = currentChannel) {
-  console.log('🎹 sendModulationIM called:', { imIndex, value, isFeedback, channel, hasOutput: !!midiOutput });
+  debugLog('🎹 sendModulationIM called:', { imIndex, value, isFeedback, channel, hasOutput: !!midiOutput });
 
   // Feedback always goes to IM6 (index 5), regardless of sequential position
   const actualIndex = isFeedback ? 5 : imIndex;
@@ -1811,7 +1873,7 @@ export function sendModulationIM(imIndex: number, value: number, isFeedback: boo
   // UI value: 0-16, firmware expects 0-1600 (value * 100), feedback IM expects 0-1 (0-100)
   let firmwareValue;
   if (isFeedback) {
-    firmwareValue = Math.round(Math.max(0, Math.min(1, value)) * 100);
+    firmwareValue = Math.round(Math.max(0, Math.min(16, value)) * 100);
   } else {
     firmwareValue = Math.round(Math.max(0, Math.min(16, value)) * 100);
   }
@@ -1823,7 +1885,7 @@ export function sendModulationIM(imIndex: number, value: number, isFeedback: boo
     valueLSB: firmwareValue & 0x7F
   };
 
-  console.log('📤 Sending IM via NRPN:', {
+  debugLog('📤 Sending IM via NRPN:', {
     displayIndex: actualIndex + 1,
     isFeedback,
     nrpn,
@@ -1839,7 +1901,7 @@ export function sendModulationIM(imIndex: number, value: number, isFeedback: boo
  * NOTE: isFeedback parameter - if true, always sends to IMVelo6 (index 5) regardless of imIndex
  */
 export function sendModulationVelo(imIndex: number, value: number, isFeedback: boolean = false, channel: number = currentChannel) {
-  console.log('🎹 sendModulationVelo called:', { imIndex, value, isFeedback, channel, hasOutput: !!midiOutput });
+  debugLog('🎹 sendModulationVelo called:', { imIndex, value, isFeedback, channel, hasOutput: !!midiOutput });
 
   // Feedback always goes to IMVelo6 (index 5), regardless of sequential position
   const actualIndex = isFeedback ? 5 : imIndex;
@@ -1852,7 +1914,7 @@ export function sendModulationVelo(imIndex: number, value: number, isFeedback: b
   // UI value: 0-16, firmware expects 0-1600 (value * 100), feedback IMVelo expects 0-1 (0-100)
   let firmwareValue;
   if (isFeedback) {
-    firmwareValue = Math.round(Math.max(0, Math.min(1, value)) * 100);
+    firmwareValue = Math.round(Math.max(0, Math.min(16, value)) * 100);
   } else {
     firmwareValue = Math.round(Math.max(0, Math.min(16, value)) * 100);
   }
@@ -1864,7 +1926,7 @@ export function sendModulationVelo(imIndex: number, value: number, isFeedback: b
     valueLSB: firmwareValue & 0x7F
   };
 
-  console.log('📤 Sending IM Velo via NRPN:', {
+  debugLog('📤 Sending IM Velo via NRPN:', {
     displayIndex: actualIndex + 1,
     isFeedback,
     nrpn,
@@ -1888,7 +1950,7 @@ export function calculateIMIndex(patch: import('../types/patch').Patch, sourceId
     return -1;
   }
 
-  console.log('🔍 calculateIMIndex (edge-order):', { sourceId, targetId, algoId: patch.algorithm.id });
+  debugLog('🔍 calculateIMIndex (edge-order):', { sourceId, targetId, algoId: patch.algorithm.id });
 
   let imIndex = 0;
   for (const edge of diagram.edges) {
@@ -1898,7 +1960,7 @@ export function calculateIMIndex(patch: import('../types/patch').Patch, sourceId
 
     if (edgeSrc === sourceId && edgeTgt === targetId) {
       const result = isFeedback ? 5 : imIndex;
-      console.log(`  ✅ Found${isFeedback ? ' FEEDBACK' : ''} link OP${sourceId}→OP${targetId} at IM index ${result}`);
+      debugLog(`  ✅ Found${isFeedback ? ' FEEDBACK' : ''} link OP${sourceId}→OP${targetId} at IM index ${result}`);
       return result;
     }
     if (!isFeedback) {
@@ -2100,7 +2162,7 @@ export const startMidiListener = (onPatchUpdate: (patchData: any) => void) => {
  * Parse incoming SysEx data (placeholder - to be implemented)
  */
 function parseIncomingSysex(data: Uint8Array): any {
-  console.log('Received SysEx:', data);
+  debugLog('Received SysEx:', data);
   // TODO: Implement SysEx parsing based on PreenFM3 format
   return null;
 }
@@ -2124,11 +2186,11 @@ export function getMidiStatus() {
  */
 export function logMidiStatus() {
   const status = getMidiStatus();
-  console.log('🔍 MIDI Status:', status);
-  console.log('  WebMIDI enabled:', status.enabled);
-  console.log('  Input:', status.input);
-  console.log('  Output:', status.output);
-  console.log('  Channel:', status.channel);
+  debugLog('🔍 MIDI Status:', status);
+  debugLog('  WebMIDI enabled:', status.enabled);
+  debugLog('  Input:', status.input);
+  debugLog('  Output:', status.output);
+  debugLog('  Channel:', status.channel);
   return status;
 }
 
@@ -2201,7 +2263,7 @@ export function sendModulationMatrixParam(
     valueLSB,
   };
 
-  console.log(
+  debugLog(
     `📤 Sending Matrix Row ${rowIndex + 1} ${paramType}:`,
     typeof value === 'string' ? `"${value}" (${numericValue})` : value,
     `NRPN [${msb},${lsb}] = [${valueMSB},${valueLSB}]`
