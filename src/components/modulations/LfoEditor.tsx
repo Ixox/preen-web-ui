@@ -23,28 +23,25 @@ const LfoContainer = styled.div`
 const LfoTitle = styled.h3`
   color: ${props => props.theme.colors.text};
   font-size: 1rem;
-  margin: 0 0 8px 0;
+  margin: 0 0 10px 0;
   text-transform: uppercase;
   letter-spacing: 1px;
 `;
 
 const HeaderRow = styled.div`
   display: flex;
-  align-items: flex-start;
-  gap: 0;
-  margin-bottom: 12px;
-`;
-
-const HeaderLeft = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 186px;
+  justify-content: space-between;
+  align-items: center;
 `;
 
 const LfoTabs = styled.div`
   display: flex;
-  gap: 0px;
+  gap: 10px;
+  margin-bottom: 10px;
+`;
+
+const WaveformRow = styled.div`
+  margin-bottom: 10px;
 `;
 
 const LfoTab = styled.button<{ $active: boolean }>`
@@ -113,21 +110,21 @@ export const LfoEditor: React.FC = () => {
   return (
     <LfoContainer>
       <HeaderRow>
-        <HeaderLeft>
-          <LfoTitle>LFO Editor</LfoTitle>
-          <LfoTabs>
-            {([0, 1, 2] as const).map((lfoNum) => (
-              <LfoTab
-                key={lfoNum}
-                $active={activeLfo === lfoNum}
-                onClick={() => setActiveLfo(lfoNum)}
-              >
-                LFO {lfoNum + 1}
-              </LfoTab>
-            ))}
-          </LfoTabs>
-        </HeaderLeft>
+        <LfoTitle>LFO Editor</LfoTitle>
+        <LfoTabs>
+          {([0, 1, 2] as const).map((lfoNum) => (
+            <LfoTab
+              key={lfoNum}
+              $active={activeLfo === lfoNum}
+              onClick={() => setActiveLfo(lfoNum)}
+            >
+              LFO {lfoNum + 1}
+            </LfoTab>
+          ))}
+        </LfoTabs>
+      </HeaderRow>
 
+      <WaveformRow>
         <LfoWaveformSelector
           value={lfo.shape}
           frequency={lfo.syncMode === 'Int' ? lfo.frequency : 10}
@@ -139,7 +136,7 @@ export const LfoEditor: React.FC = () => {
             sendLfoParamNRPN(activeLfo, 'shape', shapeIndex >= 0 ? shapeIndex : 0);
           }}
         />
-      </HeaderRow>
+      </WaveformRow>
 
       <LfoControls>
       <div style={{ width: "100%" }}>
