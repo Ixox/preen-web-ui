@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import { debugLog } from '../utils/debug';
 import { WaveformType, getWaveformId } from '../types/waveform';
 import {
   sendOperatorMix, sendOperatorPan, sendOperatorFrequency, sendOperatorDetune,
@@ -764,7 +765,7 @@ export const usePatchStore = create<PatchStore>()(
         // Send patch name to PreenFM3 via MIDI
         try {
           sendPatchName(safe);
-          console.log('✅ Patch name sent to PreenFM3:', safe);
+          debugLog('✅ Patch name sent to PreenFM3:', safe);
         } catch (error) {
           console.warn('⚠️ Failed to send patch name to PreenFM3:', error);
         }
@@ -854,12 +855,12 @@ export const useOperator = (operatorId: number) => usePatchStore(state => {
 });
 
 export const updateOperator = (operatorId: number, changes: Partial<Operator>, sendMidi: boolean = true) => {
-  console.log('🔧 updateOperator called:', { operatorId, changes, sendMidi });
+  debugLog('🔧 updateOperator called:', { operatorId, changes, sendMidi });
   
   // Suspendre l'envoi MIDI si un pull ou push est en cours
   const { isPulling, isPushing } = usePatchStore.getState();
   if (isPulling || isPushing) {
-    console.log('⏸️ MIDI suspended:', isPulling ? 'pull' : 'push', 'in progress');
+    debugLog('⏸️ MIDI suspended:', isPulling ? 'pull' : 'push', 'in progress');
     sendMidi = false;
   }
   
@@ -876,8 +877,8 @@ export const updateOperator = (operatorId: number, changes: Partial<Operator>, s
   
   // Envoyer le MIDI si l'amplitude change (sauf si on reçoit depuis MIDI)
   if (sendMidi && changes.amplitude !== undefined) {
-    console.log('🎛️ Amplitude change detected, calling sendOperatorMix...');
-    console.log('🔍 Carrier analysis:', { 
+    debugLog('🎛️ Amplitude change detected, calling sendOperatorMix...');
+    debugLog('🔍 Carrier analysis:', { 
       operatorId, 
       isCarrier, 
       carrierIndex, 
@@ -888,7 +889,7 @@ export const updateOperator = (operatorId: number, changes: Partial<Operator>, s
     // For carriers: use carrier index (0-5) to determine CC
     if (isCarrier && carrierIndex < 6) {
       const encoderNumber = carrierIndex + 1; // 1-based for display
-      console.log(`📍 Carrier ${operatorId} is the ${encoderNumber}${encoderNumber===1?'st':encoderNumber===2?'nd':encoderNumber===3?'rd':'th'} carrier → Encoder Mix${encoderNumber}`);
+      debugLog(`📍 Carrier ${operatorId} is the ${encoderNumber}${encoderNumber===1?'st':encoderNumber===2?'nd':encoderNumber===3?'rd':'th'} carrier → Encoder Mix${encoderNumber}`);
       sendOperatorMix(encoderNumber, changes.amplitude);
     } else if (!isCarrier) {
       console.warn('⚠️ Modulator has no Mix control');
@@ -897,12 +898,12 @@ export const updateOperator = (operatorId: number, changes: Partial<Operator>, s
   
   // Envoyer le MIDI si le pan change (sauf si on reçoit depuis MIDI)
   if (sendMidi && changes.pan !== undefined) {
-    console.log('🎛️ Pan change detected, calling sendOperatorPan...');
+    debugLog('🎛️ Pan change detected, calling sendOperatorPan...');
     
     // Same logic for Pan: use carrier index
     if (isCarrier && carrierIndex < 6) {
       const encoderNumber = carrierIndex + 1;
-      console.log(`📍 Carrier ${operatorId} is the ${encoderNumber}${encoderNumber===1?'st':encoderNumber===2?'nd':encoderNumber===3?'rd':'th'} carrier → Encoder Pan${encoderNumber}`);
+      debugLog(`📍 Carrier ${operatorId} is the ${encoderNumber}${encoderNumber===1?'st':encoderNumber===2?'nd':encoderNumber===3?'rd':'th'} carrier → Encoder Pan${encoderNumber}`);
       sendOperatorPan(encoderNumber, changes.pan);
     } else if (!isCarrier) {
       console.warn('⚠️ Modulator has no Pan control');
@@ -911,38 +912,38 @@ export const updateOperator = (operatorId: number, changes: Partial<Operator>, s
   
   // Envoyer le MIDI si la fréquence change (sauf si on reçoit depuis MIDI)
   if (sendMidi && changes.frequency !== undefined) {
-    console.log('🎛️ Frequency change detected, calling sendOperatorFrequency...');
+    debugLog('🎛️ Frequency change detected, calling sendOperatorFrequency...');
     sendOperatorFrequency(operatorId, changes.frequency);
   }
   
   // Envoyer le MIDI si le detune change (sauf si on reçoit depuis MIDI)
   if (sendMidi && changes.detune !== undefined) {
-    console.log('🎛️ Detune change detected, calling sendOperatorDetune...');
+    debugLog('🎛️ Detune change detected, calling sendOperatorDetune...');
     sendOperatorDetune(operatorId, changes.detune);
   }
   
   // Envoyer le MIDI si la waveform change (sauf si on reçoit depuis MIDI)
   if (sendMidi && changes.waveform !== undefined) {
-    console.log('🎛️ Waveform change detected, calling sendOperatorWaveform...');
+    debugLog('🎛️ Waveform change detected, calling sendOperatorWaveform...');
     const waveformId = getWaveformId(changes.waveform);
     sendOperatorWaveform(operatorId, waveformId);
   }
   
   // Envoyer le MIDI si le keyboard tracking change (sauf si on reçoit depuis MIDI)
   if (sendMidi && changes.keyboardTracking !== undefined) {
-    console.log('🎛️ Keyboard tracking change detected, calling sendOperatorKeyboardTracking...');
+    debugLog('🎛️ Keyboard tracking change detected, calling sendOperatorKeyboardTracking...');
     sendOperatorKeyboardTracking(operatorId, changes.keyboardTracking);
   }
 
   // Envoyer le MIDI si la phase change (sauf si on reçoit depuis MIDI)
   if (sendMidi && changes.phase !== undefined) {
-    console.log('🎛️ Phase change detected, calling sendOperatorPhase...');
+    debugLog('🎛️ Phase change detected, calling sendOperatorPhase...');
     sendOperatorPhase(operatorId, changes.phase);
   }
 
   // Envoyer le MIDI si le warp change (sauf si on reçoit depuis MIDI)
   if (sendMidi && changes.warp !== undefined) {
-    console.log('🌀 Warp change detected, calling sendOperatorWarp...');
+    debugLog('🌀 Warp change detected, calling sendOperatorWarp...');
     sendOperatorWarp(operatorId, changes.warp);
   }
   
@@ -971,7 +972,7 @@ export const updateADSR = (operatorId: number, envelope: Partial<AdsrState>, sen
     // Get the complete ADSR after update to send all parameters
     const operator = usePatchStore.getState().currentPatch.operators.find(op => op.id === operatorId);
     if (operator && operator.adsr) {
-      console.log('📤 ADSR changed, sending to PreenFM3:', { operatorId, adsr: operator.adsr });
+      debugLog('📤 ADSR changed, sending to PreenFM3:', { operatorId, adsr: operator.adsr });
       sendOperatorADSR(operatorId, operator.adsr);
     }
   }
@@ -1018,7 +1019,7 @@ export const updateModulationAmount = (sourceId: number, targetId: number, amoun
     const imIndex = calculateIMIndex(patch, sourceId, targetId);
     
     if (imIndex >= 0 && imIndex < 6) {
-      console.log('📤 IM changed, sending to PreenFM3:', { sourceId, targetId, imIndex, isFeedback, amount });
+      debugLog('📤 IM changed, sending to PreenFM3:', { sourceId, targetId, imIndex, isFeedback, amount });
       sendModulationIM(imIndex, amount, isFeedback);
     } else {
       console.warn('⚠️ Could not find IM index for modulation link:', { sourceId, targetId, imIndex });
@@ -1037,7 +1038,7 @@ export const updateModulationVelo = (sourceId: number, targetId: number, velo: n
     const imIndex = calculateIMIndex(patch, sourceId, targetId);
     
     if (imIndex >= 0 && imIndex < 6) {
-      console.log('📤 IM Velo changed, sending to PreenFM3:', { sourceId, targetId, imIndex, isFeedback, velo });
+      debugLog('📤 IM Velo changed, sending to PreenFM3:', { sourceId, targetId, imIndex, isFeedback, velo });
       sendModulationVelo(imIndex, velo, isFeedback);
     } else {
       console.warn('⚠️ Could not find IM index for velo link:', { sourceId, targetId, imIndex });
