@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import type { Algorithm } from '../../types/patch';
 import { ALGO_DIAGRAMS } from '../../algo/algorithms.static';
-import { renderAlgoSvg } from '../../algo/renderAlgoSvg';
+import { getAlgoCanvasColors, renderAlgoSvg } from '../../algo/renderAlgoSvg';
 import { useFMSynthContext } from './FMSynthContext';
 import { useThemeStore } from '../../theme/themeStore';
 
@@ -13,11 +13,12 @@ const VisualizationContainer = styled.div`
   align-items: center;
   justify-content: center;
   padding: 0; /* Espacement autour du SVG */
-  background: ${props => props.theme.colors.background};
-  zoom:1.25;
+  background: ${props => getAlgoCanvasColors(props.theme).background};
+  zoom: 1.25;
 
   svg {
     max-width: 100%;
+    height: auto;
     max-height: 100%;
   }
 `;

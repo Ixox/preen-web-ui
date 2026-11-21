@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { AlgorithmVisualization } from './AlgorithmVisualization';
+import { getAlgoCanvasColors } from '../../algo/renderAlgoSvg';
 import { DEFAULT_ALGORITHMS } from '../../types/patch';
 import { useCurrentPatch, selectAlgorithm, usePatchStore } from '../../stores/patchStore';
 import { useMutationStore } from '../../stores/mutationStore';
@@ -8,14 +9,14 @@ import { useMutationStore } from '../../stores/mutationStore';
 const SelectorContainer = styled.div`
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 10px;
   padding: 10px;
   background: ${props => props.theme.colors.panel};
   border-radius: 8px;
   min-width: 250px;
-  max-width: 450px;
-  width: 450px;
-  flex: 1;
+  width: 100%;
+  position: relative;
 
   @media (max-width: 768px) {
     max-width: 100%;
@@ -132,8 +133,9 @@ const AlgorithmSelect = styled.select`
 `;
 
 const VisualizationWrapper = styled.div`
-  background: ${props => props.theme.colors.background};
+  background: ${props => getAlgoCanvasColors(props.theme).background};
   border-radius: 8px;
+  overflow: hidden;
   padding: 0;
   position: relative;
   min-height: 220px;
@@ -142,11 +144,14 @@ const VisualizationWrapper = styled.div`
   justify-content: center;
   gap: 10px;
   align-items: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  box-sizing: border-box;
 `;
 
 const VisualizationContainer = styled.div`
   min-width: 220px;
-  background: ${props => props.theme.colors.background};
+  background: ${props => getAlgoCanvasColors(props.theme).background};
   border-radius: 8px;
   padding: 0;
   position: relative;
@@ -249,9 +254,16 @@ export const FMAlgorithmSelector: React.FC<FMAlgorithmSelectorProps> = ({ global
 
   return (
     <SelectorContainer>
+      <HeaderSection>
+        <PatchNameEditorComponent />
+        {globalKnobs && (
+          <GlobalKnobsContainer>
+            {globalKnobs}
+          </GlobalKnobsContainer>
+        )}
+      </HeaderSection>
 
       <NavigationControls>
-        <PatchNameEditorComponent />
         <AlgorithmSection>
           <NavButtonsContainer>
             <NavButton
@@ -290,14 +302,6 @@ export const FMAlgorithmSelector: React.FC<FMAlgorithmSelectorProps> = ({ global
         </VisualizationContainer>
 
       </VisualizationWrapper>
-
-      {globalKnobs && (
-        <HeaderSection>
-          <GlobalKnobsContainer>
-            {globalKnobs}
-          </GlobalKnobsContainer>
-        </HeaderSection>
-      )}
 
     </SelectorContainer>
   );
