@@ -10,6 +10,7 @@ import {
   initializeMidi,
   setMidiInput,
   setMidiOutput,
+  setMidiForwardInput,
   setMidiChannel,
   sendAlgorithmChange,
   sendIMChange,
@@ -22,6 +23,7 @@ import {
   logMidiStatus,
   onDevicesChanged,
 } from './midiService';
+import { isPreenFM3Device } from './midiDevices';
 
 import type { NRPNMessage } from './preenFM3MidiMap';
 
@@ -29,15 +31,21 @@ import type { NRPNMessage } from './preenFM3MidiMap';
 const STORAGE_KEYS = {
   INPUT_ID: 'preenFM3_midi_input_id',
   OUTPUT_ID: 'preenFM3_midi_output_id',
+  FORWARD_INPUT_ID: 'preenFM3_midi_forward_input_id',
   CHANNEL: 'preenFM3_midi_channel',
 } as const;
 
 /**
  * Save MIDI preferences to localStorage
  */
-function saveMidiPreferences(inputId: string | null, outputId: string | null, channel: number) {
+function saveMidiPreferences(
+  inputId: string | null,
+  outputId: string | null,
+  channel: number,
+  forwardInputId: string | null,
+) {
   try {
-    console.log('💾 Sauvegarde préférences MIDI:', { inputId, outputId, channel });
+    console.log('💾 Sauvegarde préférences MIDI:', { inputId, outputId, channel, forwardInputId });
     
     // Sauvegarder ou supprimer l'input ID
     if (inputId) {
@@ -52,6 +60,12 @@ function saveMidiPreferences(inputId: string | null, outputId: string | null, ch
     } else {
       localStorage.removeItem(STORAGE_KEYS.OUTPUT_ID);
     }
+
+    if (forwardInputId) {
+      localStorage.setItem(STORAGE_KEYS.FORWARD_INPUT_ID, forwardInputId);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.FORWARD_INPUT_ID);
+    }
     
     // Le canal est toujours sauvegardé
     localStorage.setItem(STORAGE_KEYS.CHANNEL, channel.toString());
@@ -63,16 +77,22 @@ function saveMidiPreferences(inputId: string | null, outputId: string | null, ch
 /**
  * Load MIDI preferences from localStorage
  */
-function loadMidiPreferences(): { inputId: string | null; outputId: string | null; channel: number } {
+function loadMidiPreferences(): {
+  inputId: string | null;
+  outputId: string | null;
+  forwardInputId: string | null;
+  channel: number;
+} {
   try {
     return {
       inputId: localStorage.getItem(STORAGE_KEYS.INPUT_ID),
       outputId: localStorage.getItem(STORAGE_KEYS.OUTPUT_ID),
+      forwardInputId: localStorage.getItem(STORAGE_KEYS.FORWARD_INPUT_ID),
       channel: parseInt(localStorage.getItem(STORAGE_KEYS.CHANNEL) || '1', 10),
     };
   } catch (error) {
     console.warn('Failed to load MIDI preferences:', error);
-    return { inputId: null, outputId: null, channel: 1 };
+    return { inputId: null, outputId: null, forwardInputId: null, channel: 1 };
   }
 }
 
@@ -86,6 +106,7 @@ export interface MidiState {
   devices: MidiDevices | null;
   selectedInput: Input | null;
   selectedOutput: Output | null;
+  forwardInput: Input | null;
   channel: number;
   isLoading: boolean;
   error: string | null;
@@ -93,11 +114,12 @@ export interface MidiState {
 
 interface MidiStoreActions {
   _setLoading: (isLoading: boolean) => void;
-  _setInitialized: (devices: MidiDevices, selectedInput: Input | null, selectedOutput: Output | null, channel: number) => void;
+  _setInitialized: (devices: MidiDevices, selectedInput: Input | null, selectedOutput: Output | null, channel: number, forwardInput?: Input | null) => void;
   _setError: (error: string) => void;
-  _updateDevices: (devices: MidiDevices, selectedInput: Input | null, selectedOutput: Output | null) => void;
+  _updateDevices: (devices: MidiDevices, selectedInput: Input | null, selectedOutput: Output | null, forwardInput?: Input | null) => void;
   selectInput: (input: Input | null) => void;
   selectOutput: (output: Output | null) => void;
+  selectForwardInput: (input: Input | null) => void;
   changeChannel: (channel: number) => void;
 }
 
@@ -112,20 +134,22 @@ export const useMidiStore = create<MidiStore>((set, get) => ({
   devices: null,
   selectedInput: null,
   selectedOutput: null,
+  forwardInput: null,
   channel: 1,
   isLoading: false,
   error: null,
 
   // Internal actions (used by the init effect)
   _setLoading: (isLoading) => set({ isLoading }),
-  _setInitialized: (devices, selectedInput, selectedOutput, channel) =>
-    set({ enabled: true, devices, selectedInput, selectedOutput, channel, isLoading: false }),
+  _setInitialized: (devices, selectedInput, selectedOutput, channel, forwardInput) =>
+    set({ enabled: true, devices, selectedInput, selectedOutput, forwardInput: forwardInput ?? null, channel, isLoading: false }),
   _setError: (error) => set({ enabled: false, isLoading: false, error }),
-  _updateDevices: (devices, selectedInput, selectedOutput) =>
+  _updateDevices: (devices, selectedInput, selectedOutput, forwardInput) =>
     set((state) => ({
       devices,
       selectedInput: selectedInput ?? state.selectedInput,
       selectedOutput: selectedOutput ?? state.selectedOutput,
+      forwardInput: forwardInput ?? state.forwardInput,
     })),
 
   // Public actions
@@ -133,7 +157,12 @@ export const useMidiStore = create<MidiStore>((set, get) => ({
   selectInput: (input) => {
     console.log('🎹 Sélection MIDI Input:', input?.name || 'None', input?.id || null);
     setMidiInput(input);
-    let { selectedOutput, channel, devices } = get();
+    const { channel, devices } = get();
+    let { selectedOutput, forwardInput } = get();
+    if (forwardInput && (forwardInput.id === input?.id || forwardInput.name === input?.name)) {
+      setMidiForwardInput(null);
+      forwardInput = null;
+    }
     // Si aucune sortie n'est sélectionnée, essayer d'en trouver une avec le même nom ou id
     if (!selectedOutput && input && devices) {
       const match = devices.outputs.find(
@@ -144,14 +173,15 @@ export const useMidiStore = create<MidiStore>((set, get) => ({
         selectedOutput = match;
       }
     }
-    saveMidiPreferences(input?.id || null, selectedOutput?.id || null, channel);
-    set({ selectedInput: input, selectedOutput });
+    saveMidiPreferences(input?.id || null, selectedOutput?.id || null, channel, forwardInput?.id || null);
+    set({ selectedInput: input, selectedOutput, forwardInput });
   },
 
   selectOutput: (output) => {
     console.log('🎹 Sélection MIDI Output:', output?.name || 'None', output?.id || null);
     setMidiOutput(output);
-    let { selectedInput, channel, devices } = get();
+    const { channel, devices, forwardInput } = get();
+    let { selectedInput } = get();
     // Si aucune entrée n'est sélectionnée, essayer d'en trouver une avec le même nom ou id
     if (!selectedInput && output && devices) {
       const match = devices.inputs.find(
@@ -162,14 +192,24 @@ export const useMidiStore = create<MidiStore>((set, get) => ({
         selectedInput = match;
       }
     }
-    saveMidiPreferences(selectedInput?.id || null, output?.id || null, channel);
+    saveMidiPreferences(selectedInput?.id || null, output?.id || null, channel, forwardInput?.id || null);
     set({ selectedOutput: output, selectedInput });
+  },
+
+  selectForwardInput: (input) => {
+    const { selectedInput, selectedOutput, channel } = get();
+    const next = input && (isPreenFM3Device(input.name) || input.id === selectedInput?.id)
+      ? null
+      : input;
+    setMidiForwardInput(next);
+    saveMidiPreferences(selectedInput?.id || null, selectedOutput?.id || null, channel, next?.id || null);
+    set({ forwardInput: next });
   },
 
   changeChannel: (channel) => {
     setMidiChannel(channel);
-    const { selectedInput, selectedOutput } = get();
-    saveMidiPreferences(selectedInput?.id || null, selectedOutput?.id || null, channel);
+    const { selectedInput, selectedOutput, forwardInput } = get();
+    saveMidiPreferences(selectedInput?.id || null, selectedOutput?.id || null, channel, forwardInput?.id || null);
     set({ channel });
   },
 }));
@@ -200,34 +240,41 @@ export function usePreenFM3Midi() {
         console.log('🎹 Restauration des préférences MIDI:', prefs);
         
         // Try to restore previously selected devices
-        const savedInput = prefs.inputId 
+        const savedInput = prefs.inputId
           ? devices.inputs.find(input => input.id === prefs.inputId)
           : null;
-        const savedOutput = prefs.outputId 
+        const savedOutput = prefs.outputId
           ? devices.outputs.find(output => output.id === prefs.outputId)
           : null;
-        
-        // Vérifier si les périphériques sauvés sont encore disponibles
-        const inputStillExists = prefs.inputId && savedInput;
-        const outputStillExists = prefs.outputId && savedOutput;
-        
+        const savedForwardInput = prefs.forwardInputId
+          ? devices.inputs.find(input => input.id === prefs.forwardInputId)
+          : null;
+
+        const defaultInput = devices.inputs.find(input => isPreenFM3Device(input.name)) ?? null;
+        const defaultOutput = devices.outputs.find(output => isPreenFM3Device(output.name)) ?? null;
+
+        // Prefer saved devices; otherwise default to the PreenFM3 by name.
+        const selectedInput = savedInput || defaultInput;
+        const selectedOutput = savedOutput || defaultOutput;
+        const selectedChannel = prefs.channel || 1;
+        const forwardInput =
+          savedForwardInput &&
+          !isPreenFM3Device(savedForwardInput.name) &&
+          savedForwardInput.id !== selectedInput?.id
+            ? savedForwardInput
+            : null;
+
         // Nettoyer localStorage si les périphériques ne sont plus disponibles
-        if (prefs.inputId && !inputStillExists) {
-          console.log('Périphérique MIDI input sauvé non trouvé, nettoyage...', prefs.inputId);
+        if (prefs.inputId && !savedInput) {
           localStorage.removeItem(STORAGE_KEYS.INPUT_ID);
         }
-        
-        if (prefs.outputId && !outputStillExists) {
-          console.log('Périphérique MIDI output sauvé non trouvé, nettoyage...', prefs.outputId);
+        if (prefs.outputId && !savedOutput) {
           localStorage.removeItem(STORAGE_KEYS.OUTPUT_ID);
         }
-        
-        // Utiliser uniquement les périphériques explicitement sauvés et encore disponibles
-        const selectedInput = savedInput || null;
-        const selectedOutput = savedOutput || null;
-        const selectedChannel = prefs.channel || 1;
-        
-        // Auto-connect uniquement si des périphériques étaient explicitement sauvés
+        if (prefs.forwardInputId && !forwardInput) {
+          localStorage.removeItem(STORAGE_KEYS.FORWARD_INPUT_ID);
+        }
+
         if (selectedInput) {
           console.log('🎹 Restauration MIDI Input:', selectedInput.name, selectedInput.id);
           setMidiInput(selectedInput);
@@ -236,17 +283,21 @@ export function usePreenFM3Midi() {
           console.log('🎹 Restauration MIDI Output:', selectedOutput.name, selectedOutput.id);
           setMidiOutput(selectedOutput);
         }
+        if (forwardInput) {
+          setMidiForwardInput(forwardInput);
+        }
         setMidiChannel(selectedChannel);
 
-        useMidiStore.getState()._setInitialized(devices, selectedInput, selectedOutput, selectedChannel);
+        useMidiStore.getState()._setInitialized(devices, selectedInput, selectedOutput, selectedChannel, forwardInput);
         
         // Ne sauvegarder que si on a des périphériques sélectionnés
         // Évite de sauvegarder null de manière non intentionnelle
-        if (selectedInput || selectedOutput) {
+        if (selectedInput || selectedOutput || forwardInput) {
           saveMidiPreferences(
-            selectedInput?.id || null, 
-            selectedOutput?.id || null, 
-            selectedChannel
+            selectedInput?.id || null,
+            selectedOutput?.id || null,
+            selectedChannel,
+            forwardInput?.id || null,
           );
         }
 
@@ -258,13 +309,22 @@ export function usePreenFM3Midi() {
           // Try to find the previously selected (or saved) input/output by id
           const currentInputId = store.selectedInput?.id || prefs.inputId;
           const currentOutputId = store.selectedOutput?.id || prefs.outputId;
+          const currentForwardId = store.forwardInput?.id || prefs.forwardInputId;
 
           const newInput = currentInputId
             ? newDevices.inputs.find(i => i.id === currentInputId) ?? null
-            : store.selectedInput;
+            : store.selectedInput ?? newDevices.inputs.find(i => isPreenFM3Device(i.name)) ?? null;
           const newOutput = currentOutputId
             ? newDevices.outputs.find(o => o.id === currentOutputId) ?? null
-            : store.selectedOutput;
+            : store.selectedOutput ?? newDevices.outputs.find(o => isPreenFM3Device(o.name)) ?? null;
+          const forwardCandidate = currentForwardId
+            ? newDevices.inputs.find(i => i.id === currentForwardId) ?? null
+            : store.forwardInput;
+          const newForward = forwardCandidate &&
+            !isPreenFM3Device(forwardCandidate.name) &&
+            forwardCandidate.id !== newInput?.id
+              ? forwardCandidate
+              : null;
 
           if (newInput && newInput !== store.selectedInput) {
             console.log('🔌 Auto-reconnexion MIDI Input:', newInput.name);
@@ -281,10 +341,22 @@ export function usePreenFM3Midi() {
             setMidiOutput(null);
           }
 
+          if (newForward !== store.forwardInput) {
+            setMidiForwardInput(newForward);
+          }
+
+          saveMidiPreferences(
+            newInput?.id || null,
+            newOutput?.id || null,
+            store.channel,
+            newForward?.id || null,
+          );
+
           useMidiStore.getState()._updateDevices(
             newDevices,
             newInput,
             newOutput,
+            newForward,
           );
         });
         

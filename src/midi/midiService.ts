@@ -726,8 +726,18 @@ import { debugLog } from '../utils/debug';
 
 let midiInput: Input | null = null;
 let midiOutput: Output | null = null;
+let midiForwardInput: Input | null = null;
+let midiForwardHandler: ((e: unknown) => void) | null = null;
 let currentChannel = 1; // MIDI channel 1-16
 let suppressMidiOutputDepth = 0;
+
+function isForwardedMidiMessage(data: Uint8Array): boolean {
+  if (data.length === 0) return false;
+  const status = data[0];
+  if (status === 0xF8) return true; // MIDI clock
+  const type = status & 0xF0;
+  return type === 0x80 || type === 0x90 || type === 0xB0;
+}
 
 /**
  * Execute `fn` while suppressing all outgoing CC and NRPN messages.
@@ -810,6 +820,35 @@ export function setMidiInput(input: Input | null) {
  */
 export function setMidiOutput(output: Output | null) {
   midiOutput = output;
+}
+
+export function getMidiForwardInput(): Input | null {
+  return midiForwardInput;
+}
+
+/**
+ * Select a second MIDI input whose notes/CC/clock are forwarded to the
+ * PreenFM3 output. Pass null to stop forwarding.
+ */
+export function setMidiForwardInput(input: Input | null) {
+  if (midiForwardInput && midiForwardHandler) {
+    midiForwardInput.removeListener('midimessage', midiForwardHandler);
+  }
+  midiForwardInput = input;
+  midiForwardHandler = null;
+
+  if (!input || input === midiInput) return;
+
+  const handler = (e: unknown) => {
+    if (!midiOutput || midiForwardInput !== input) return;
+    const event = e as { message?: { data?: Uint8Array }; data?: Uint8Array };
+    const data = event.message?.data ?? event.data;
+    if (!data || !isForwardedMidiMessage(data)) return;
+    midiOutput.send(data);
+  };
+
+  midiForwardHandler = handler;
+  input.addListener('midimessage', handler);
 }
 
 /**
